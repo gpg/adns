@@ -136,6 +136,7 @@ static void checkc_queue_output(adns_state ads) {
     assert(qu->state == query_done);
     assert(!qu->children.head && !qu->children.tail);
     assert(!qu->parent);
+    assert(!qu->allocations.head && !qu->allocations.tail);
     checkc_query(ads,qu);
   });
 }

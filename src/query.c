@@ -362,6 +362,7 @@ static void free_query_allocs(adns_query qu) {
 
   cancel_children(qu);
   for (an= qu->allocations.head; an; an= ann) { ann= an->next; free(an); }
+  LIST_INIT(qu->allocations);
   adns__vbuf_free(&qu->vb);
 }
 

@@ -18,6 +18,7 @@ adns (0.5) unstable; urgency=medium
   * Reject TXT RRs with no strings.
   * Don't complain so much about poll(2) tests if not available.
   * Do not give -u 0 -g 0 options to install.
+  * Do not scramble innards when a query on the output queue is cancelled.
 
  --
 
@@ -101,4 +102,5 @@ adns (0.1) experimental; urgency=low
 
 Local variables:
 mode: debian-changelog
+fill-column: 75
 End:
