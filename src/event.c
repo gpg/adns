@@ -191,18 +191,18 @@ void adns__timeouts(adns_state ads, int act,
 void adns_firsttimeout(adns_state ads,
 		       struct timeval **tv_io, struct timeval *tvbuf,
 		       struct timeval now) {
-  adns__consistency(ads,cc_entex);
+  adns__consistency(ads,0,cc_entex);
   adns__timeouts(ads, 0, tv_io,tvbuf, now);
-  adns__consistency(ads,cc_entex);
+  adns__consistency(ads,0,cc_entex);
 }
 
 void adns_processtimeouts(adns_state ads, const struct timeval *now) {
   struct timeval tv_buf;
 
-  adns__consistency(ads,cc_entex);
+  adns__consistency(ads,0,cc_entex);
   adns__must_gettimeofday(ads,&now,&tv_buf);
   if (now) adns__timeouts(ads, 1, 0,0, *now);
-  adns__consistency(ads,cc_entex);
+  adns__consistency(ads,0,cc_entex);
 }
 
 /* fd handling functions.  These are the top-level of the real work of
@@ -239,7 +239,7 @@ int adns_processreadable(adns_state ads, int fd, const struct timeval *now) {
   byte udpbuf[DNS_MAXUDP];
   struct sockaddr_in udpaddr;
   
-  adns__consistency(ads,cc_entex);
+  adns__consistency(ads,0,cc_entex);
 
   switch (ads->tcpstate) {
   case server_disconnected:
@@ -325,14 +325,14 @@ int adns_processreadable(adns_state ads, int fd, const struct timeval *now) {
   }
   r= 0;
 xit:
-  adns__consistency(ads,cc_entex);
+  adns__consistency(ads,0,cc_entex);
   return r;
 }
 
 int adns_processwriteable(adns_state ads, int fd, const struct timeval *now) {
   int r;
   
-  adns__consistency(ads,cc_entex);
+  adns__consistency(ads,0,cc_entex);
 
   switch (ads->tcpstate) {
   case server_disconnected:
@@ -378,12 +378,12 @@ int adns_processwriteable(adns_state ads, int fd, const struct timeval *now) {
   }
   r= 0;
 xit:
-  adns__consistency(ads,cc_entex);
+  adns__consistency(ads,0,cc_entex);
   return r;
 }
   
 int adns_processexceptional(adns_state ads, int fd, const struct timeval *now) {
-  adns__consistency(ads,cc_entex);
+  adns__consistency(ads,0,cc_entex);
   switch (ads->tcpstate) {
   case server_disconnected:
     break;
@@ -395,7 +395,7 @@ int adns_processexceptional(adns_state ads, int fd, const struct timeval *now) {
   default:
     abort();
   }
-  adns__consistency(ads,cc_entex);
+  adns__consistency(ads,0,cc_entex);
   return 0;
 }
 
@@ -446,7 +446,7 @@ void adns_beforeselect(adns_state ads, int *maxfd_io, fd_set *readfds_io,
   struct pollfd pollfds[MAX_POLLFDS];
   int i, fd, maxfd, npollfds;
   
-  adns__consistency(ads,cc_entex);
+  adns__consistency(ads,0,cc_entex);
 
   if (tv_mod && (!*tv_mod || (*tv_mod)->tv_sec || (*tv_mod)->tv_usec)) {
     /* The caller is planning to sleep. */
@@ -467,7 +467,7 @@ void adns_beforeselect(adns_state ads, int *maxfd_io, fd_set *readfds_io,
   *maxfd_io= maxfd;
 
 xit:
-  adns__consistency(ads,cc_entex);
+  adns__consistency(ads,0,cc_entex);
 }
 
 void adns_afterselect(adns_state ads, int maxfd, const fd_set *readfds,
@@ -477,7 +477,7 @@ void adns_afterselect(adns_state ads, int maxfd, const fd_set *readfds,
   struct pollfd pollfds[MAX_POLLFDS];
   int npollfds, i;
 
-  adns__consistency(ads,cc_entex);
+  adns__consistency(ads,0,cc_entex);
   adns__must_gettimeofday(ads,&now,&tv_buf);
   if (!now) goto xit;
   adns_processtimeouts(ads,now);
@@ -489,13 +489,13 @@ void adns_afterselect(adns_state ads, int maxfd, const fd_set *readfds,
 		 maxfd,readfds,writefds,exceptfds,
 		 *now, 0);
 xit:
-  adns__consistency(ads,cc_entex);
+  adns__consistency(ads,0,cc_entex);
 }
 
 /* General helpful functions. */
 
 void adns_globalsystemfailure(adns_state ads) {
-  adns__consistency(ads,cc_entex);
+  adns__consistency(ads,0,cc_entex);
 
   while (ads->timew.head) {
     adns__query_fail(ads->timew.head, adns_s_systemfail);
@@ -511,7 +511,7 @@ void adns_globalsystemfailure(adns_state ads) {
   default:
     abort();
   }
-  adns__consistency(ads,cc_entex);
+  adns__consistency(ads,0,cc_entex);
 }
 
 int adns_processany(adns_state ads) {
@@ -520,7 +520,7 @@ int adns_processany(adns_state ads) {
   struct pollfd pollfds[MAX_POLLFDS];
   int npollfds;
 
-  adns__consistency(ads,cc_entex);
+  adns__consistency(ads,0,cc_entex);
 
   r= gettimeofday(&now,0);
   if (!r) adns_processtimeouts(ads,&now);
@@ -531,7 +531,7 @@ int adns_processany(adns_state ads) {
 		 0,0,0,0,
 		 now,&r);
 
-  adns__consistency(ads,cc_entex);
+  adns__consistency(ads,0,cc_entex);
   return r;
 }
 
@@ -569,7 +569,7 @@ int adns_wait(adns_state ads,
   fd_set readfds, writefds, exceptfds;
   struct timeval tvbuf, *tvp;
   
-  adns__consistency(ads,cc_entex);
+  adns__consistency(ads,*query_io,cc_entex);
   for (;;) {
     r= internal_check(ads,query_io,answer_r,context_r);
     if (r != EWOULDBLOCK) break;
@@ -589,7 +589,7 @@ int adns_wait(adns_state ads,
       adns_afterselect(ads,maxfd,&readfds,&writefds,&exceptfds,0);
     }
   }
-  adns__consistency(ads,cc_entex);
+  adns__consistency(ads,0,cc_entex);
   return r;
 }
 
@@ -600,11 +600,11 @@ int adns_check(adns_state ads,
   struct timeval now;
   int r;
   
-  adns__consistency(ads,cc_entex);
+  adns__consistency(ads,*query_io,cc_entex);
   r= gettimeofday(&now,0);
   if (!r) adns__autosys(ads,now);
 
   r= internal_check(ads,query_io,answer_r,context_r);
-  adns__consistency(ads,cc_entex);
+  adns__consistency(ads,0,cc_entex);
   return r;
 }

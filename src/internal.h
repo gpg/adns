@@ -642,7 +642,7 @@ void adns__fdevents(adns_state ads,
 
 /* From check.c: */
 
-void adns__consistency(adns_state ads, consistency_checks cc);
+void adns__consistency(adns_state ads, adns_query qu, consistency_checks cc);
 
 /* Useful static inline functions: */
 

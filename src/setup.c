@@ -545,7 +545,7 @@ int adns_init(adns_state *ads_r, adns_initflags flags, FILE *diagfile) {
   r= init_finish(ads);
   if (r) return r;
 
-  adns__consistency(ads,cc_entex);
+  adns__consistency(ads,0,cc_entex);
   *ads_r= ads;
   return 0;
 }
@@ -565,14 +565,14 @@ int adns_init_strcfg(adns_state *ads_r, adns_initflags flags,
   }
 
   r= init_finish(ads);  if (r) return r;
-  adns__consistency(ads,cc_entex);
+  adns__consistency(ads,0,cc_entex);
   *ads_r= ads;
   return 0;
 }
 
 
 void adns_finish(adns_state ads) {
-  adns__consistency(ads,cc_entex);
+  adns__consistency(ads,0,cc_entex);
   for (;;) {
     if (ads->timew.head) adns_cancel(ads->timew.head);
     else if (ads->childw.head) adns_cancel(ads->childw.head);
@@ -587,7 +587,7 @@ void adns_finish(adns_state ads) {
 }
 
 void adns_forallqueries_begin(adns_state ads) {
-  adns__consistency(ads,cc_entex);
+  adns__consistency(ads,0,cc_entex);
   ads->forallnext=
     ads->timew.head ? ads->timew.head :
     ads->childw.head ? ads->childw.head :
@@ -597,7 +597,7 @@ void adns_forallqueries_begin(adns_state ads) {
 adns_query adns_forallqueries_next(adns_state ads, void **context_r) {
   adns_query qu, nqu;
 
-  adns__consistency(ads,cc_entex);
+  adns__consistency(ads,0,cc_entex);
   nqu= ads->forallnext;
   for (;;) {
     qu= nqu;

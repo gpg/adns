@@ -22,7 +22,9 @@
 
 #include "internal.h"
 
-void adns_checkconsistency(adns_state ads) { adns__consistency(ads,cc_user); }
+void adns_checkconsistency(adns_state ads, adns_query qu) {
+  adns__consistency(ads,qu,cc_user);
+}
 
 #define DLIST_CHECK(list, nodevar, part, body)					\
   if ((list).head) {								\
@@ -35,6 +37,15 @@ void adns_checkconsistency(adns_state ads) { adns__consistency(ads,cc_user); }
     }										\
   }
 
+#define DLIST_ASSERTON(node, nodevar, list, part)				\
+  do {										\
+    for ((nodevar)= (list).head;						\
+	 (nodevar) != (node);							\
+	 (nodevar)= (nodevar)->part next) {					\
+      assert((nodevar));							\
+    }										\
+  } while(0)
+
 static void checkc_query_alloc(adns_state ads, adns_query qu) {
   allocnode *an;
 
@@ -43,11 +54,14 @@ static void checkc_query_alloc(adns_state ads, adns_query qu) {
 }
 
 static void checkc_query(adns_state ads, adns_query qu) {
+  adns_query child;
+
   assert(qu->udpnextserver < ads->nservers);
   assert(!(qu->udpsent & (~0UL << ads->nservers)));
   assert(!(qu->tcpfailed & (~0UL << ads->nservers)));
   assert(qu->udpretries <= UDPMAXRETRIES);
   assert(qu->search_pos <= ads->nsearchlist);
+  if (qu->parent) DLIST_ASSERTON(qu, child, qu->parent->children, siblings.);
 }
 
 static void checkc_global(adns_state ads) {
@@ -126,7 +140,9 @@ static void checkc_queue_output(adns_state ads) {
   });
 }
 
-void adns__consistency(adns_state ads, consistency_checks cc) {
+void adns__consistency(adns_state ads, adns_query qu, consistency_checks cc) {
+  adns_query search;
+  
   switch (cc) {
   case cc_user:
     break;
@@ -144,4 +160,22 @@ void adns__consistency(adns_state ads, consistency_checks cc) {
   checkc_queue_timew(ads);
   checkc_queue_childw(ads);
   checkc_queue_output(ads);
+
+  if (qu) {
+    switch (qu->state) {
+    case query_tosend:
+    case query_tcpwait:
+    case query_tcpsent:
+      DLIST_ASSERTON(qu, search, ads->timew, );
+      break;
+    case query_child:
+      DLIST_ASSERTON(qu, search, ads->childw, );
+      break;
+    case query_done:
+      DLIST_ASSERTON(qu, search, ads->output, );
+      break;
+    default:
+      assert(!"specific query state");
+    }
+  }
 }

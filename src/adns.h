@@ -381,9 +381,11 @@ adns_query adns_forallqueries_next(adns_state ads, void **context_r);
  * context_r may be 0.  *context_r may not be set when _next returns 0.
  */
 
-void adns_checkconsistency(adns_state ads);
+void adns_checkconsistency(adns_state ads, adns_query qu);
 /* Checks the consistency of adns's internal data structures.
  * If any error is found, the program will abort().
+ * You may pass 0 for qu; if you pass non-null then additional checks
+ * are done to make sure that qu is a valid query.
  */
 
 /*
