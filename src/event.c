@@ -228,7 +228,6 @@ int adns__pollfds(adns_state ads, struct pollfd pollfds_buf[MAX_POLLFDS]) {
     abort();
   }
   pollfds_buf[1].fd= ads->tcpsocket;
-  pollfds_buf[1].revents= 0;
   return 2;
 }
 
