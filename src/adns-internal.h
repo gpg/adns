@@ -7,11 +7,15 @@
 
 #include "adns.h"
 
+/* Configuration and constants */
+
 #define MAXSERVERS 5
 #define MAXUDPRETRIES 15
 #define UDPRETRYMS 2000
 #define TCPMS 30000
 #define LOCALRESOURCEMS 20
+
+/* Shared data structures */
 
 union adns__align {
   adns_status status;
@@ -67,5 +71,51 @@ struct adns__state {
     struct in_addr addr;
   } servers[MAXSERVERS];
 };
+
+/* From setup.c: */
+
+void adns__debug(adns_state ads, const char *fmt, ...) PRINTFFORMAT(2,3);
+void adns__diag(adns_state ads, const char *fmt, ...) PRINTFFORMAT(2,3);
+
+/* From submit.c: */
+
+void adns__query_fail(adns_state ads, adns_query qu, adns_status stat);
+
+/* From query.c: */
+
+void adns__quproc_tosend(adns_state ads, adns_query qu, struct timeval now) {
+
+/* Useful static inline functions: */
+
+static inline void timevaladd(struct timeval *tv_io, long ms) {
+  struct timeval tmp;
+  assert(ms>=0);
+  tmp= *tv_io;
+  tmp.tv_usec += (ms%1000)*1000;
+  tmp.tv_sec += ms/1000;
+  if (tmp.tv_usec >= 1000) { tmp.tv_sec++; tmp.tv_usec -= 1000; }
+  *tv_io= tmp;
+}    
+
+/* Useful macros */
+
+#define LIST_UNLINK_PART(list,node,part) \
+  do { \
+    if ((node)->back) (node)->back->part next= (node)->part next; \
+      else                        (list).head= (node)->part next; \
+    if ((node)->next) (node)->next->part back= (node)->part back; \
+      else                        (list).tail= (node)->part back; \
+  } while(0)
+
+#define LIST_LINK_TAIL_PART(list,node,part) \
+  do { \
+    (node)->part back= 0; \
+    (node)->part next= (list).tail; \
+    if ((list).tail) (list).tail->part back= (node); else (list).part head= (node); \
+    (list).tail= (node); \
+  } while(0)
+
+#define LIST_UNLINK(list,node) LIST_UNLINK_PART(list,node,)
+#define LIST_LINK_TAIL_PART(list,node) LIST_LINK_TAIL(list,node,)
 
 #endif

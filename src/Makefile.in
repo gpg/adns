@@ -7,4 +7,4 @@ WERROR=-Werror
 
 all:		dtest
 
-dtest:		dtest.o adns.o
+dtest:		dtest.o event.o query.o setup.o submit.o
