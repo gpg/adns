@@ -77,7 +77,7 @@ void adns__tcp_tryconnect(adns_state ads, struct timeval now) {
     }
     memset(&addr,0,sizeof(addr));
     addr.sin_family= AF_INET;
-    addr.sin_port= htons(NSPORT);
+    addr.sin_port= htons(DNS_PORT);
     addr.sin_addr= ads->servers[ads->tcpserver].addr;
     r= connect(fd,&addr,sizeof(addr));
     ads->tcpsocket= fd;
@@ -195,7 +195,7 @@ static int internal_callback(adns_state ads, int maxfd,
 			     const fd_set *exceptfds,
 			     struct timeval now) {
   int skip, want, dgramlen, count, udpaddrlen, r, serv;
-  byte udpbuf[MAXUDPDGRAM];
+  byte udpbuf[DNS_MAXUDP];
   struct sockaddr_in udpaddr;
 
   count= 0;
@@ -234,7 +234,7 @@ static int internal_callback(adns_state ads, int maxfd,
 	  if (ads->tcprecv.used<skip+2+dgramlen) {
 	    want= 2+dgramlen;
 	  } else {
-	    adns__procdgram(ads,ads->tcprecv.buf+skip+2,dgramlen,ads->tcpserver);
+	    adns__procdgram(ads,ads->tcprecv.buf+skip+2,dgramlen,ads->tcpserver,now);
 	    skip+= 2+dgramlen; continue;
 	  }
 	}
@@ -294,9 +294,9 @@ static int internal_callback(adns_state ads, int maxfd,
 		   " %u (expected %u)",udpaddr.sin_family,AF_INET);
 	continue;
       }
-      if (ntohs(udpaddr.sin_port) != NSPORT) {
+      if (ntohs(udpaddr.sin_port) != DNS_PORT) {
 	adns__diag(ads,-1,"datagram received from wrong port %u (expected %u)",
-		   ntohs(udpaddr.sin_port),NSPORT);
+		   ntohs(udpaddr.sin_port),DNS_PORT);
 	continue;
       }
       for (serv= 0;
@@ -308,7 +308,7 @@ static int internal_callback(adns_state ads, int maxfd,
 		   inet_ntoa(udpaddr.sin_addr));
 	continue;
       }
-      adns__procdgram(ads,udpbuf,r,serv);
+      adns__procdgram(ads,udpbuf,r,serv,now);
     }
   }
   return count;
@@ -346,7 +346,7 @@ static int internal_check(adns_state ads,
     if (qu->id>=0) return EWOULDBLOCK;
   }
   LIST_UNLINK(ads->output,qu);
-  *answer= (adns_answer*)qu->answer.buf;
+  *answer= (adns_answer*)qu->ans.buf;
   if (context_r) *context_r= qu->context.ext;
   free(qu);
   return 0;

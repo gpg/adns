@@ -22,11 +22,20 @@ typedef unsigned char byte;
 #define TCPMS 30000
 #define LOCALRESOURCEMS 20
 
-#define DNS_UDPPORT 53
+#define DNS_PORT 53
 #define DNS_MAXUDP 512
 #define DNS_MAXDOMAIN 255
 #define DNS_HDRSIZE 12
 #define DNS_CLASS_IN 1
+
+typedef enum {
+  rcode_noerror,
+  rcode_formaterror,
+  rcode_servfail,
+  rcode_nxdomain,
+  rcode_notimp,
+  rcode_refused
+} dns_rcode;
 
 /* Shared data structures */
 
@@ -50,8 +59,13 @@ typedef union {
 } qcontext;
 
 typedef struct {
-  unsigned long searchkey; /* flags and typecode swapped */
   adns_rrtype type;
+  int rrsz;
+  adns_status (*get_fn)(adns_state ads, adns_query qu, int serv,
+			const byte *dgram, int dglen,
+			int *cbyte_io, int max,
+			int nsstart, int arcount, int *arstart_io,
+			int roff, int *rcount_io);
 } typeinfo;
 
 struct adns__query {
@@ -68,7 +82,7 @@ struct adns__query {
   unsigned long udpsent, tcpfailed; /* bitmap indexed by server */
   struct timeval timeout;
   byte *querymsg;
-  int querylen;
+  int querylen, cnameoff, rrsoff;
   qcontext context;
   char owner[1];
   /* After the owner name and nul comes the query message, pointed to by querymsg */
@@ -150,6 +164,7 @@ void adns__diag(adns_state ads, int serv, const char *fmt, ...) PRINTFFORMAT(3,4
 
 int adns__vbuf_ensure(vbuf *vb, int want);
 int adns__vbuf_append(vbuf *vb, const byte *data, int len);
+int adns__vbuf_malloc(vbuf *vb, size_t len);
 /* 1=>success, 0=>realloc failed */
 void adns__vbuf_appendq(vbuf *vb, const byte *data, int len);
 void adns__vbuf_init(vbuf *vb);
@@ -159,6 +174,7 @@ int adns__setnonblock(adns_state ads, int fd); /* => errno value */
 /* From submit.c: */
 
 void adns__query_nomem(adns_state ads, adns_query qu);
+void adns__query_finish(adns_state ads, adns_query qu, adns_status stat);
 void adns__query_fail(adns_state ads, adns_query qu, adns_status stat);
 
 /* From query.c: */
@@ -166,11 +182,35 @@ void adns__query_fail(adns_state ads, adns_query qu, adns_status stat);
 void adns__query_udp(adns_state ads, adns_query qu, struct timeval now);
 void adns__query_tcp(adns_state ads, adns_query qu, struct timeval now);
 adns_status adns__mkquery(adns_state ads, const char *owner, int ol, int id,
-			  adns_rrtype type, adns_queryflags flags);
+			  const typeinfo *typei, adns_queryflags flags);
 
 /* From reply.c: */
 
-void adns__procdgram(adns_state ads, const byte *dgram, int len, int serv);
+void adns__procdgram(adns_state ads, const byte *dgram, int len,
+		     int serv, struct timeval now);
+
+/* From types.c: */
+
+const typeinfo *adns__findtype(adns_rrtype type);
+
+/* From parse.c: */
+
+int vbuf__append_quoted1035(vbuf *vb, const byte *buf, int len);
+
+adns_status adns__get_label(const byte *dgram, int dglen, int *max_io,
+			    int *cbyte_io, int *lablen_r, int *labstart_r,
+			    int *namelen_io);
+adns_status adns__get_domain_perm(adns_state ads, adns_query qu, int serv,
+				  const byte *dgram, int dglen,
+				  int *cbyte_io, int max, int *domainstart_r);
+adns_status adns__get_domain_temp(adns_state ads, adns_query qu, int serv,
+				  const byte *dgram, int dglen,
+				  int *cbyte_io, int max, int *domainstart_r);
+adns_status adns__get_rr_temp(adns_state ads, adns_query qu, int serv,
+			      const byte *dgram, int dglen, int *cbyte_io,
+			      int *type_r, int *class_r, int *rdlen_r, int *rdstart_r,
+			      const byte *eo_dgram, int eo_dglen, int eo_cbyte,
+			      int *eo_matched_r);
 
 /* From event.c: */
 
@@ -192,6 +232,9 @@ static inline void timevaladd(struct timeval *tv_io, long ms) {
 
 static inline int ctype_whitespace(int c) { return c==' ' || c=='\n' || c=='\t'; }
 static inline int ctype_digit(int c) { return c>='0' && c<='9'; }
+static inline int ctype_alpha(int c) {
+  return (c >= 'a' && c <= 'z') || (c >= 'A' || c <= 'Z');
+}
 
 /* Useful macros */
 
@@ -215,5 +258,9 @@ static inline int ctype_digit(int c) { return c>='0' && c<='9'; }
 
 #define LIST_UNLINK(list,node) LIST_UNLINK_PART(list,node,)
 #define LIST_LINK_TAIL(list,node) LIST_LINK_TAIL_PART(list,node,)
+
+#define GETIL_B(cb) (dgram[(cb)++])
+#define GET_B(cb,tv) ((tv)= GETIL_B((cb)))
+#define GET_W(cb,tv) ((tv)=0, (tv)|=(GETIL_B((cb))<<8), (tv)|=GETIL_B(cb), (tv))
 
 #endif

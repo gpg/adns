@@ -20,7 +20,6 @@ int main(void) {
   r= adns_wait(ads,&qu,&ans,0);
   if (r) { perror("wait"); exit(2); }
 
-  if (!ans) { fputs("no answer\n",stderr); exit(2); }
   fprintf(stderr,"answer status %d type %d rrs %d cname %s\n",
 	  ans->status,ans->type,ans->nrrs,
 	  ans->cname ? ans->cname : "-");

@@ -2,13 +2,14 @@
 
 #include <errno.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include <sys/uio.h>
 
 #include "internal.h"
 
 adns_status adns__mkquery(adns_state ads, const char *owner, int ol, int id,
-			  adns_rrtype type, adns_queryflags flags) {
+			  const typeinfo *typei, adns_queryflags flags) {
   /* Assembles a query packet in ads->rqbuf. */
   int ll, c, nlabs;
   byte label[255], *rqp;
@@ -17,7 +18,7 @@ adns_status adns__mkquery(adns_state ads, const char *owner, int ol, int id,
 #define MKQUERY_ADDB(b) *rqp++= (b)
 #define MKQUERY_ADDW(w) (MKQUERY_ADDB(((w)>>8)&0x0ff), MKQUERY_ADDB((w)&0x0ff))
 
-  if (!adns__vbuf_ensure(&ads->rqbuf,DNSHDRSIZE+strlen(owner)+1+5))
+  if (!adns__vbuf_ensure(&ads->rqbuf,DNS_HDRSIZE+strlen(owner)+1+5))
     return adns_s_nolocalmem;
   rqp= ads->rqbuf.buf;
 
@@ -50,7 +51,7 @@ adns_status adns__mkquery(adns_state ads, const char *owner, int ol, int id,
       if (!(flags & adns_qf_anyquote)) {
 	if (ctype_digit(c) || c == '-') {
 	  if (!ll) return adns_s_invaliddomain;
-	} else if ((c < 'a' || c > 'z') && (c < 'A' && c > 'Z')) {
+	} else if (!ctype_alpha(c)) {
 	  return adns_s_invaliddomain;
 	}
       }
@@ -64,7 +65,7 @@ adns_status adns__mkquery(adns_state ads, const char *owner, int ol, int id,
   } while (p!=pe);
 
   MKQUERY_ADDB(0);
-  MKQUERY_ADDW(type & adns__rrt_typemask); /* QTYPE */
+  MKQUERY_ADDW(typei->type & adns__rrt_typemask); /* QTYPE */
   MKQUERY_ADDW(DNS_CLASS_IN); /* QCLASS=IN */
 
   ads->rqbuf.used= rqp - ads->rqbuf.buf;
@@ -148,12 +149,12 @@ void adns__query_udp(adns_state ads, adns_query qu, struct timeval now) {
   int serv, r;
 
   assert(qu->state == query_udp);
-  if ((qu->flags & adns_qf_usevc) || (qu->querylen > MAXUDPDGRAM)) {
+  if ((qu->flags & adns_qf_usevc) || (qu->querylen > DNS_MAXUDP)) {
     query_usetcp(ads,qu,now);
     return;
   }
 
-  if (qu->udpretries >= MAXUDPRETRIES) {
+  if (qu->udpretries >= UDPMAXRETRIES) {
     adns__query_fail(ads,qu,adns_s_timeout);
     return;
   }
@@ -162,7 +163,7 @@ void adns__query_udp(adns_state ads, adns_query qu, struct timeval now) {
   memset(&servaddr,0,sizeof(servaddr));
   servaddr.sin_family= AF_INET;
   servaddr.sin_addr= ads->servers[serv].addr;
-  servaddr.sin_port= htons(NSPORT);
+  servaddr.sin_port= htons(DNS_PORT);
   
   r= sendto(ads->udpsocket,qu->querymsg,qu->querylen,0,&servaddr,sizeof(servaddr));
   if (r<0 && errno == EMSGSIZE) { query_usetcp(ads,qu,now); return; }
@@ -176,8 +177,16 @@ void adns__query_udp(adns_state ads, adns_query qu, struct timeval now) {
   LIST_LINK_TAIL(ads->timew,qu);
 }
 
-void adns__query_nomem(adns_state ads, adns_query qu) {
-  qu->answer.used= 0;
+void adns__query_finish(adns_state ads, adns_query qu, adns_status stat) {
+  adns_answer *ans;
+  byte *newbuf;
+
+  newbuf= realloc(qu->ans.buf,qu->ans.used);
+  if (newbuf) qu->ans.buf= newbuf;
+  ans= (adns_answer*)qu->ans.buf;
+  ans->status= stat;
+  ans->cname= qu->cnameoff<0 ? 0 : qu->ans.buf + qu->cnameoff;
+  ans->rrs.str= qu->rrsoff<0 ? 0 : (char **)(qu->ans.buf + qu->rrsoff);
   qu->id= -1;
   LIST_LINK_TAIL(ads->output,qu);
 }
@@ -185,16 +194,11 @@ void adns__query_nomem(adns_state ads, adns_query qu) {
 void adns__query_fail(adns_state ads, adns_query qu, adns_status stat) {
   adns_answer *ans;
 
-  if (!adns__vbuf_ensure(&qu->answer,sizeof(adns_answer))) {
-    adns__query_nomem(ads,qu);
-    return;
-  }
-  ans= (adns_answer*)qu->answer.buf;
-  ans->status= stat;
-  ans->cname= 0;
-  ans->type= qu->type;
+  qu->ans.used= sizeof(adns_answer);
+  qu->cnameoff= -1;
+  qu->rrsoff= -1;
+  ans= (adns_answer*)qu->ans.buf;
   ans->nrrs= 0;
-  qu->answer.used= sizeof(adns_answer);
-  qu->id= -1;
-  LIST_LINK_TAIL(ads->output,qu);
+
+  adns__query_finish(ads,qu,stat);
 }

@@ -143,8 +143,8 @@ typedef struct {
   adns_rrtype type;
   int nrrs;
   union {
-    struct in_addr *inaddr;        /* a */
     char *(*str);                  /* ns_raw, cname, ptr, ptr_raw, txt, <any>_mf */
+    struct in_addr *inaddr;        /* a */
     adns_rr_dmaddr *dmaddr;        /* ns */
     adns_rr_strpair *strpair;      /* hinfo, rp, rp_raw */
     adns_rr_intdmaddr *intdmaddr;  /* mx */
@@ -173,8 +173,6 @@ typedef struct {
  *  type will always be the type requested;
  *  If no (appropriate) requests are done adns_check returns EWOULDBLOCK;
  *  If no (appropriate) requests are outstanding adns_query and adns_wait return ESRCH;
- *  If malloc failure occurs during internal allocation or processing
- *  ands_check and _wait set *answer to 0.
  */
 
 int adns_init(adns_state *newstate_r, adns_initflags flags, FILE *diagfile/*0=>stderr*/);

@@ -7,10 +7,12 @@ WERROR=-Werror
 
 all:		dtest
 
-dtest:		dtest.o event.o query.o setup.o submit.o reply.o
+dtest:		dtest.o event.o query.o setup.o submit.o reply.o parse.o
 
 clean:
 		rm -f dtest *.o
 
-dtest.o event.o query.o setup.o submit.o reply.o:	internal.h adns.h
+dtest.o:						adns.h
+
+event.o query.o setup.o submit.o reply.o parse.o:	internal.h adns.h
 
