@@ -29,7 +29,8 @@ Notes/known problems:
     [1] IRIX 6.5 inet_ntoa seems to break with GCC.
 
 The following platforms are known to be deficient and will not work:
-    Solaris 2.5		Lacks vsnprintf
+    Solaris 2.5			Lacks vsnprintf
+    TruUnix64 (DEC UNIX 4.0f)	Lacks vsnprintf
 Please don't report these problems unless you have a nice,
 straightforward solution or workaround for them.
 
