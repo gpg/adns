@@ -8,7 +8,6 @@ adns (0.2) experimental; urgency=low
   * Include <sys/times.h> in a few more files.
   * Include <unistd.h> and <sys/time.h> for select.
   * Look for inet_aton and inet_ntoa (in -lnsl and -lsocket).
-  * Regression test doesn't rely on value of fcntl flags eg O_NONBLOCK.
   * LDLIBS removed from dependency lists (some makes don't support this).
   * An `ambiguous else' warning from some compilers in types.c is removed.
 
@@ -16,8 +15,9 @@ adns (0.2) experimental; urgency=low
   * Added COPYING (copy of the GPL).
   * Regression test failure output improved.
   * Missing targets in regress/Makefile.in added.
+  * Regression test doesn't rely on value of fcntl flags eg O_NONBLOCK.
 
- --
+ -- Ian Jackson <ian@davenant.greenend.org.uk>  Thu, 20 May 1999 00:27:32 +0100
 
 adns (0.1) experimental; urgency=low
 
