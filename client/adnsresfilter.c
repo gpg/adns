@@ -33,7 +33,7 @@
 #include <assert.h>
 #include <ctype.h>
 
-#include <sys/fcntl.h>
+#include <fcntl.h>
 
 #include "adns.h"
 #include "config.h"

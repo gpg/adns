@@ -1,3 +1,9 @@
+adns (0.10) unstable; urgency=low
+
+  * Fix <sys/fcntl.h> in client/adnsresfilter.c to <fcntl.h>.
+
+ --
+
 adns (0.9) unstable; urgency=high
 
   Bug fixes:
