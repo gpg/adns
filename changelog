@@ -1,6 +1,7 @@
 adns (1.0); urgency=low
 
   Bugfixes:
+  * Treat 8-bit characters in email addrs as RFC822 `special' (=> quote).
   * Fix incorrect `compressed datagram contains loop' error.
   * Actually compile shared libraries by default !
   * Fix adnsresfilter usage message to include correct default timeout.

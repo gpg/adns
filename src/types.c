@@ -851,7 +851,7 @@ static adns_status pap_mailbox822(const parseinfo *pai, int *cbyte_io, int max,
     c= *p++;
     if ((c&~128) < 32 || (c&~128) == 127) return adns_s_invaliddata;
     if (c == '.' && !neednorm) neednorm= 1;
-    else if (c==' ' || ctype_822special(c)) needquote++;
+    else if (c==' ' || c>=127 || ctype_822special(c)) needquote++;
     else neednorm= 0;
   }
 

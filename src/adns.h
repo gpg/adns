@@ -5,7 +5,7 @@
 /*
  *
  *  This file is
- *    Copyright (C) 1997-1999 Ian Jackson <ian@davenant.greenend.org.uk>
+ *    Copyright (C) 1997-2000 Ian Jackson <ian@davenant.greenend.org.uk>
  *
  *  It is part of adns, which is
  *    Copyright (C) 1997-2000 Ian Jackson <ian@davenant.greenend.org.uk>
@@ -151,12 +151,6 @@ typedef enum {
  * names) will be quoted, as \X if it is a printing ASCII character or
  * \DDD otherwise.
  *
- * (The characters which will be unquoted are the printing 7-bit ASCII
- * characters except the punctuation characters " ( ) @ ; $ \
-
- * I.e. unquoted characters are alphanumerics, and the following
- * punctuation characters:  ! # % ^ & * - _ = + [ ] { } 
- *
  * If the query goes via a CNAME then the canonical name (ie, the
  * thing that the CNAME record refers to) is usually allowed to
  * contain any characters, which will be quoted as above.  With
@@ -179,13 +173,26 @@ typedef enum {
  * header field.  The particular format used is that if the mailbox
  * requires quoting according to the rules in RFC822 then the
  * local-part is quoted in double quotes, which end at the next
- * unescaped double quote.  (\ is the escape char, and is doubled, and
- * is used to escape only \ and ".)  Otherwise the local-part is
- * presented as-is.  In any case this is followed by an @ and the
- * domain.  The domain will not contain any characters not legal in
- * hostnames.  adns will protect the application from local parts
- * containing control characters - these appear to be legal according
- * to RFC822 but are clearly a bad idea.
+ * unescaped double quote (\ is the escape char, and is doubled, and
+ * is used to escape only \ and ").  If the local-part is legal
+ * without quoting according to RFC822, it is presented as-is.  In any
+ * case the local-part is followed by an @ and the domain.  The domain
+ * will not contain any characters not legal in hostnames.
+ *
+ * Unquoted local-parts may contain any printing 7-bit ASCII
+ * except the punctuation characters ( ) < > @ , ; : \ " [ ]
+ * I.e. they may contain alphanumerics, and the following
+ * punctuation characters:  ! # % ^ & * - _ = + { } .
+ *
+ * adns will reject local parts containing control characters (byte
+ * values 0-31, 127-159, and 255) - these appear to be legal according
+ * to RFC822 but are clearly a bad idea.  RFC1035 syntax does not make
+ * any distinction between a single RFC822 quoted-string containing
+ * full stops, and a series of quoted-strings separated by full stops;
+ * adns will return anything that isn't all valid atoms as a single
+ * quoted-string.  RFC822 does not allow high-bit-set characters at
+ * all, but adns does allow them in local-parts, treating them as
+ * needing quoting.
  *
  * If you ask for the domain with _raw then _no_ checking is done
  * (even on the host part, regardless of adns_qf_quoteok_anshost), and
