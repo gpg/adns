@@ -151,7 +151,7 @@ typedef struct {
 
 struct adns__query {
   adns_state ads;
-  enum { query_udp, query_tcpwait, query_tcpsent, query_child, query_done } state;
+  enum { query_tosend, query_tcpwait, query_tcpsent, query_child, query_done } state;
   adns_query back, next, parent;
   struct { adns_query head, tail; } children;
   struct { adns_query back, next; } siblings;
@@ -207,9 +207,9 @@ struct adns__query {
    *
    *  state   Queue   child  id   nextudpserver  sentudp     failedtcp
    *				  
-   *  udp     NONE    null   >=0  0              zero        zero
-   *  udp     timew   null   >=0  any            nonzero     zero
-   *  udp     NONE    null   >=0  any            nonzero     zero
+   *  tosend  NONE    null   >=0  0              zero        zero
+   *  tosend  timew   null   >=0  any            nonzero     zero
+   *  tosend  NONE    null   >=0  any            nonzero     zero
    *				  
    *  tcpwait timew   null   >=0  irrelevant     zero        any
    *  tcpsent timew   null   >=0  irrelevant     zero        any
@@ -364,11 +364,14 @@ void adns__query_tcp(adns_query qu, struct timeval now);
  * reestablishment and retry.
  */
 
-void adns__query_udp(adns_query qu, struct timeval now);
-/* Query must be in state udp/NONE; it will be moved to a new state,
+void adns__query_send(adns_query qu, struct timeval now);
+/* Query must be in state tosend/NONE; it will be moved to a new state,
  * and no further processing can be done on it for now.
  * (Resulting state is one of udp/timew, tcpwait/timew (if server not connected),
  *  tcpsent/timew, child/childw or done/output.)
+ * __query_send may decide to use either UDP or TCP depending whether
+ * _qf_usevc is set (or has become set) and whether the query is too
+ * large.
  */
 
 /* From query.c: */

@@ -59,7 +59,7 @@ void adns__tcp_broken(adns_state ads, const char *what, const char *why) {
   
   for (qu= ads->timew.head; qu; qu= nqu) {
     nqu= qu->next;
-    if (qu->state == query_udp) continue;
+    if (qu->state == query_tosend) continue;
     assert(qu->state == query_tcpwait || qu->state == query_tcpsent);
     qu->state= query_tcpwait;
     qu->tcpfailed |= (1<<serv);
@@ -77,7 +77,7 @@ static void tcp_connected(adns_state ads, struct timeval now) {
   ads->tcpstate= server_ok;
   for (qu= ads->timew.head; qu; qu= nqu) {
     nqu= qu->next;
-    if (qu->state == query_udp) continue;
+    if (qu->state == query_tosend) continue;
     assert (qu->state == query_tcpwait);
     adns__query_tcp(qu,now);
   }
@@ -179,10 +179,10 @@ void adns__timeouts(adns_state ads, int act,
     } else {
       if (!act) continue;
       LIST_UNLINK(ads->timew,qu);
-      if (qu->state != query_udp) {
+      if (qu->state != query_tosend) {
 	adns__query_fail(qu,adns_s_timeout);
       } else {
-	adns__query_udp(qu,now);
+	adns__query_send(qu,now);
       }
       nqu= ads->timew.head;
     }

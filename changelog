@@ -7,6 +7,7 @@ adns (0.4) unstable; urgency=low
   * adns_s_systemfail is in table of errors (for eg adns_strerror).
   * Improvements to install instructions, TODO, etc.
   * Changed memory semantics of internal queries to fix bugs.
+  * Restarting a TCP-using query doesn't abort.
 
  --
 

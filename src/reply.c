@@ -320,7 +320,6 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
   qu->flags |= adns_qf_usevc;
   
  x_restartquery:
-  
   if (qu->cname_dgram) {
     st= adns__mkquery_frdgram(qu->ads,&qu->vb,&qu->id,
 			      qu->cname_dgram, qu->cname_dglen, qu->cname_begin,
@@ -335,6 +334,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
     memcpy(newquery,qu->vb.buf,qu->vb.used);
   }
   
+  if (qu->state == query_tcpsent) qu->state= query_tosend;
   adns__reset_preserved(qu);
-  adns__query_udp(qu,now);
+  adns__query_send(qu,now);
 }

@@ -42,7 +42,7 @@ static adns_query query_alloc(adns_state ads, const typeinfo *typei,
   qu->answer= malloc(sizeof(*qu->answer));  if (!qu->answer) { free(qu); return 0; }
   
   qu->ads= ads;
-  qu->state= query_udp;
+  qu->state= query_tosend;
   qu->back= qu->next= qu->parent= 0;
   LIST_INIT(qu->children);
   LINK_INIT(qu->siblings);
@@ -100,7 +100,7 @@ static void query_submit(adns_state ads, adns_query qu,
   qu->query_dglen= qu->vb.used;
   memcpy(qu->query_dgram,qu->vb.buf,qu->vb.used);
   
-  adns__query_udp(qu,now);
+  adns__query_send(qu,now);
   adns__autosys(ads,now);
 }
 
@@ -363,7 +363,7 @@ static void free_query_allocs(adns_query qu) {
 
 void adns_cancel(adns_query qu) {
   switch (qu->state) {
-  case query_udp: case query_tcpwait: case query_tcpsent:
+  case query_tosend: case query_tcpwait: case query_tcpsent:
     LIST_UNLINK(qu->ads->timew,qu);
     break;
   case query_child:
