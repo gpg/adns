@@ -74,7 +74,7 @@ Please do not report this as a bug; install GNU Make instead.
 
 SECURITY AND PERFORMANCE - AN IMPORTANT NOTE
 
-adns is not a full-service resolver.  It does no caching of responses
+adns is not a `full-service resolver': it does no caching of responses
 at all, and has no defence against bad nameservers or fake packets
 which appear to come from your real nameservers.  It relies on the
 full-service resolvers listed in resolv.conf to handle these tasks.
