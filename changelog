@@ -8,9 +8,9 @@ adns (0.2) experimental; urgency=low
   * Include <sys/times.h> in a few more files.
   * Include <unistd.h> and <sys/time.h> for select.
   * Look for inet_aton and inet_ntoa (in -lnsl and -lsocket).
-
-  Portability fixes to regression test:
-  * Regression test doesn't rely on value of O_NONBLOCK and other flags.
+  * Regression test doesn't rely on value of fcntl flags eg O_NONBLOCK.
+  * LDLIBS removed from dependency lists (some makes don't support this).
+  * An `ambiguous else' warning from some compilers in types.c is removed.
 
   Other changes:
   * Added COPYING (copy of the GPL).
