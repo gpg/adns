@@ -42,6 +42,7 @@ typedef enum {
   adns_if_debug=        0x0008, /* enable all output to stderr plus debug msgs */
   adns_if_noautosys=    0x0010, /* do not make syscalls at every opportunity */
   adns_if_eintr=        0x0020, /* allow _wait and _synchronous to return EINTR */
+  adns_if_nosigpipe=    0x0040, /* applic has SIGPIPE set to SIG_IGN, do not protect */
 } adns_initflags;
 
 typedef enum {

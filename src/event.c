@@ -284,7 +284,9 @@ static int internal_callback(adns_state ads, int maxfd,
     } else if (callb_checkfd(maxfd,exceptfds,ads->tcpsocket)) {
       adns__tcp_broken(ads,"select","exceptional condition detected");
     } else if (ads->tcpsend.used && callb_checkfd(maxfd,writefds,ads->tcpsocket)) {
+      adns__sigpipe_protect(ads);
       r= write(ads->tcpsocket,ads->tcpsend.buf,ads->tcpsend.used);
+      adns__sigpipe_unprotect(ads);
       if (r<0) {
 	if (errno!=EAGAIN && errno!=EWOULDBLOCK && errno!=ENOMEM && errno!=EINTR) {
 	  adns__tcp_broken(ads,"write",strerror(errno));

@@ -270,3 +270,32 @@ void adns__isort(void *array, int nobjs, int sz, void *tempbuf,
     }
   }
 }
+
+/* SIGPIPE protection. */
+
+void adns__sigpipe_protect(adns_state ads) {
+  sigset_t toblock;
+  struct sigaction sa;
+  int r;
+
+  if (ads->iflags & adns_if_nosigpipe) return;
+
+  sigfillset(&toblock);
+  sigdelset(&toblock,SIGPIPE);
+
+  sa.sa_handler= SIG_IGN;
+  sigfillset(&sa.sa_mask);
+  sa.sa_flags= 0;
+  
+  r= sigprocmask(SIG_SETMASK,&toblock,&ads->stdsigmask); assert(!r);
+  r= sigaction(SIGPIPE,&sa,&ads->stdsigpipe); assert(!r);
+}
+
+void adns__sigpipe_unprotect(adns_state ads) {
+  int r;
+
+  if (ads->iflags & adns_if_nosigpipe) return;
+
+  r= sigaction(SIGPIPE,&ads->stdsigpipe,0); assert(!r);
+  r= sigprocmask(SIG_SETMASK,&ads->stdsigmask,0); assert(!r);
+}

@@ -31,6 +31,7 @@ typedef unsigned char byte;
 #include <stdarg.h>
 #include <assert.h>
 #include <unistd.h>
+#include <signal.h>
 
 #include <sys/time.h>
 
@@ -249,6 +250,8 @@ struct adns__state {
   int nservers, nsortlist, tcpserver;
   enum adns__tcpstate { server_disconnected, server_connecting, server_ok } tcpstate;
   struct timeval tcptimeout;
+  struct sigaction stdsigpipe;
+  sigset_t stdsigmask;
   struct server {
     struct in_addr addr;
   } servers[MAXSERVERS];
@@ -302,7 +305,15 @@ void adns__isort(void *array, int nobjs, int sz, void *tempbuf,
  * sz bytes long.  needswap should return !0 if a>b (strictly, ie
  * wrong order) 0 if a<=b (ie, order is fine).
  */
-  
+
+void adns__sigpipe_protect(adns_state);
+void adns__sigpipe_unprotect(adns_state);
+/* If SIGPIPE protection is not disabled, will block all signals except
+ * SIGPIPE, and set SIGPIPE's disposition to SIG_IGN.  (And then restore.)
+ * Each call to _protect must be followed by a call to _unprotect before
+ * any significant amount of code gets to run.
+ */
+
 /* From transmit.c: */
 
 adns_status adns__mkquery(adns_state ads, vbuf *vb, int *id_r,
