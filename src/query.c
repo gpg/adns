@@ -225,6 +225,7 @@ int adns_submit(adns_state ads,
 				 
   if (ol>=1 && owner[ol-1]=='.' && (ol<2 || owner[ol-2]!='\\')) {
     flags &= ~adns_qf_search;
+    qu->flags= flags;
     ol--;
   }
 
