@@ -14,20 +14,21 @@ adns debug: using nameserver 172.18.45.6
 254.0.99.203.in-addr.arpa flags 0 type 65551 MX(+addr) submitted
 254.0.99.203.in-addr.arpa flags 0 type 131078 SOA(822) submitted
 254.0.99.203.in-addr.arpa flags 0 type 131089 RP(822) submitted
-254.0.99.203.in-addr.arpa flags 0 type A(-): No such data; nrrs=0; cname=$; owner=$; ttl=576
-254.0.99.203.in-addr.arpa flags 0 type NS(raw): No such data; nrrs=0; cname=$; owner=$; ttl=576
-254.0.99.203.in-addr.arpa flags 0 type SOA(raw): No such data; nrrs=0; cname=$; owner=$; ttl=576
-254.0.99.203.in-addr.arpa flags 0 type HINFO(-): No such data; nrrs=0; cname=$; owner=$; ttl=576
-254.0.99.203.in-addr.arpa flags 0 type MX(raw): No such data; nrrs=0; cname=$; owner=$; ttl=576
-254.0.99.203.in-addr.arpa flags 0 type TXT(-): No such data; nrrs=0; cname=$; owner=$; ttl=576
-254.0.99.203.in-addr.arpa flags 0 type RP(raw): No such data; nrrs=0; cname=$; owner=$; ttl=576
-254.0.99.203.in-addr.arpa flags 0 type A(addr): No such data; nrrs=0; cname=$; owner=$; ttl=576
-254.0.99.203.in-addr.arpa flags 0 type NS(+addr): No such data; nrrs=0; cname=$; owner=$; ttl=576
-254.0.99.203.in-addr.arpa flags 0 type MX(+addr): No such data; nrrs=0; cname=$; owner=$; ttl=576
-254.0.99.203.in-addr.arpa flags 0 type SOA(822): No such data; nrrs=0; cname=$; owner=$; ttl=576
-254.0.99.203.in-addr.arpa flags 0 type RP(822): No such data; nrrs=0; cname=$; owner=$; ttl=576
+254.0.99.203.in-addr.arpa flags 0 type SOA(raw): No such data; nrrs=0; cname=$; owner=$; ttl=3600
+254.0.99.203.in-addr.arpa flags 0 type NS(raw): No such data; nrrs=0; cname=$; owner=$; ttl=3600
+254.0.99.203.in-addr.arpa flags 0 type A(-): No such data; nrrs=0; cname=$; owner=$; ttl=3600
+254.0.99.203.in-addr.arpa flags 0 type CNAME(-): No such data; nrrs=0; cname=$; owner=$; ttl=3600
+254.0.99.203.in-addr.arpa flags 0 type HINFO(-): No such data; nrrs=0; cname=$; owner=$; ttl=3600
+254.0.99.203.in-addr.arpa flags 0 type MX(raw): No such data; nrrs=0; cname=$; owner=$; ttl=3600
+254.0.99.203.in-addr.arpa flags 0 type TXT(-): No such data; nrrs=0; cname=$; owner=$; ttl=3600
+254.0.99.203.in-addr.arpa flags 0 type RP(raw): No such data; nrrs=0; cname=$; owner=$; ttl=3600
+254.0.99.203.in-addr.arpa flags 0 type A(addr): No such data; nrrs=0; cname=$; owner=$; ttl=3600
+254.0.99.203.in-addr.arpa flags 0 type NS(+addr): No such data; nrrs=0; cname=$; owner=$; ttl=3600
+254.0.99.203.in-addr.arpa flags 0 type MX(+addr): No such data; nrrs=0; cname=$; owner=$; ttl=3600
+254.0.99.203.in-addr.arpa flags 0 type SOA(822): No such data; nrrs=0; cname=$; owner=$; ttl=3600
+254.0.99.203.in-addr.arpa flags 0 type RP(822): No such data; nrrs=0; cname=$; owner=$; ttl=3600
 adns debug: TCP connected (NS=172.18.45.6)
-254.0.99.203.in-addr.arpa flags 0 type PTR(raw): OK; nrrs=114; cname=$; owner=$; ttl=2615
+254.0.99.203.in-addr.arpa flags 0 type PTR(raw): OK; nrrs=114; cname=$; owner=$; ttl=3599
  ns.security.co.nz
  tetra.co.nz
  mail.agate.co.nz
@@ -142,113 +143,6 @@ adns debug: TCP connected (NS=172.18.45.6)
  ns.asis.org.nz
  ns.bouquets.co.nz
  agate.co.nz
-adns debug: reply not found, id 3135, query owner ns.giftbasket.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3136, query owner ns.security.gen.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3137, query owner bouquet.co.nz (NS=172.18.45.6)
 adns debug: reply not found, id 3138, query owner ns.aldridge.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3139, query owner investigation.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 313a, query owner ns.nzipi.org.nz (NS=172.18.45.6)
-adns debug: reply not found, id 313b, query owner mail.neru.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 313c, query owner security.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 313d, query owner ns.storewatch.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 313e, query owner security.gen.nz (NS=172.18.45.6)
-adns debug: reply not found, id 313f, query owner toughsteel.com.au (NS=172.18.45.6)
-adns debug: reply not found, id 3140, query owner ns.tetra.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3141, query owner mail.tetra.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3142, query owner ns.securicard.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3143, query owner ns.underhour.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3144, query owner bcc.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3145, query owner security.org.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3146, query owner burglaralarms.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3147, query owner ns.safes.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3148, query owner ns.security.org.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3149, query owner couperconsulting.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 314a, query owner securityguards.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 314b, query owner ns.copycatz.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 314c, query owner ns.toughsteel.com.au (NS=172.18.45.6)
-adns debug: reply not found, id 314d, query owner ns.guards.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 314e, query owner asis.org.nz (NS=172.18.45.6)
-adns debug: reply not found, id 314f, query owner neru.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3150, query owner giftbasket.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3151, query owner magic.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3152, query owner mail.bcc.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3153, query owner ns.investigation.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3154, query owner nzipi.org.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3155, query owner ns.mitchells.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3156, query owner ns.bouquet.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3157, query owner mail.safes.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3158, query owner ns.bcc.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3159, query owner ns.burglaralarms.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 315a, query owner ns.securityguards.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 315b, query owner covertcameras.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 315c, query owner ns.neru.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 315d, query owner ns.covertcameras.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 315e, query owner bouquets.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 315f, query owner concentric.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3160, query owner ns.securitytraining.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3161, query owner mail.couperconsulting.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3162, query owner retailsecurity.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3163, query owner ns.concentric.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3164, query owner mail.magic.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3165, query owner nzangling.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3166, query owner ns.couperconsulting.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3167, query owner ns.nzangling.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3168, query owner mail.storewatch.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3169, query owner swift.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 316a, query owner mail.selective.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 316b, query owner ns.forefront.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 316c, query owner mail.nzangling.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 316d, query owner guards.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 316e, query owner mail.nzdesigns.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 316f, query owner storewatch.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3170, query owner ns.securitymanagement.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3171, query owner mail.woolworths.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3172, query owner mail.concentric.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3173, query owner selective.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3174, query owner specialinvestigations.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3175, query owner ns.toughsteel.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3176, query owner ns.swift.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3177, query owner mail.swift.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3178, query owner ns.securenet.net.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3179, query owner privateinvestigation.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 317a, query owner ns.privateinvestigation.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 317b, query owner etrade.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 317c, query owner ns.specialinvestigations.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 317d, query owner mail.ansett.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 317e, query owner ftp.warrent.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 317f, query owner ns.retailsecurity.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3180, query owner mail.securitymanagement.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3181, query owner mail.toughsteel.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3182, query owner ns.magic.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3183, query owner securityseals.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3184, query owner mail.forefront.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3185, query owner mail.securicard.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3186, query owner mail.toughsteel.com.au (NS=172.18.45.6)
-adns debug: reply not found, id 3187, query owner securicard.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3188, query owner ns.nzdesigns.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3189, query owner safes.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 318a, query owner ns.securityseals.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 318b, query owner mitchells.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 318c, query owner ns.selective.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 318d, query owner forefront.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 318e, query owner securitymanagement.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 318f, query owner idcard.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3190, query owner mail.copycatz.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3191, query owner ns.idcard.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3192, query owner toughsteel.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3193, query owner aldridge.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3194, query owner copycatz.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3195, query owner underhour.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3196, query owner securenet.net.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3197, query owner mail.specialinvestigations.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3198, query owner nzdesigns.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 3199, query owner ns.etrade.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 319a, query owner mail.mitchells.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 319b, query owner mail.nzipi.org.nz (NS=172.18.45.6)
-adns debug: reply not found, id 319c, query owner mail.underhour.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 319d, query owner ns.asis.org.nz (NS=172.18.45.6)
-adns debug: reply not found, id 319e, query owner ns.bouquets.co.nz (NS=172.18.45.6)
-adns debug: reply not found, id 319f, query owner agate.co.nz (NS=172.18.45.6)
-254.0.99.203.in-addr.arpa flags 0 type PTR(checked): Inconsistent resource records in DNS; nrrs=0; cname=$; owner=$; ttl=2614
-254.0.99.203.in-addr.arpa flags 0 type CNAME(-): No such data; nrrs=0; cname=$; owner=$; ttl=3600
+254.0.99.203.in-addr.arpa flags 0 type PTR(checked): Inconsistent resource records in DNS; nrrs=0; cname=$; owner=$; ttl=3596
 rc=0
