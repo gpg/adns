@@ -52,15 +52,16 @@ typedef enum {
 } adns_initflags;
 
 typedef enum {
-  adns_qf_search=          0x000001, /* use the searchlist */
-  adns_qf_usevc=           0x000002, /* use a virtual circuit (TCP connection) */
-  adns_qf_owner=           0x000004, /* fill in the owner field in the answer */
-  adns_qf_quoteok_query=   0x000010, /* allow quote-requiring chars in query domain */
-  adns_qf_quoteok_cname=   0x000020, /* allow ... in CNAME we go via */
-  adns_qf_quoteok_anshost= 0x000040, /* allow ... in answers expected to be hostnames */
-  adns_qf_cname_loose=     0x000100, /* allow refs to CNAMEs - without, get _s_cname */
-  adns_qf_cname_forbid=    0x000200, /* don't follow CNAMEs, instead give _s_cname */
-  adns__qf_internalmask=   0x0ff000
+  adns_qf_search=          0x00000001, /* use the searchlist */
+  adns_qf_usevc=           0x00000002, /* use a virtual circuit (TCP connection) */
+  adns_qf_owner=           0x00000004, /* fill in the owner field in the answer */
+  adns_qf_quoteok_query=   0x00000010, /* allow quote-requiring chars in query domain */
+  adns_qf_quoteok_cname=   0x00000000, /* allow ... in CNAME we go via - now default */
+  adns_qf_quoteok_anshost= 0x00000040, /* allow ... in things supposed to be hostnames */
+  adns_qf_quotefail_cname= 0x00000080, /* refuse if quote-req chars in CNAME we go via */
+  adns_qf_cname_loose=     0x00000100, /* allow refs to CNAMEs - without, get _s_cname */
+  adns_qf_cname_forbid=    0x00000200, /* don't follow CNAMEs, instead give _s_cname */
+  adns__qf_internalmask=   0x0ff00000
 } adns_queryflags;
 
 typedef enum {
@@ -97,18 +98,57 @@ typedef enum {
   
 } adns_rrtype;
 
-/* In queries without qf_quoteok_*, all domains must have standard
- * legal syntax.  In queries _with_ qf_quoteok_*, domains in the query
- * or response may contain any characters, quoted according to RFC1035
- * 5.1.  On input to adns, the char* is a pointer to the interior of a
- * " delimited string, except that " may appear in it, and on output,
+/*
+ * In queries without qf_quoteok_*, all domains must have standard
+ * legal syntax, or you get adns_s_querydomainvalid (if the query
+ * domain contains bad characters) or adns_s_answerdomaininvalid (if
+ * the answer contains bad characters).
+ * 
+ * In queries _with_ qf_quoteok_*, domains in the query or response
+ * may contain any characters, quoted according to RFC1035 5.1.  On
+ * input to adns, the char* is a pointer to the interior of a "
+ * delimited string, except that " may appear in it, and on output,
  * the char* is a pointer to a string which would be legal either
  * inside or outside " delimiters, and any characters not usually
  * legal in domain names will be quoted as \X (if the character is
  * 33-126 except \ and ") or \DDD.
  *
- * Do not ask for _raw records containing mailboxes without
- * specifying _qf_anyquote.
+ * If the query goes via a CNAME then the canonical name (ie, the
+ * thing that the CNAME record refers to) is usually allowed to
+ * contain any characters, which will be quoted as above.  With
+ * adns_qf_quotefail_cname you get adns_s_answerdomaininvalid when
+ * this happens.  (This is a change from version 0.4 and earlier, in
+ * which failing the query was the default, and you had to say
+ * adns_qf_quoteok_cname to avoid this; that flag is now deprecated.)
+ *
+ * In version 0.4 and earlier, asking for _raw records containing
+ * mailboxes without specifying _qf_quoteok_anshost was silly.  This
+ * is no longer the case.  In this version only parts of responses
+ * that are actually supposed to be hostnames will be refused by
+ * default if quote-requiring characters are found.
+ */
+
+/*
+ * If you ask for an RR which contains domains which are actually
+ * encoded mailboxes, and don't ask for the _raw version, then adns
+ * returns the mailbox formatted suitably for an RFC822 recipient
+ * header field.  The particular format used is that if the mailbox
+ * requires quoting according to the rules in RFC822 then the
+ * local-part is quoted in double quotes, which end at the next
+ * unescaped double quote.  (\ is the escape char, and is doubled, and
+ * is used to escape only \ and ".)  Otherwise the local-part is
+ * presented as-is.  In any case this is followed by an @ and the
+ * domain.  The domain will not contain any characters not legal in
+ * hostnames.  adns will protect the application from local parts
+ * containing control characters - these appear to be legal according
+ * to RFC822 but are clearly a bad idea.
+ *
+ * If you ask for the domain with _raw then _no_ checking is done
+ * (even on the host part, regardless of adns_qf_quoteok_anshost), and
+ * you just get the domain name in master file format.
+ *
+ * If no mailbox is supplied the returned string will be `.' in either
+ * caswe.
  */
 
 typedef enum {
@@ -210,7 +250,7 @@ typedef struct {
   char *owner; /* only set if requested in query flags */
   adns_rrtype type; /* guaranteed to be same as in query */
   time_t expires; /* expiry time, defined only if _s_ok, nxdomain or nodata. NOT TTL! */
-  int nrrs, rrsz;
+  int nrrs, rrsz; /* nrrs is 0 if an error occurs */
   union {
     void *untyped;
     unsigned char *bytes;
@@ -307,6 +347,14 @@ void adns_cancel(adns_query query);
  * _submit and _synchronous return ENOSYS if they don't understand the
  * query type.
  */
+
+int adns_submit_reverse(adns_state ads,
+			const struct sockaddr *addr,
+			adns_rrtype type,
+			adns_queryflags flags,
+			void *context,
+			adns_query *query_r);
+/* type must be _r_ptr or _r_ptr_raw.  _qf_search is ignored. */
 
 void adns_finish(adns_state ads);
 /* You may call this even if you have queries outstanding;
@@ -541,21 +589,23 @@ adns_status adns_rr_info(adns_rrtype type,
 			 const char **rrtname_r, const char **fmtname_r,
 			 int *len_r,
 			 const void *datap, char **data_r);
-/* Gets information in human-readable (but non-i18n) form
- * for eg debugging purposes.  type must be specified,
- * and the official name of the corresponding RR type will
- * be returned in *rrtname_r, and information about the processing
- * style in *fmtname_r.  The length of the table entry in an answer
- * for that type will be returned in in *len_r.
- * Any or all of rrtname_r, fmtname_r and len_r may be 0.
- * If fmtname_r is non-null then *fmtname_r may be
- * null on return, indicating that no special processing is
- * involved.
+/*
+  
+ * Get information about a query type, or convert reply data to a
+ * textual form.  type must be specified, and the official name of the
+ * corresponding RR type will be returned in *rrtname_r, and
+ * information about the processing style in *fmtname_r.  The length
+ * of the table entry in an answer for that type will be returned in
+ * in *len_r.  Any or all of rrtname_r, fmtname_r and len_r may be 0.
+ * If fmtname_r is non-null then *fmtname_r may be null on return,
+ * indicating that no special processing is involved.
  *
- * data_r be must be non-null iff datap is.  In this case
- * *data_r will be set to point to a human-readable text
- * string representing the RR data.  The text will have
- * been obtained from malloc() and must be freed by the caller.
+ * data_r be must be non-null iff datap is.  In this case *data_r will
+ * be set to point to a string pointing to a representation of the RR
+ * data in master file format.  (The owner name, timeout, class and
+ * type will not be present - only the data part of the RR.)  The
+ * memory will have been obtained from malloc() and must be freed by
+ * the caller.
  *
  * Usually this routine will succeed.  Possible errors include:
  *  adns_s_nomemory
@@ -563,6 +613,32 @@ adns_status adns_rr_info(adns_rrtype type,
  *  adns_s_invaliddata (*datap contained garbage)
  * If an error occurs then no memory has been allocated,
  * and *rrtname_r, *fmtname_r, *len_r and *data_r are undefined.
+ *
+ * There are some adns-invented data formats which are not official
+ * master file formats.  These include:
+ *
+ * Mailboxes if __qtf_mail822: these are just included as-is.
+ *
+ * Addresses (adns_rr_addr): these may be of pretty much any type.
+ * The representation is in two parts: first, a word for the address
+ * family (ie, in AF_XXX, the XXX), and then one or more items for the
+ * address itself, depending on the format.  For an IPv4 address the
+ * syntax is INET followed by the dotted quad (from inet_ntoa).
+ * Currently only IPv4 is supported.
+ *
+ * Hostname with addresses (adns_rr_hostaddr): this consists of the
+ * hostname, as usual, followed by the adns_status value (as an
+ * abbreviation) for the address lookup, followed by zero or more
+ * addresses enclosed in ( and ).  If the result was a permanent
+ * failure, then a single ?  appears instead of the ( ).  If the
+ * result was a temporary failure then an empty pair of parentheses
+ * appears (which a space in between).  For example, one of the NS
+ * records for greenend.org.uk comes out like 
+ *  ns.chiark.greenend.org.uk ok ( INET 195.224.76.132 )
+ * an MX referring to a nonexistent host might come out like:
+ *  50 sun2.nsfnet-relay.ac.uk nxdomain ( )
+ * and if nameserver information is not available you might get:
+ *  dns2.spong.dyn.ml.org timeout ?
  */
 
 const char *adns_strerror(adns_status st);

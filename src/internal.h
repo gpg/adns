@@ -33,6 +33,7 @@ typedef unsigned char byte;
 #include <unistd.h>
 #include <signal.h>
 #include <errno.h>
+#include <string.h>
 
 #include <sys/time.h>
 
@@ -650,6 +651,7 @@ static inline int ctype_digit(int c) { return c>='0' && c<='9'; }
 static inline int ctype_alpha(int c) {
   return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }
+static inline int ctype_822special(int c) { return strchr("()<>@,;:\\\".[]",c) != 0; }
 
 static inline int errno_resources(int e) { return e==ENOMEM || e==ENOBUFS; }
 
