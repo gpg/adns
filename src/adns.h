@@ -13,6 +13,7 @@ typedef enum {
   adns_if_noenv=      0x0001, /* do not look at environment */
   adns_if_noerrprint= 0x0002, /* never print output to stderr */
   adns_if_debug=      0x0004, /* print debugging output to stderr */
+  adns_if_noautosys=  0x0008, /* do not do full flow-of-control whenever we can */
 } adns_initflags;
 
 typedef enum {
@@ -75,7 +76,7 @@ typedef enum {
  * used.
  */
 
-struct adns_answer {
+typedef struct {
   adns_status status;
   char *cname; /* always NULL if query was for CNAME records */
   adns_rrtype type;
@@ -93,7 +94,7 @@ struct adns_answer {
     } soa[1]; /* soa, soa_raw */
     /* NULL is empty */
   } rrs;
-};
+} adns_answer;
 
 /* Memory management:
  *  adns_state and adns_query are actually pointers to malloc'd state;
@@ -111,10 +112,10 @@ struct adns_answer {
  *  are returned in the status field of the answer.  If status is
  *  nonzero then nrrs will be 0, otherwise it will be >0.
  *  type will always be the type requested;
- *  If no (appropriate) requests are done adns_query returns EWOULDBLOCK;
- *  If no requests are outstanding adns_query and adns_wait return ESRCH;
+ *  If no (appropriate) requests are done adns_check returns EWOULDBLOCK;
+ *  If no (appropriate) requests are outstanding adns_query and adns_wait return ESRCH;
  *  If malloc failure occurs during internal allocation or processing
- *  ands_query, _wait and _answer set *answer to 0.
+ *  ands_check and _wait set *answer to 0.
  */
 
 int adns_init(adns_state *newstate_r, adns_initflags flags);
@@ -123,7 +124,12 @@ int adns_synchronous(adns_state ads,
 		     const char *owner,
 		     adns_rrtype type,
 		     int flags,
-		     struct adns_answer *answer);
+		     adns_answer *answer);
+
+/* NB: if you set adns_if_noautosys then _submit and _check do not
+ * make any system calls; you must use adns_callback (possibly after
+ * adns_interest) to actually get things to happen.
+ */
 
 int adns_submit(adns_state ads,
 		const char *owner,
@@ -134,34 +140,38 @@ int adns_submit(adns_state ads,
 
 int adns_check(adns_state ads,
 	       adns_query *query_io,
-	       struct adns_answer *answer,
+	       adns_answer *answer,
 	       void *context_r);
 
 int adns_wait(adns_state ads,
 	      adns_query *query_io,
-	      struct adns_answer *answer,
+	      adns_answer *answer,
 	      void *context_r);
 
-int adns_cancel(adns_state ads, adns_query query);
+void adns_cancel(adns_state ads, adns_query query);
 
 int adns_finish(adns_state);
 
-void adns_interest(adns_state, fd_set *readfds_mod,
-		   fd_set *writefds_mod, fd_set *exceptfds_mod,
-		   int *maxfd_mod, struct timeval **tv_mod, struct timeval *tv_buf);
-/* You may call this with *_mod=0 to allow adns to have flow-of-control
- * briefly, or with *fds_mod=*maxfd_mod=0 but tv_mod!=0 if you are
- * not going to sleep, or with all !=0 if you are going to sleep.
- * If tv_mod!=0 and *tv_mod=0 then tv_buf must be !0 and *tv_buf is irrelevant
- * and may be overwritten (and *tv_mod set to tv_buf); otherwise tv_buf is ignored.
+int adns_callback(adns_state, int maxfd, const fd_set *readfds, const fd_set *writefds,
+		  const fd_set *exceptfds);
+/* Gives adns flow-of-control for a bit.  This will never block.
+ * If maxfd == -1 then adns will check (make nonblocking system calls on)
+ * all of its own filedescriptors; otherwise it will only use those
+ * < maxfd and specified in the fd_set's, as if select had returned them.
+ * Other fd's may be in the fd_sets, and will be ignored.
+ * _callback returns how many adns fd's were in the various sets, so
+ * you can tell if your select handling code has missed something and is going awol.
  */
 
-int adns_callback(adns_state, fd_set readfds, fd_set writefds,
-		  fd_set exceptfds, int maxfd);
-/* For select-driven programs, this allows adns to know which fd's are relevant,
- * so that it doesn't need to make syscalls on others of its fd's.  It's a kind
- * of limited flow-of-control allowance.  It will return how many adns fd's were
- * in the set, so you can tell if your select handling code is missing things.
+void adns_interest(adns_state, int *maxfd_io, fd_set *readfds_io,
+		   fd_set *writefds_io, fd_set *exceptfds_io,
+		   struct timeval **tv_mod, struct timeval *tv_buf);
+/* Find out file descriptors adns is interested in, and when it
+ * would like the opportunity to time something out.  If you do not plan to
+ * block then tv_mod may be 0.  Otherwise, tv_mod may point to 0 meaning
+ * you have no timeout of your own, in which case tv_buf must be non-null and
+ * _interest may fill it in and set *tv_mod=tv_buf.
+ * readfds, writefds, exceptfds and maxfd may not be 0.
  */
 
 /* Example expected/legal calling sequences:
@@ -176,14 +186,14 @@ int adns_callback(adns_state, fd_set readfds, fd_set writefds,
  *  ....
  *  adns_finish
  *
- *  adns_init
- *  adns_submit ...
+ *  adns_init _noautosys
  *  loop {
- *   adns_check
  *   adns_interest
  *   select
  *   adns_callback
- *   other things
+ *   ...
+ *   adns_submit / adns_check
+ *   ...
  *  }
  */
 

@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
 
 #include <arpa/nameser.h>
 #include <sys/socket.h>
@@ -60,13 +61,23 @@ static void diag(adns_state ads, const char *fmt, ...) {
 }
 
 static void addserver(adns_state ads, struct in_addr addr) {
+  int i;
+  
+  for (i=0; i<ads->nservers; i++) {
+    if (ads->servers[i].addr.s_addr == addr.s_addr) {
+      debug(ads,"duplicate nameserver %s ignored",inet_ntoa(addr));
+      return;
+    }
+  }
+  
   if (ads->nservers>=MAXSERVERS) {
     diag(ads,"too many nameservers, ignoring %s",inet_ntoa(addr));
-  } else {
-    ads->servers[ads->nservers].addr= addr;
-    ads->servers[ads->nservers].tcpsocket= -1;
-    ads->nservers++;
+    return;
   }
+
+  ads->servers[ads->nservers].addr= addr;
+  ads->servers[ads->nservers].tcpsocket= -1;
+  ads->nservers++;
 }
 
 static void configparseerr(adns_state ads, const char *fn, int lno,
@@ -180,8 +191,8 @@ static const char *instrum_getenv(adns_state ads, const char *envvar) {
   const char *value;
 
   value= getenv(envvar);
-  if (!value) debug(ads,"environment variable `%s' not set",envvar);
-  else debug(ads,"environment variable `%s' set to `%s'",envvar,value);
+  if (!value) debug(ads,"environment variable %s not set",envvar);
+  else debug(ads,"environment variable %s set to `%s'",envvar,value);
   return value;
 }
 
@@ -242,7 +253,7 @@ int adns_init(adns_state *ads_r, adns_initflags flags) {
 }
 
 static void query_fail(adns_state ads, adns_query qu, adns_status stat) {
-  struct adns_answer *ans;
+  adns_answer *ans;
   
   ans= qu->answer;
   if (!ans) ans= malloc(sizeof(*qu->answer));
@@ -256,10 +267,77 @@ static void query_fail(adns_state ads, adns_query qu, adns_status stat) {
   LIST_LINK_TAIL(ads->input,qu);
 }
 
-void adns_interest(adns_state ads,
+void adns_interest(adns_state ads, int *maxfd,
 		   fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
-		   int *maxfd, struct timeval **tv_io, struct timeval *tvbuf) {
+		   struct timeval **tv_io, struct timeval *tvbuf) {
   abort(); /* FIXME */
+}
+
+static void autosys(adns_state ads) {
+  if (ads->iflags & adns_if_noautosys) return;
+  adns_callback(ads,-1,0,0,0);
+}
+
+void adns_cancel(adns_state ads, adns_query query) {
+  abort(); /* FIXME */
+}
+
+int adns_callback(adns_state ads, int maxfd,
+		  const fd_set *readfds, const fd_set *writefds,
+		  const fd_set *exceptfds) {
+  abort(); /* FIXME */
+}
+
+static int internal_check(adns_state ads,
+			  adns_query *query_io,
+			  adns_answer *answer,
+			  void *context_r) {
+  abort(); /* FIXME */
+}
+
+int adns_wait(adns_state ads,
+	      adns_query *query_io,
+	      adns_answer *answer,
+	      void *context_r) {
+  int r, maxfd, rsel, rcb;
+  fd_set readfds, writefds, exceptfds;
+  struct timeval tvbuf, *tvp;
+  
+  for (;;) {
+    r= internal_check(ads,query_io,answer,context_r);
+    if (r && r != EWOULDBLOCK) return r;
+    FD_ZERO(&readfds); FD_ZERO(&writefds); FD_ZERO(&exceptfds);
+    maxfd= 0; tvp= 0;
+    adns_interest(ads,&maxfd,&readfds,&writefds,&exceptfds,&tvp,&tvbuf);
+    rsel= select(maxfd,&readfds,&writefds,&exceptfds,tvp);
+    if (rsel==-1) return r;
+    rcb= adns_callback(ads,maxfd,&readfds,&writefds,&exceptfds);
+    assert(rcb==rsel);
+  }
+}
+
+int adns_check(adns_state ads,
+	       adns_query *query_io,
+	       adns_answer *answer,
+	       void *context_r) {
+  autosys(ads);
+  return internal_check(ads,query_io,answer,context_r);
+}
+
+int adns_synchronous(adns_state ads,
+		     const char *owner,
+		     adns_rrtype type,
+		     int flags,
+		     adns_answer *answer) {
+  adns_query qu;
+  int r;
+  
+  r= adns_submit(ads,owner,type,flags,0,&qu);
+  if (r) return r;
+
+  r= adns_wait(ads,&qu,answer,0);
+  if (r) adns_cancel(ads,qu);
+  return r;
 }
 
 int adns_submit(adns_state ads,
@@ -289,9 +367,8 @@ int adns_submit(adns_state ads,
     query_fail(ads,qu,stat);
   } else {
     LIST_LINK_TAIL(ads->input,qu);
-    adns_interest(ads,0,0,0,0,0,0);
+    autosys(ads);
   }
   *query_r= qu;
-
-  abort(); /* FIXME */
+  return 0;
 }

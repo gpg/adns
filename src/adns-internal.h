@@ -16,7 +16,7 @@ struct adns__query {
   adns_query next, back;
   adns_query parent, child;
   adns_rrtype type;
-  struct adns_answer *answer;
+  adns_answer *answer;
   int flags, udpretries, server;
   struct timeval timeout;
   void *context;
