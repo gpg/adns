@@ -111,22 +111,22 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
     break;
   case rcode_formaterror:
     adns__warn(ads,serv,qu,"server cannot understand our query (Format Error)");
-    adns__query_fail(qu,adns_s_serverfaulty);
+    adns__query_fail(qu,adns_s_rcodeformaterror);
     return;
   case rcode_servfail:
-    adns__query_fail(qu,adns_s_servfail);
+    adns__query_fail(qu,adns_s_rcodeservfail);
     return;
   case rcode_notimp:
     adns__warn(ads,serv,qu,"server claims not to implement our query");
-    adns__query_fail(qu,adns_s_notimplemented);
+    adns__query_fail(qu,adns_s_rcodenotimplemented);
     return;
   case rcode_refused:
     adns__warn(ads,serv,qu,"server refused our query");
-    adns__query_fail(qu,adns_s_refused);
+    adns__query_fail(qu,adns_s_rcoderefused);
     return;
   default:
     adns__warn(ads,serv,qu,"server gave unknown response code %d",rcode);
-    adns__query_fail(qu,adns_s_reasonunknown);
+    adns__query_fail(qu,adns_s_rcodeunknown);
     return;
   }
 
@@ -167,7 +167,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
 	if (st) { adns__query_fail(qu,st); return; }
 	l= strlen(qu->vb.buf)+1;
 	qu->answer->cname= adns__alloc_interim(qu,l);
-	if (!qu->answer->cname) { adns__query_fail(qu,adns_s_nolocalmem); return; }
+	if (!qu->answer->cname) { adns__query_fail(qu,adns_s_nomemory); return; }
 
 	qu->cname_dgram= adns__alloc_mine(qu,dglen);
 	memcpy(qu->cname_dgram,dgram,dglen);
@@ -246,7 +246,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
       adns__query_fail(qu,adns_s_norecurse);
     } else {
       adns__diag(ads,serv,qu,"server claims to do recursion, but gave us a referral");
-      adns__query_fail(qu,adns_s_serverfaulty);
+      adns__query_fail(qu,adns_s_invalidresponse);
     }
     return;
   }
@@ -254,7 +254,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
   /* Now, we have some RRs which we wanted. */
 
   qu->answer->rrs.untyped= adns__alloc_interim(qu,qu->typei->rrsz*wantedrrs);
-  if (!qu->answer->rrs.untyped) { adns__query_fail(qu,adns_s_nolocalmem); return; }
+  if (!qu->answer->rrs.untyped) { adns__query_fail(qu,adns_s_nomemory); return; }
 
   typei= qu->typei;
   cbyte= anstart;
@@ -301,7 +301,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
   
   if (!flg_tc) {
     adns__diag(ads,serv,qu,"server sent datagram which points outside itself");
-    adns__query_fail(qu,adns_s_serverfaulty);
+    adns__query_fail(qu,adns_s_invalidresponse);
     return;
   }
   qu->flags |= adns_qf_usevc;
@@ -315,7 +315,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
     if (st) { adns__query_fail(qu,st); return; }
     
     newquery= realloc(qu->query_dgram,qu->vb.used);
-    if (!newquery) { adns__query_fail(qu,adns_s_nolocalmem); return; }
+    if (!newquery) { adns__query_fail(qu,adns_s_nomemory); return; }
     
     qu->query_dgram= newquery;
     qu->query_dglen= qu->vb.used;

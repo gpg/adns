@@ -109,7 +109,7 @@ int main(int argc, char *const *argv) {
     for (ti=0; ti<tc; ti++) {
       fprintf(stdout,"%s type %d",domlist[qi],types[ti]);
       r= adns_submit(ads,domlist[qi],types[ti],0,0,&qus[qi*tc+ti]);
-      if (r == adns_s_notimplemented) {
+      if (r == adns_s_unknownrrtype) {
 	fprintf(stdout," not implemented\n");
 	qus[qi*tc+ti]= 0;
       } else if (r) {

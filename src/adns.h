@@ -102,29 +102,50 @@ typedef enum {
  */
 
 typedef enum {
-  /* fixme: think about error codes */
   adns_s_ok,
+
+  /* locally induced errors */
+  adns_s_nomemory,
+  adns_s_unknownrrtype,
+  
+  /* remotely induced errors, detected locally */
   adns_s_timeout,
-  adns_s_nolocalmem,
   adns_s_allservfail,
-  adns_s_servfail,
-  adns_s_notimplemented,
-  adns_s_refused,
-  adns_s_reasonunknown,
   adns_s_norecurse,
-  adns_s_serverfaulty,
-  adns_s_unknownreply,
-  adns_s_invaliddata,
+  adns_s_invalidresponse,
+  adns_s_unknownformat,
+  
+  /* remotely induced errors, reported by remote server to us */
+  adns_s_rcodeservfail,
+  adns_s_rcodeformaterror,
+  adns_s_rcodenotimplemented,
+  adns_s_rcoderefused,
+  adns_s_rcodeunknown,
+  
   adns_s_max_tempfail= 99,
-  adns_s_inconsistent, /* PTR gives domain whose A does not match */
-  adns_s_cname, /* CNAME found where data eg A expected (not if _qf_loosecname) */
-  adns_s_invalidanswerdomain,
+
+  /* remote configuration errors */
+  adns_s_inconsistent, /* PTR gives domain whose A does not exist and match */
+  adns_s_prohibitedcname, /* CNAME found where eg A expected (not if _qf_loosecname) */
+  adns_s_answerdomaininvalid,
+  adns_s_answerdomaintoolong,
+  adns_s_invaliddata,
+  
+  adns_s_max_misconfig= 199,
+
   /* fixme: implement _s_cname */
-  adns_s_max_remotemisconfig= 199,
+
+  /* permanent problems with the query */
+  adns_s_querydomainwrong,
+  adns_s_querydomaininvalid,
+  adns_s_querydomaintoolong,
+  
+  adns_s_max_misquery= 299,
+
+  /* permanent errors */
   adns_s_nxdomain,
   adns_s_nodata,
-  adns_s_invalidquerydomain,
-  adns_s_domaintoolong,
+  
 } adns_status;
 
 typedef struct {
@@ -321,7 +342,7 @@ adns_status adns_rr_info(adns_rrtype type,
  *
  * Usually this routine will succeed.  Possible errors include:
  *  adns_s_nomemory
- *  adns_s_notimplemented (RR type not known)
+ *  adns_s_rrtypeunknown
  *  adns_s_invaliddata (*datap contained garbage)
  * If an error occurs then no memory has been allocated,
  * and *rrtname_r, *fmtname_r, *len_r and *data_r are undefined.

@@ -78,7 +78,7 @@ int adns__internal_submit(adns_state ads, adns_query *query_r,
   if (qumsg_vb->used) {
     qu->query_dgram= malloc(qumsg_vb->used);
     if (!qu->query_dgram) {
-      adns__query_fail(qu,adns_s_nolocalmem);
+      adns__query_fail(qu,adns_s_nomemory);
       return adns_s_ok;
     }
     memcpy(qu->query_dgram,qumsg_vb->buf,qumsg_vb->used);
@@ -101,7 +101,7 @@ int adns__internal_submit(adns_state ads, adns_query *query_r,
   free(qu);
  x_nomemory:
   adns__vbuf_free(qumsg_vb);
-  return adns_s_nolocalmem;
+  return adns_s_nomemory;
 }
 
 int adns_submit(adns_state ads,
@@ -118,7 +118,7 @@ int adns_submit(adns_state ads,
   struct timeval now;
 
   typei= adns__findtype(type);
-  if (!typei) return adns_s_notimplemented;
+  if (!typei) return adns_s_unknownrrtype;
   
   ctx.ext= context;
   ctx.callback= 0;
@@ -130,7 +130,7 @@ int adns_submit(adns_state ads,
   adns__vbuf_init(&vb);
 
   ol= strlen(owner);
-  if (ol<=1 || ol>DNS_MAXDOMAIN+1) { stat= adns_s_domaintoolong; goto xit; }
+  if (ol<=1 || ol>DNS_MAXDOMAIN+1) { stat= adns_s_querydomaintoolong; goto xit; }
 				 
   if (owner[ol-1]=='.' && owner[ol-2]!='\\') { flags &= ~adns_qf_search; ol--; }
 
@@ -281,7 +281,7 @@ static void makefinal_query(adns_query qu) {
   return;
   
  x_nomem:
-  qu->answer->status= adns_s_nolocalmem;
+  qu->answer->status= adns_s_nomemory;
   qu->answer->cname= 0;
   adns__reset_cnameonly(qu);
   free_query_allocs(qu);
@@ -296,7 +296,7 @@ void adns__query_done(adns_query qu) {
 
   if (ans->nrrs && qu->typei->diff_needswap) {
     if (!adns__vbuf_ensure(&qu->vb,qu->typei->rrsz)) {
-      adns__query_fail(qu,adns_s_nolocalmem);
+      adns__query_fail(qu,adns_s_nomemory);
       return;
     }
     adns__isort(ans->rrs.bytes, ans->nrrs, ans->rrsz,

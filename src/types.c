@@ -27,7 +27,7 @@
 
 #include "internal.h"
 
-#define R_NOMEM           return adns_s_nolocalmem
+#define R_NOMEM           return adns_s_nomemory
 #define CSP_ADDSTR(s)     if (!adns__vbuf_appendstr(vb,(s))) R_NOMEM; else;
 
 /*
@@ -650,20 +650,20 @@ static adns_status pa_ptr(const parseinfo *pai, int dmstart, int max, void *data
 			  pai->qu->query_dglen, DNS_HDRSIZE, 0);
     for (i=0; i<4; i++) {
       st= adns__findlabel_next(&fls,&lablen,&labstart); assert(!st);
-      if (lablen<=0 || lablen>3) return adns_s_invalidquerydomain;
+      if (lablen<=0 || lablen>3) return adns_s_querydomainwrong;
       memcpy(labbuf, pai->qu->query_dgram + labstart, lablen);  labbuf[lablen]= 0;
-      ipv[3-i]= strtoul(labbuf,&ep,10);  if (*ep) return adns_s_invalidquerydomain;
+      ipv[3-i]= strtoul(labbuf,&ep,10);  if (*ep) return adns_s_querydomainwrong;
       if (lablen>1 && pai->qu->query_dgram[labstart]=='0')
-	return adns_s_invalidquerydomain;
+	return adns_s_querydomainwrong;
     }
     for (i=0; i<sizeof(expectdomain)/sizeof(*expectdomain); i++) {
       st= adns__findlabel_next(&fls,&lablen,&labstart); assert(!st);
       l= strlen(expectdomain[i]);
       if (lablen != l || memcmp(pai->qu->query_dgram + labstart, expectdomain[i], l))
-	return adns_s_invalidquerydomain;
+	return adns_s_querydomainwrong;
     }
     st= adns__findlabel_next(&fls,&lablen,0); assert(!st);
-    if (lablen) return adns_s_invalidquerydomain;
+    if (lablen) return adns_s_querydomainwrong;
     
     ap->len= sizeof(struct sockaddr_in);
     memset(&ap->addr,0,sizeof(ap->addr.inet));

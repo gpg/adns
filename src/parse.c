@@ -72,16 +72,16 @@ adns_status adns__findlabel_next(findlabel_state *fls,
   dgram= fls->dgram;
   for (;;) {
     if (fls->cbyte >= fls->dglen) goto x_truncated;
-    if (fls->cbyte >= fls->max) goto x_serverfaulty;
+    if (fls->cbyte >= fls->max) goto x_badresponse;
     GET_B(fls->cbyte,lablen);
     if (!(lablen & 0x0c0)) break;
-    if ((lablen & 0x0c0) != 0x0c0) return adns_s_unknownreply;
+    if ((lablen & 0x0c0) != 0x0c0) return adns_s_unknownformat;
     if (jumped++) {
       adns__diag(fls->ads,fls->serv,fls->qu,"compressed datagram contains loop");
-      return adns_s_serverfaulty;
+      return adns_s_invalidresponse;
     }
     if (fls->cbyte >= fls->dglen) goto x_truncated;
-    if (fls->cbyte >= fls->max) goto x_serverfaulty;
+    if (fls->cbyte >= fls->max) goto x_badresponse;
     GET_B(fls->cbyte,jumpto);
     jumpto |= (lablen&0x3f)<<8;
     if (fls->dmend_r) *(fls->dmend_r)= fls->cbyte;
@@ -92,10 +92,10 @@ adns_status adns__findlabel_next(findlabel_state *fls,
   if (lablen) {
     if (fls->namelen) fls->namelen++;
     fls->namelen+= lablen;
-    if (fls->namelen > DNS_MAXDOMAIN) return adns_s_domaintoolong;
+    if (fls->namelen > DNS_MAXDOMAIN) return adns_s_answerdomaintoolong;
     fls->cbyte+= lablen;
     if (fls->cbyte > fls->dglen) goto x_truncated;
-    if (fls->cbyte > fls->max) goto x_serverfaulty;
+    if (fls->cbyte > fls->max) goto x_badresponse;
   } else {
     if (fls->dmend_r) *(fls->dmend_r)= fls->cbyte;
   }
@@ -107,9 +107,9 @@ adns_status adns__findlabel_next(findlabel_state *fls,
   *lablen_r= -1;
   return adns_s_ok;
 
- x_serverfaulty: 
+ x_badresponse: 
   adns__diag(fls->ads,fls->serv,fls->qu,"label in domain runs beyond end of domain");
-  return adns_s_serverfaulty;
+  return adns_s_invalidresponse;
 }
 
 adns_status adns__parse_domain(adns_state ads, int serv, adns_query qu,
@@ -128,23 +128,23 @@ adns_status adns__parse_domain(adns_state ads, int serv, adns_query qu,
     if (lablen<0) { vb->used=0; return adns_s_ok; }
     if (!lablen) break;
     if (vb->used)
-      if (!adns__vbuf_append(vb,".",1)) return adns_s_nolocalmem;
+      if (!adns__vbuf_append(vb,".",1)) return adns_s_nomemory;
     if (flags & pdf_quoteok) {
       if (!vbuf__append_quoted1035(vb,dgram+labstart,lablen))
-	return adns_s_nolocalmem;
+	return adns_s_nomemory;
     } else {
       ch= dgram[labstart];
-      if (!ctype_alpha(ch) && !ctype_digit(ch)) return adns_s_invalidanswerdomain;
+      if (!ctype_alpha(ch) && !ctype_digit(ch)) return adns_s_answerdomaininvalid;
       for (i= labstart+1; i<labstart+lablen; i++) {
 	ch= dgram[i];
 	if (ch != '-' && !ctype_alpha(ch) && !ctype_digit(ch))
-	  return adns_s_invalidanswerdomain;
+	  return adns_s_answerdomaininvalid;
       }
       if (!adns__vbuf_append(vb,dgram+labstart,lablen))
-	return adns_s_nolocalmem;
+	return adns_s_nomemory;
     }
   }
-  if (!adns__vbuf_append(vb,"",1)) return adns_s_nolocalmem;
+  if (!adns__vbuf_append(vb,"",1)) return adns_s_nomemory;
   return adns_s_ok;
 }
 	

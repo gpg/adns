@@ -37,7 +37,7 @@ static adns_status mkquery_header(adns_state ads, vbuf *vb, int *id_r, int qdlen
   int id;
   byte *rqp;
   
-  if (!adns__vbuf_ensure(vb,DNS_HDRSIZE+qdlen+4)) return adns_s_nolocalmem;
+  if (!adns__vbuf_ensure(vb,DNS_HDRSIZE+qdlen+4)) return adns_s_nomemory;
 
   *id_r= id= (ads->nextid++) & 0x0ffff;
   
@@ -83,35 +83,35 @@ adns_status adns__mkquery(adns_state ads, vbuf *vb, int *id_r,
 
   p= owner; pe= owner+ol;
   nlabs= 0;
-  if (!*p) return adns_s_invalidquerydomain;
+  if (!*p) return adns_s_querydomaininvalid;
   do {
     ll= 0;
     while (p!=pe && (c= *p++)!='.') {
       if (c=='\\') {
-	if (!(flags & adns_qf_quoteok_query)) return adns_s_invalidquerydomain;
+	if (!(flags & adns_qf_quoteok_query)) return adns_s_querydomaininvalid;
 	if (ctype_digit(p[0])) {
 	  if (ctype_digit(p[1]) && ctype_digit(p[2])) {
 	    c= (*p++ - '0')*100 + (*p++ - '0')*10 + (*p++ - '0');
-	    if (c >= 256) return adns_s_invalidquerydomain;
+	    if (c >= 256) return adns_s_querydomaininvalid;
 	  } else {
-	    return adns_s_invalidquerydomain;
+	    return adns_s_querydomaininvalid;
 	  }
 	} else if (!(c= *p++)) {
-	  return adns_s_invalidquerydomain;
+	  return adns_s_querydomaininvalid;
 	}
       }
       if (!(flags & adns_qf_quoteok_query)) {
 	if (c == '-') {
-	  if (!ll) return adns_s_invalidquerydomain;
+	  if (!ll) return adns_s_querydomaininvalid;
 	} else if (!ctype_alpha(c) && !ctype_digit(c)) {
-	  return adns_s_invalidquerydomain;
+	  return adns_s_querydomaininvalid;
 	}
       }
-      if (ll == sizeof(label)) return adns_s_invalidquerydomain;
+      if (ll == sizeof(label)) return adns_s_querydomaininvalid;
       label[ll++]= c;
     }
-    if (!ll) return adns_s_invalidquerydomain;
-    if (nlabs++ > 63) return adns_s_domaintoolong;
+    if (!ll) return adns_s_querydomaininvalid;
+    if (nlabs++ > 63) return adns_s_querydomaintoolong;
     MKQUERY_ADDB(ll);
     memcpy(rqp,label,ll); rqp+= ll;
   } while (p!=pe);
