@@ -16,13 +16,19 @@
 #  along with this program; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
 
-SUBDIR=/client
-DIRCFLAGS=	-I$(srcdir)/src
-TARGETS=	adnstest
+srcdir=		@srcdir@
+VPATH=		@srcdir@
 
-include $(srcdir)/settings.make
+TARGETS=	adnstest
+include		$(srcdir)/../settings.make
+
+DIRCFLAGS=	-I$(srcdir)/../src
 
 install:	$(TARGETS)
-		$(INSTALL_BIN) $(TARGETS) $(bin_dir)
+		set -xe; for f in $(TARGETS); \
+			do $(INSTALL_PROGRAM) $$f $(bin_dir)/$$f; done
 
-adnstest:	adnstest.o $(srcdir)/dynamic/$(SHLIBFILE)
+uninstall:
+		for f in $(TARGETS); do rm -f $(bin_dir)/$$f; done
+
+adnstest:	adnstest.o $(srcdir)/../dynamic/$(SHLIBFILE)

@@ -16,8 +16,14 @@
 #  along with this program; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
 
-SUBDIR=/regress
-DIRCFLAGS=	-I$(srcdir)/src
+srcdir=		@srcdir@
+VPATH=		@srcdir@
+
+TARGETS=	hplayback hrecord
+include		$(srcdir)/../settings.make
+include		$(srcdir)/../src/adns.make
+
+DIRCFLAGS=	-I$(srcdir)/../src
 
 HCPPFLAGS:= $(foreach F,			\
 	gettimeofday select			\
@@ -29,25 +35,20 @@ HARNLOBJS=	$(addsuffix _d.o, $(basename $(LIBOBJS)))
 ALLOBJS=	$(HARNLOBJS) dtest.o hrecord.o hplayback.o hcommon.o
 AUTOCSRCS=	harness.h hrecord.c hplayback.c hcommon.c
 
-TARGETS=	hplayback hrecord
-
-include $(srcdir)/settings.make
-include $(srcdir)/src/adns.make
-
 .PRECIOUS:	$(AUTOCSRCS)
 
 check:		$(TARGETS)
 		./checkall
 
-hrecord:	$(srcdir)/client/adnstest.o hrecord.o hcommon.o $(HARNLOBJS)
-hplayback:	$(srcdir)/client/adnstest.o hplayback.o hcommon.o $(HARNLOBJS)
+hrecord:	$(srcdir)/../client/adnstest.o hrecord.o hcommon.o $(HARNLOBJS)
+hplayback:	$(srcdir)/../client/adnstest.o hplayback.o hcommon.o $(HARNLOBJS)
 
-%_d.o:		$(srcdir)/src/%.c
+%_d.o:		$(srcdir)/../src/%.c
 		$(CC) $(HCPPFLAGS) -c -g -o $@ $<
 
-$(ALLOBJS):	$(srcdir)/src/adns.h $(srcdir)/src/internal.h harness.h
+$(ALLOBJS):	$(srcdir)/../src/adns.h $(srcdir)/../src/internal.h harness.h
 
 %::	%.m4 hmacros.i4 hsyscalls.i4
-	m4 -P $< >$@-a.new
+	$(M4) -P $< >$@-a.new
 	sed -e 's/hm_comma/,/g; s/hm_squote/'\''/g; /^[	 ]*$$/d' <$@-a.new >$@-b.new
 	@mv -f $@-b.new $@; rm -f $@-a.new

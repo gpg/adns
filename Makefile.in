@@ -16,23 +16,22 @@
 #  along with this program; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
 
-SUBDIR=
+srcdir=		@srcdir@
+VPATH=		@srcdir@
+
 SUBDIRS= src dynamic client regress
 
-all:
-	set -e; for d in $(SUBDIRS); do $(MAKE) -C $$d all; done
+all install uninstall clean distclean mostlyclean maintainer-clean distprep:
+	set -e; for d in $(SUBDIRS); do $(MAKE) -C $$d $@; done
 
-check:	all
+install-strip:
+	$(MAKE) INSTALL_PROGRAM_FLAGS=-s
+
+dist:			distprep
+	false not implemented yet
+
+check:			all
 	$(MAKE) -C regress check
 
-install:
-	set -e; for d in $(SUBDIRS); do $(MAKE) -C $$d install; done
-
-clean:
-	set -e; for d in $(SUBDIRS); do $(MAKE) -C $$d clean; done
-
-distclean:
-	set -e; for d in $(SUBDIRS); do $(MAKE) -C $$d distclean; done
-
-maintainer-clean:
-	set -e; for d in $(SUBDIRS); do $(MAKE) -C $$d maintainer-clean; done
+TAGS info dvi:
+	# do nothing
