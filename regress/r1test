@@ -4,6 +4,7 @@
 set -e
 casename="$1"
 case="case-$casename"
+ocase="output-$casename"
 
 exec <"$case.sys"
 read initfile
@@ -11,22 +12,24 @@ read queryargs
 
 initstring="`cat init-$initfile.text`"
 
+rm -f $ocase.*
+
 set +e
-ADNS_TEST_REPORT_FD=3 3>>"$case.report-o" >"$case.stdout-o" 2>"$case.stderr-o" \
+ADNS_TEST_REPORT_FD=3 3>>"$ocase.report" >"$ocase.out" 2>"$ocase.err" \
  ./hplayback "/$initstring" $queryargs
 rc=$?
 set -e
 
 if test $rc != 0
 then
-	egrep . -- "$case.report-o" "$case.stdout-o" "$case.stderr-o"
+	egrep . -- "$ocase.report" "$ocase.out" "$ocase.err"
 	echo >&2 "FAILED $case - EXIT STATUS $rc"
 	exit 2
 fi
 
-for part in stdout stderr
+for part in out err
 do
-	if diff -- "$case.$part" "$case.$part-o"
+	if diff -- "$case.$part" "$ocase.$part"
 	then
 		:
 	else

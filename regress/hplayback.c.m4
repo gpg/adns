@@ -45,16 +45,6 @@ static void Tensurereportfile(void) {
   Treportfile= fdopen(fd,"a"); if (!Treportfile) Tfailed("fdopen ADNS_TEST_REPORT_FD");
 }
 
-static void Tensureinputfile(void) {
-  const char *fdstr;
-  int fd;
-
-  Tinputfile= stdin;
-  fdstr= getenv("ADNS_TEST_IN_FD"); if (!fdstr) return;
-  fd= atoi(fdstr);
-  Tinputfile= fdopen(fd,"r"); if (!Tinputfile) Tfailed("fdopen ADNS_TEST_IN_FD");
-}
-
 static void Psyntax(const char *where) {
   fprintf(stderr,"adns test harness: syntax error in test log input file: %s\n",where);
   exit(-1);
@@ -63,6 +53,30 @@ static void Psyntax(const char *where) {
 static void Pcheckinput(void) {
   if (ferror(Tinputfile)) Tfailed("read test log input file");
   if (feof(Tinputfile)) Psyntax("eof at syscall reply");
+}
+
+static void Tensureinputfile(void) {
+  const char *fdstr;
+  int fd;
+  int chars;
+  unsigned long sec, usec;
+
+  if (Tinputfile) return;
+  Tinputfile= stdin;
+  fdstr= getenv("ADNS_TEST_IN_FD");
+  if (fdstr) {
+    fd= atoi(fdstr);
+    Tinputfile= fdopen(fd,"r"); if (!Tinputfile) Tfailed("fdopen ADNS_TEST_IN_FD");
+  }
+
+  if (!adns__vbuf_ensure(&vb2,1000)) Tnomem();
+  fgets(vb2.buf,vb2.avail,Tinputfile); Pcheckinput();
+  chars= -1;
+  sscanf(vb2.buf," start %lu.%lu%n",&sec,&usec,&chars);
+  if (chars==-1) Psyntax("start time invalid");
+  currenttime.tv_sec= sec;
+  currenttime.tv_usec= usec;
+  if (vb2.buf[chars] != hm_squote\nhm_squote) Psyntax("not newline after start time");
 }
 
 static void Parg(const char *argname) {
@@ -87,35 +101,22 @@ static int Perrno(const char *stuff) {
   return r;
 }
 
-static struct timeval begin;
-
-static void Ptimevalabs(struct timeval *tvr) {
-  int store, chars;
+static void P_updatetime(void) {
+  int chars;
   unsigned long sec, usec;
-  struct timeval rv;
-  
-  if (vb2.buf[vb2.used]==hm_squote+hm_squote) {
-    vb2.used++;
-    rv= begin;
-    store= 0;
-  } else {
-    rv.tv_sec= 0;
-    rv.tv_usec= 0;
-    store= 1;
-  }
-  chars= -1;
-  sscanf(vb2.buf+vb2.used,"%lu.%lu%n",&sec,&usec,&chars);
-  if (chars==-1) Psyntax("timeval syntax error");
-  rv.tv_sec += sec;
-  rv.tv_usec += usec;
-  if (begin.tv_usec > 1000000) {
-    rv.tv_sec++;
-    rv.tv_usec -= 1000000;
-  }
-  *tvr= rv;
-  if (store) begin= rv;
 
-  vb2.used += chars;
+  if (!adns__vbuf_ensure(&vb2,1000)) Tnomem();
+  fgets(vb2.buf,vb2.avail,Tinputfile); Pcheckinput();
+  chars= -1;
+  sscanf(vb2.buf," +%lu.%lu%n",&sec,&usec,&chars);
+  if (chars==-1) Psyntax("update time invalid");
+  currenttime.tv_sec+= sec;
+  currenttime.tv_usec+= usec;
+  if (currenttime.tv_usec > 1000000) {
+    currenttime.tv_sec++;
+    currenttime.tv_usec -= 1000000;
+  }
+  if (vb2.buf[chars] != hm_squote\nhm_squote) Psyntax("not newline after update time");
 }
 
 static void Pfdset(fd_set *set, int max) {
@@ -238,7 +239,10 @@ int H$1(hm_args_massage($3,void)) {
  if (memcmp(vb2.buf," $1=",hm_r_offset)) Psyntax("syscall reply mismatch");
 
  if (vb2.buf[hm_r_offset] == hm_squoteEhm_squote) {
-  errno= Perrno(vb2.buf+hm_r_offset);
+  int e;
+  e= Perrno(vb2.buf+hm_r_offset);
+  P_updatetime();
+  errno= e;
   return -1;
  }
 
@@ -260,7 +264,6 @@ int H$1(hm_args_massage($3,void)) {
  hm_create_nothing
  m4_define(`hm_arg_fdset_io',`Parg("$'`1"); Pfdset($'`1,$'`2);')
  m4_define(`hm_arg_addr_out',`Parg("$'`1"); Paddr($'`1,$'`2);')
- m4_define(`hm_arg_timeval_out_abs',`Parg("$'`1"); Ptimevalabs($'`1);')
  $3
  if (vb2.used != vb2.avail) Psyntax("junk at end of line");
 
@@ -268,6 +271,7 @@ int H$1(hm_args_massage($3,void)) {
  m4_define(`hm_arg_bytes_out',`r= Pbytes($'`2,$'`4);')
  $3
 
+ P_updatetime();
  return r;
 }
 ')

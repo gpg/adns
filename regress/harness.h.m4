@@ -37,6 +37,7 @@ m4_define(`hm_syscall', `int H$1(hm_args_massage($3,void));')
 m4_include(`hsyscalls.i4')
 
 int Hwritev(int fd, const struct iovec *vector, size_t count);
+int Hgettimeofday(struct timeval *tv, struct timezone *tz);
 
 /* There is a Q function (Q for Question) for each such syscall;
  * it constructs a string representing the call, and calls Q_str
@@ -69,6 +70,7 @@ void Tvba(const char *str);
 /* Shared globals */
 
 extern vbuf vb;
+extern struct timeval currenttime;
 extern const struct Terrno { const char *n; int v; } Terrnos[];
   
 #endif

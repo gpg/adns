@@ -28,20 +28,39 @@ m4_include(hmacros.i4)
 
 #include "harness.h"
 
-static int begin_set;
-static struct timeval begin;
 static FILE *Toutputfile;
 
 /* fixme: record syscall durations, rather than gettimeofday results */
 
+static void R_recordtime(void) {
+  int r;
+  struct timeval tv, tvrel;
+
+  Tensureoutputfile();
+  r= gettimeofday(&tv,0); if (r) Tfailed("gettimeofday syscallbegin");
+  tvrel.tv_sec= tv.tv_sec - currenttime.tv_sec;
+  tvrel.tv_usec= tv.tv_usec - currenttime.tv_usec;
+  if (tv.tv_usec < 0) { tvrel.tv_usec += 1000000; tvrel.tv_sec--; }
+  Tvbf("\n +%ld.%06ld",(long)tvrel.tv_sec,(long)tvrel.tv_usec);
+  currenttime= tv;
+}
+
 void Tensureoutputfile(void) {
   const char *fdstr;
-  int fd;
+  int fd, r;
 
+  if (Toutputfile) return;
+  
   Toutputfile= stdout;
-  fdstr= getenv("ADNS_TEST_OUT_FD"); if (!fdstr) return;
-  fd= atoi(fdstr);
-  Toutputfile= fdopen(fd,"a"); if (!Toutputfile) Tfailed("fdopen ADNS_TEST_OUT_FD");
+  fdstr= getenv("ADNS_TEST_OUT_FD");
+  if (fdstr) {
+    fd= atoi(fdstr);
+    Toutputfile= fdopen(fd,"a"); if (!Toutputfile) Tfailed("fdopen ADNS_TEST_OUT_FD");
+  }
+
+  r= gettimeofday(&currenttime,0); if (r) Tfailed("gettimeofday syscallbegin");
+  if (fprintf(Toutputfile," start %ld.%06ld\n",
+	      (long)currenttime.tv_sec,(long)currenttime.tv_usec) == EOF) Toutputerr();
 }
 
 void Q_vb(void) {
@@ -54,7 +73,7 @@ void Q_vb(void) {
 static void R_vb(void) {
   Q_vb();
 }
-  
+
 m4_define(`hm_syscall', `
  hm_create_proto_h
 int H$1(hm_args_massage($3,void)) {
@@ -92,23 +111,6 @@ int H$1(hm_args_massage($3,void)) {
  hm_create_nothing
  m4_define(`hm_arg_fdset_io',`Tvba(" $'`1="); Tvbfdset($'`2,$'`1);')
  m4_define(`hm_arg_addr_out',`Tvba(" $'`1="); Tvbaddr($'`1,*$'`2);')
- m4_define(`hm_arg_timeval_out_abs',`
-  if (!begin_set) {
-    Tvbf(" $'`1=%ld.%06ld",$'`1->tv_sec,$'`1->tv_usec);
-    begin= *$'`1;
-    begin_set= 1;
-  } else {
-    struct timeval diff;
-    diff.tv_sec= $'`1->tv_sec - begin.tv_sec;
-    diff.tv_usec= $'`1->tv_usec - begin.tv_usec;
-    if (diff.tv_usec < 0) {
-      diff.tv_sec -= 1;
-      diff.tv_usec += 1000000;
-    }
-    assert(diff.tv_sec >= 0);
-    assert(diff.tv_usec >= 0);
-    Tvbf(" $'`1=+%ld.%06ld",diff.tv_sec,diff.tv_usec);
-  }')
  $3
 
  hm_create_nothing
@@ -122,6 +124,7 @@ int H$1(hm_args_massage($3,void)) {
  m4_define(`hm_rv_must',`')
  $2
 
+ R_recordtime();
  R_vb();
  errno= e;
  return r;

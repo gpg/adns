@@ -27,7 +27,6 @@ m4_dnl  hm_rv_fd         file descriptor is returned, -1 means see errno
 m4_dnl  hm_rv_succfail   returns 0 (ok) or -1 (see errno)
 m4_dnl  hm_rv_len(<max>) returns length read/written, must be <=max, -1 => errno
 m4_dnl <args> is list of macros for arguments, each followed by hm_na
-m4_dnl  hm_arg_timeval_out_abs(<arg>)   struct timeval, absolute time is returned
 m4_dnl  hm_arg_nullptr(<type>,<arg>)    pointer of type type, must be null
 m4_dnl  hm_arg_int(<arg>)               signed integer
 m4_dnl  hm_arg_fdset_io(<arg>,<max>)    fd_set, max bit set is in max
@@ -46,12 +45,6 @@ m4_dnl   buffer for data from syscall; <objarg> is of type pointer to const <obj
 m4_dnl   and points to at least <lenarg> bytes (<lenarg> is of type <lentype>)
 m4_dnl   return value from syscall is supposed to be returned length
 m4_dnl  hm_arg_addr_out(<arg>,<lenptr>) struct sockaddr*, length io at <lenptr> (an int*)
-
-hm_syscall(
-	gettimeofday, `hm_rv_must', `
-	hm_arg_timeval_out_abs(tv) hm_na
-	hm_arg_nullptr(struct timezone*, tz) hm_na
-')
 
 hm_syscall(
 	select, `hm_rv_any', `

@@ -4,4 +4,4 @@ hrecord
 hrecord.c
 hplayback
 hplayback.c
-case-*.*-o
+output-*.*

@@ -33,6 +33,7 @@ m4_include(hmacros.i4)
 
 vbuf vb;
 FILE *Toutputfile= 0;
+struct timeval currenttime;
 
 const struct Terrno Terrnos[]= {
   { "EAGAIN",                    EAGAIN                       },
@@ -49,6 +50,12 @@ const struct Terrno Terrnos[]= {
 };
 
 static vbuf vbw;
+
+int Hgettimeofday(struct timeval *tv, struct timezone *tz) {
+  Tmust("gettimeofday","tz",!tz);
+  *tv= currenttime;
+  return 0;
+}
 
 int Hwritev(int fd, const struct iovec *vector, size_t count) {
   size_t i;
