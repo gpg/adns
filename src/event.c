@@ -201,6 +201,7 @@ void adns_interest(adns_state ads, int *maxfd,
     inter_addfd(maxfd,readfds,ads->tcpsocket);
     inter_addfd(maxfd,exceptfds,ads->tcpsocket);
     if (ads->tcpsend.used) inter_addfd(maxfd,writefds,ads->tcpsocket);
+    break;
   default:
     abort();
   }
@@ -230,7 +231,7 @@ static int internal_callback(adns_state ads, int maxfd,
     if (callb_checkfd(maxfd,writefds,ads->tcpsocket)) {
       count++;
       assert(ads->tcprecv.used==0);
-      adns__vbuf_ensure(&ads->tcprecv,1);
+      if (!adns__vbuf_ensure(&ads->tcprecv,1)) return -1;
       if (ads->tcprecv.buf) {
 	r= read(ads->tcpsocket,&ads->tcprecv.buf,1);
 	if (r==0 || (r<0 && (errno==EAGAIN || errno==EWOULDBLOCK))) {
@@ -263,8 +264,10 @@ static int internal_callback(adns_state ads, int maxfd,
 	}
 	ads->tcprecv.used -= skip;
 	memmove(ads->tcprecv.buf,ads->tcprecv.buf+skip,ads->tcprecv.used);
-	adns__vbuf_ensure(&ads->tcprecv,want);
-	if (ads->tcprecv.used >= ads->tcprecv.avail) break;
+	skip= 0;
+	if (!adns__vbuf_ensure(&ads->tcprecv,want)) return -1;
+	assert(ads->tcprecv.used <= ads->tcprecv.avail);
+	if (ads->tcprecv.used == ads->tcprecv.avail) continue;
 	r= read(ads->tcpsocket,
 		ads->tcprecv.buf+ads->tcprecv.used,
 		ads->tcprecv.avail-ads->tcprecv.used);
@@ -292,6 +295,7 @@ static int internal_callback(adns_state ads, int maxfd,
 	memmove(ads->tcpsend.buf,ads->tcpsend.buf+r,ads->tcpsend.used);
       }
     }
+    break;
   default:
     abort();
   }

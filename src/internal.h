@@ -108,6 +108,11 @@ typedef struct {
    * If there is an overrun which might indicate truncation, it should set
    * *rdstart to -1; otherwise it may set it to anything else positive.
    */
+
+  int (*diff_needswap)(const void *datap_a, const void *datap_b);
+  /* Returns >0 if RR a should be strictly after RR b in the sort order,
+   * 0 otherwise.  Must not fail.
+   */
 } typeinfo;
 
 typedef struct allocnode {
@@ -134,7 +139,7 @@ struct adns__query {
   void *final_allocspace;
   
   const typeinfo *typei;
-  char *query_dgram;
+  byte *query_dgram;
   int query_dglen;
   
   vbuf vb;
@@ -273,6 +278,13 @@ adns_status adns__mkquery(adns_state ads, vbuf *vb, int *id_r,
 			  const typeinfo *typei, adns_queryflags flags);
 /* Assembles a query packet in vb, and returns id at *id_r. */
 
+adns_status adns__mkquery_frdgram(adns_state ads, vbuf *vb, int *id_r,
+				  const byte *qd_dgram, int qd_dglen, int qd_begin,
+				  adns_rrtype type, adns_queryflags flags);
+/* Same as adns__mkquery, but takes the owner domain from an existing datagram.
+ * That domain must be correct and untruncated.
+ */
+
 void adns__query_tcp(adns_query qu, struct timeval now);
 /* Query must be in state tcpwait/timew; it will be moved to a new state
  * if possible and no further processing can be done on it for now.
@@ -322,11 +334,11 @@ void *adns__alloc_interim(adns_query qu, size_t sz);
  * big enough for all these allocations, and then adns__alloc_final
  * will get memory from this buffer.
  *
- * _alloc_interim can fail, in which case it will fail the query too,
- * so nothing more need be done with it.
+ * _alloc_interim can fail (and return 0).
+ * The caller must ensure that the query is failed.
  *
- * adns__alloc_interim(qu,0) will not return 0, but it will not
- * necessarily return a distinct pointer each time.
+ * adns__alloc_interim_{only,fail}(qu,0) will not return 0,
+ * but it will not necessarily return a distinct pointer each time.
  */
 
 void *adns__alloc_mine(adns_query qu, size_t sz);

@@ -28,23 +28,22 @@
 
 #include "internal.h"
 
-adns_status adns__mkquery(adns_state ads, vbuf *vb, int *id_r,
-			  const char *owner, int ol,
-			  const typeinfo *typei, adns_queryflags flags) {
-  int ll, c, nlabs, id;
-  byte label[255], *rqp;
-  const char *p, *pe;
-
+#define MKQUERY_START(vb) (rqp= (vb)->buf+(vb)->used)
 #define MKQUERY_ADDB(b) *rqp++= (b)
 #define MKQUERY_ADDW(w) (MKQUERY_ADDB(((w)>>8)&0x0ff), MKQUERY_ADDB((w)&0x0ff))
+#define MKQUERY_STOP(vb) ((vb)->used= rqp-(vb)->buf)
 
-  vb->used= 0;
-  if (!adns__vbuf_ensure(vb,DNS_HDRSIZE+strlen(owner)+1+5))
-    return adns_s_nolocalmem;
-  rqp= vb->buf;
+static adns_status mkquery_header(adns_state ads, vbuf *vb, int *id_r, int qdlen) {
+  int id;
+  byte *rqp;
+  
+  if (!adns__vbuf_ensure(vb,DNS_HDRSIZE+qdlen+4)) return adns_s_nolocalmem;
 
   *id_r= id= (ads->nextid++) & 0x0ffff;
-
+  
+  vb->used= 0;
+  MKQUERY_START(vb);
+  
   MKQUERY_ADDW(id);
   MKQUERY_ADDB(0x01); /* QR=Q(0), OPCODE=QUERY(0000), !AA, !TC, RD */
   MKQUERY_ADDB(0x00); /* !RA, Z=000, RCODE=NOERROR(0000) */
@@ -52,6 +51,36 @@ adns_status adns__mkquery(adns_state ads, vbuf *vb, int *id_r,
   MKQUERY_ADDW(0); /* ANCOUNT=0 */
   MKQUERY_ADDW(0); /* NSCOUNT=0 */
   MKQUERY_ADDW(0); /* ARCOUNT=0 */
+
+  MKQUERY_STOP(vb);
+  
+  return adns_s_ok;
+}
+
+static adns_status mkquery_footer(vbuf *vb, adns_rrtype type) {
+  byte *rqp;
+
+  MKQUERY_START(vb);
+  MKQUERY_ADDW(type & adns__rrt_typemask); /* QTYPE */
+  MKQUERY_ADDW(DNS_CLASS_IN); /* QCLASS=IN */
+  MKQUERY_STOP(vb);
+  assert(vb->used <= vb->avail);
+  
+  return adns_s_ok;
+}
+
+adns_status adns__mkquery(adns_state ads, vbuf *vb, int *id_r,
+			  const char *owner, int ol,
+			  const typeinfo *typei, adns_queryflags flags) {
+  int ll, c, nlabs;
+  byte label[255], *rqp;
+  const char *p, *pe;
+  adns_status st;
+
+  st= mkquery_header(ads,vb,id_r,strlen(owner)+2); if (st) return st;
+  
+  MKQUERY_START(vb);
+
   p= owner; pe= owner+ol;
   nlabs= 0;
   if (!*p) return adns_s_invalidquerydomain;
@@ -86,13 +115,41 @@ adns_status adns__mkquery(adns_state ads, vbuf *vb, int *id_r,
     MKQUERY_ADDB(ll);
     memcpy(rqp,label,ll); rqp+= ll;
   } while (p!=pe);
-
   MKQUERY_ADDB(0);
-  MKQUERY_ADDW(typei->type & adns__rrt_typemask); /* QTYPE */
-  MKQUERY_ADDW(DNS_CLASS_IN); /* QCLASS=IN */
 
-  vb->used= rqp - vb->buf;
-  assert(vb->used <= vb->avail);
+  MKQUERY_STOP(vb);
+  
+  st= mkquery_footer(vb,typei->type);
+  
+  return adns_s_ok;
+}
+
+adns_status adns__mkquery_frdgram(adns_state ads, vbuf *vb, int *id_r,
+				  const byte *qd_dgram, int qd_dglen, int qd_begin,
+				  adns_rrtype type, adns_queryflags flags) {
+  byte *rqp;
+  findlabel_state fls;
+  int lablen, labstart;
+  adns_status st;
+
+  st= mkquery_header(ads,vb,id_r,qd_dglen); if (st) return st;
+
+  MKQUERY_START(vb);
+
+  adns__findlabel_start(&fls,ads,-1,0,qd_dgram,qd_dglen,qd_dglen,qd_begin,0);
+  for (;;) {
+    st= adns__findlabel_next(&fls,&lablen,&labstart); assert(!st);
+    if (!lablen) break;
+    assert(lablen<255);
+    MKQUERY_ADDB(lablen);
+    memcpy(rqp,qd_dgram+labstart,lablen);
+    rqp+= lablen;
+  }
+  MKQUERY_ADDB(0);
+
+  MKQUERY_STOP(vb);
+  
+  st= mkquery_footer(vb,type);
   
   return adns_s_ok;
 }
@@ -114,7 +171,6 @@ void adns__query_tcp(adns_query qu, struct timeval now) {
   timevaladd(&now,TCPMS);
   qu->timeout= now;
   qu->state= query_tcpsent;
-  LIST_LINK_TAIL(ads->timew,qu);
 
   if (ads->tcpsend.used) {
     wr= 0;

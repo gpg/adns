@@ -28,64 +28,136 @@
 
 static adns_status pa_inaddr(adns_query qu, int serv,
 			     const byte *dgram, int dglen, int cbyte, int max,
-			     void *store_r) {
-  struct in_addr *dr= store_r;
+			     void *datap) {
+  struct in_addr *storeto= datap;
   
   if (max-cbyte != 4) return adns_s_invaliddata;
-  memcpy(dr,dgram+cbyte,4);
+  memcpy(storeto,dgram+cbyte,4);
   return adns_s_ok;
 }
 
-static adns_status cs_inaddr(vbuf *vb, const void *data) {
-  const struct in_addr *dp= data;
+static int dip_inaddr(struct in_addr a, struct in_addr b) {
+  /* fixme implement sortlist */
+  return 0;
+}
+
+static int di_inaddr(const void *datap_a, const void *datap_b) {
+  const struct in_addr *ap= datap_a, *bp= datap_b;
+
+  return dip_inaddr(*ap,*bp);
+}
+
+static adns_status cs_inaddr(vbuf *vb, const void *datap) {
+  const struct in_addr *rrp= datap, rr= *rrp;
   const char *ia;
 
-  ia= inet_ntoa(*dp); assert(ia);
+  ia= inet_ntoa(rr); assert(ia);
   return adns__vbuf_appendstr(vb,ia) ? adns_s_ok : adns_s_nolocalmem;
+}
+
+static adns_status pap_domain(adns_query qu, int serv,
+			       const byte *dgram, int dglen, int *cbyte_io, int max,
+			       char **domain_r) {
+  adns_status st;
+  char *dm;
+  
+  st= adns__parse_domain(qu->ads,serv,qu,&qu->vb,qu->flags,
+			 dgram,dglen, cbyte_io,max);
+  if (st) return st;
+  if (!qu->vb.used) return adns_s_invaliddata;
+
+  dm= adns__alloc_interim(qu,qu->vb.used+1);
+  if (!dm) return adns_s_nolocalmem;
+
+  dm[qu->vb.used]= 0;
+  memcpy(dm,qu->vb.buf,qu->vb.used);
+  
+  *domain_r= dm;
+  return adns_s_ok;
 }
 
 static adns_status pa_domain_raw(adns_query qu, int serv,
 				 const byte *dgram, int dglen, int cbyte, int max,
-				 void *store_r) {
-  char **dpp= store_r;
+				 void *datap) {
+  char **rrp= datap;
   adns_status st;
-  vbuf vb;
-  char *dp;
 
-  adns__vbuf_init(&vb);
-  st= adns__parse_domain(qu->ads,serv,qu,&vb,qu->flags,
-			 dgram,dglen, &cbyte,max);
-  if (st) goto x_error;
-
-  dp= adns__alloc_interim(qu,vb.used+1);
-  if (!dp) { st= adns_s_nolocalmem; goto x_error; }
-
-  dp[vb.used]= 0;
-  memcpy(dp,vb.buf,vb.used);
-
-  if (cbyte != max) { st= adns_s_invaliddata; goto x_error; }
-
-  st= adns_s_ok;
-  *dpp= dp;
-
- x_error:
-  adns__vbuf_free(&vb);
-  return st;
+  st= pap_domain(qu,serv,dgram,dglen,&cbyte,max,rrp);
+  if (st) return st;
+  
+  if (cbyte != max) return adns_s_invaliddata;
+  return adns_s_ok;
 }
 
-static void mf_str(adns_query qu, void *data) {
-  char **ddp= data;
+static adns_status pa_mx_raw(adns_query qu, int serv,
+			     const byte *dgram, int dglen, int cbyte, int max,
+			     void *datap) {
+  adns_rr_intstr *rrp= datap;
+  adns_status st;
+  int pref;
 
-  adns__makefinal_str(qu,ddp);
+  if (cbyte+2 > max) return adns_s_invaliddata;
+  GET_W(cbyte,pref);
+  rrp->i= pref;
+  st= pap_domain(qu,serv,dgram,dglen,&cbyte,max,&rrp->str);
+  if (st) return st;
+  
+  if (cbyte != max) return adns_s_invaliddata;
+  return adns_s_ok;
 }
 
-static int csp_qstring(vbuf *vb, const char *dp) {
+static int di_mx_raw(const void *datap_a, const void *datap_b) {
+  const adns_rr_intstr *ap= datap_a, *bp= datap_b;
+
+  if (ap->i < bp->i) return 0;
+  if (ap->i > bp->i) return 1;
+  return 0;
+}
+
+static adns_status pa_txt(adns_query qu, int serv,
+			  const byte *dgram, int dglen, int startbyte, int max,
+			  void *datap) {
+  adns_rr_intstr **rrp= datap, *table, *te;
+  int ti, tc, cbyte, l;
+
+  cbyte= startbyte;
+  if (cbyte >= max) return adns_s_invaliddata;
+  tc= 0;
+  while (cbyte < max) {
+    GET_B(cbyte,l);
+    cbyte+= l;
+  }
+  if (cbyte != max) return adns_s_invaliddata;
+
+  table= adns__alloc_interim(qu,sizeof(*table)*(tc+1));
+  if (!table) return adns_s_nolocalmem;
+
+  for (cbyte=startbyte, ti=0, te=table; ti<tc; ti++, te++) {
+    GET_B(cbyte,l);
+    te->str= adns__alloc_interim(qu,l+1);
+    if (!te->str) return adns_s_nolocalmem;
+    te->str[l]= 0;
+    memcpy(te->str,dgram+cbyte,l);
+    te->i= l;
+  }
+  assert(cbyte == max);
+
+  te->i= -1;
+  te->str= 0;
+  
+  *rrp= table;
+  return adns_s_ok;
+}
+
+static int csp_textdata(vbuf *vb, const char *dp, int len) {
   unsigned char ch;
   char buf[10];
+  int cn;
 
   if (!adns__vbuf_append(vb,"\"",1)) return 0;
 
-  while ((ch= *dp++)) {
+  for (cn=0; cn<len; cn++) {
+    ch= *dp++;
     if (ch >= 32 && ch <= 126 && ch != '"' && ch != '\\') {
       if (!adns__vbuf_append(vb,&ch,1)) return 0;
     } else {
@@ -98,17 +170,72 @@ static int csp_qstring(vbuf *vb, const char *dp) {
   return 1;
 }
 
-static adns_status cs_str(vbuf *vb, const void *data) {
-  const char *const *dpp= data;
+static int csp_qstring(vbuf *vb, const char *dp) {
+  return csp_textdata(vb, dp, strlen(dp));
+}
 
-  return csp_qstring(vb,*dpp) ? adns_s_ok : adns_s_nolocalmem;
+static adns_status cs_str(vbuf *vb, const void *datap) {
+  const char *const *rrp= datap;
+
+  return csp_qstring(vb,*rrp) ? adns_s_ok : adns_s_nolocalmem;
+}
+
+static adns_status cs_intstr(vbuf *vb, const void *datap) {
+  const adns_rr_intstr *rrp= datap;
+  char buf[10];
+
+  sprintf(buf,"%u ",rrp->i);
+  return (adns__vbuf_appendstr(vb,buf) &&
+	  csp_qstring(vb,rrp->str)) ? adns_s_ok : adns_s_nolocalmem;
+}
+
+static adns_status cs_manyistr(vbuf *vb, const void *datap) {
+  const adns_rr_intstr *const *rrp= datap;
+  const adns_rr_intstr *current;
+  int spc;
+
+  for (spc=0, current= *rrp; current->i >= 0; current++) {
+    if (spc)
+      if (!adns__vbuf_append(vb," ",1)) goto x_nomem;
+    if (!csp_textdata(vb,current->str,current->i)) goto x_nomem;
+  }
+  return adns_s_ok;
+
+ x_nomem:
+  return adns_s_nolocalmem;
+}
+
+static void mf_str(adns_query qu, void *datap) {
+  char **rrp= datap;
+
+  adns__makefinal_str(qu,rrp);
+}
+
+static void mf_intstr(adns_query qu, void *datap) {
+  adns_rr_intstr *rrp= datap;
+
+  adns__makefinal_str(qu,&rrp->str);
+}
+
+static void mf_manyistr(adns_query qu, void *datap) {
+  adns_rr_intstr **rrp= datap;
+  adns_rr_intstr *te, *table;
+  void *tablev;
+  int tc;
+
+  for (tc=0, te= *rrp; te->i >= 0; te++, tc++);
+  tablev= *rrp;
+  adns__makefinal_block(qu,&tablev,sizeof(*te)*(tc+1));
+  *rrp= table= tablev;
+  for (te= *rrp; te->i >= 0; te++)
+    adns__makefinal_str(qu,&te->str);
 }
 
 static void mf_flat(adns_query qu, void *data) { }
 
 #define TYPE_SF(size,func,cp,free) size, pa_##func, mf_##free, cs_##cp
 #define TYPE_SN(size,func,cp)      size, pa_##func, mf_flat, cs_##cp
-#define TYPESZ_M(member)           (sizeof(((adns_answer*)0)->rrs.member))
+#define TYPESZ_M(member)           (sizeof(*((adns_answer*)0)->rrs.member))
 #define TYPE_MF(memb,parse)        TYPE_SF(TYPESZ_M(memb),parse,memb,memb)
 #define TYPE_MN(memb,parse)        TYPE_SN(TYPESZ_M(memb),parse,memb)
 
@@ -124,27 +251,33 @@ static void mf_flat(adns_query qu, void *data) { }
 
 static const typeinfo typeinfos[] = {
   /* Must be in ascending order of rrtype ! */
-  /* rr type code   rrt     fmt        mem.mgmt  member      parser        */
+  /* rr type code   rrt     fmt      mem.mgmt  member      parser         comparer */
   
-  { adns_r_a,       "A",     0,        FLAT_MEMB(inaddr),    pa_inaddr      },
-  { adns_r_ns_raw,  "NS",   "raw",     DEEP_MEMB(str),       pa_domain_raw  },
-  { adns_r_cname,   "CNAME", 0,        DEEP_MEMB(str),       pa_domain_raw  },
+  { adns_r_a,       "A",     0,      FLAT_MEMB(inaddr),    pa_inaddr,     di_inaddr  },
+  { adns_r_ns_raw,  "NS",   "raw",   DEEP_MEMB(str),       pa_domain_raw, 0          },
+  { adns_r_cname,   "CNAME", 0,      DEEP_MEMB(str),       pa_domain_raw, 0          },
 #if 0 /*fixme*/	    	                    	       	  		   
-  { adns_r_soa_raw, "SOA",  "raw",     DEEP_MEMB(soa),       pa_soa         },
+  { adns_r_soa_raw, "SOA",  "raw",   DEEP_MEMB(soa),       pa_soa,        0          },
 #endif
-  { adns_r_ptr_raw, "PTR",  "raw",     DEEP_MEMB(str),       pa_domain_raw  },
+  { adns_r_ptr_raw, "PTR",  "raw",   DEEP_MEMB(str),       pa_domain_raw, 0          },
+#if 0 /*fixme*/	    	                    	       	  		   
+  { adns_r_hinfo,   "HINFO", 0,      DEEP_MEMB(strpair),   pa_hinfo,      0          },
+#endif
+  { adns_r_mx_raw,  "MX",   "raw",   DEEP_MEMB(intstr),    pa_mx_raw,     di_mx_raw  },
+  { adns_r_txt,     "TXT",   0,      DEEP_MEMB(manyistr),  pa_txt,        0          },
+#if 0 /*fixme*/	    	                    	       	  		   
+  { adns_r_rp_raw,  "RP",   "raw",   DEEP_MEMB(strpair),   pa_rp,         0          },
+#endif
+#if 0 /*fixme*/	    	                    	       	  		   
+   		      	                                  		   
+  { adns_r_ns,      "NS", "+addr",   DEEP_MEMB(dmaddr),    pa_dmaddr,     di_dmaddr  },
+  { adns_r_ptr,     "PTR","checked", DEEP_MEMB(str),       pa_ptr,        0          },
+  { adns_r_mx,      "MX", "+addr",   DEEP_MEMB(intdmaddr), pa_mx,         di_mx      },
+   		      	                                  		   
+#endif
 #if 0 /*fixme*/
-  { adns_r_hinfo,   "HINFO", 0,        DEEP_MEMB(strpair),   pa_hinfo       },
-  { adns_r_mx_raw,  "MX",   "raw",     DEEP_MEMB(intstr),    pa_mx_raw      },
-  { adns_r_txt,     "TXT",   0,        DEEP_MEMB(manystr),   pa_txt         },
-  { adns_r_rp_raw,  "RP",   "raw",     DEEP_MEMB(strpair),   pa_rp          },
-   		      	                                  		   
-  { adns_r_ns,      "NS",   "+addr",   DEEP_MEMB(dmaddr),    pa_dmaddr      },
-  { adns_r_ptr,     "PTR",  "checked", DEEP_MEMB(str),       pa_ptr         },
-  { adns_r_mx,      "MX",   "+addr",   DEEP_MEMB(intdmaddr), pa_mx          },
-   		      	                                  		   
-  { adns_r_soa,     "SOA",  "822",     DEEP_MEMB(soa),       pa_soa         },
-  { adns_r_rp,      "RP",   "822",     DEEP_MEMB(strpair),   pa_rp          },
+  { adns_r_soa,     "SOA",  "822",   DEEP_MEMB(soa),       pa_soa,        0          },
+  { adns_r_rp,      "RP",   "822",   DEEP_MEMB(strpair),   pa_rp,         0          },
 #endif
 };
 

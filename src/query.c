@@ -164,10 +164,7 @@ static void *alloc_common(adns_query qu, size_t sz) {
   if (!sz) return qu; /* Any old pointer will do */
   assert(!qu->final_allocspace);
   an= malloc(MEM_ROUND(MEM_ROUND(sizeof(*an)) + sz));
-  if (!an) {
-    adns__query_fail(qu,adns_s_nolocalmem);
-    return 0;
-  }
+  if (!an) return 0;
   an->next= qu->allocations;
   qu->allocations= an;
   return (byte*)an + MEM_ROUND(sizeof(*an));
@@ -211,10 +208,19 @@ void adns__query_done(adns_query qu) {
   allocnode *an, *ann;
   int i;
 
-  qu->answer= ans= realloc(qu->answer,
-			   MEM_ROUND(MEM_ROUND(sizeof(*ans)) +
-				     qu->interim_allocd));
-  qu->final_allocspace= (byte*)qu->answer + MEM_ROUND(sizeof(*ans));
+  if (qu->answer->status == adns_s_nolocalmem && !qu->interim_allocd) {
+    ans= qu->answer;
+  } else {
+    ans= realloc(qu->answer,
+		 MEM_ROUND(MEM_ROUND(sizeof(*ans)) + qu->interim_allocd));
+    if (!ans) {
+      qu->answer->cname= 0;
+      adns__query_fail(qu, adns_s_nolocalmem);
+      return;
+    }
+    qu->answer= ans;
+  }
+  qu->final_allocspace= (byte*)ans + MEM_ROUND(sizeof(*ans));
 
   adns__makefinal_str(qu,&ans->cname);
   if (ans->nrrs) {

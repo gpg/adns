@@ -96,6 +96,7 @@ typedef enum {
  */
 
 typedef enum {
+  /* fixme: think about error codes */
   adns_s_ok,
   adns_s_timeout,
   adns_s_nolocalmem,
@@ -137,6 +138,11 @@ typedef struct {
 } adns_rr_intdmaddr;
 
 typedef struct {
+  /* Used both for mx_raw, in which case i is the preference and str the domain,
+   * and for txt, in which case each entry has i for the `text' length,
+   * and str for the data (which will have had an extra nul appended
+   * so that if it was plain text it is now a null-terminated string).
+   */
   int i;
   char *str;
 } adns_rr_intstr;
@@ -155,10 +161,10 @@ typedef struct {
     void *untyped;
     unsigned char *bytes;
     char *(*str);                  /* ns_raw, cname, ptr, ptr_raw */
-    char *(**manystr);             /* txt (list is null-terminated) */
+    adns_rr_intstr *(*manyistr);   /* txt (list of strings ends with i=-1, str=0) */
     struct in_addr *inaddr;        /* a */
     adns_rr_dmaddr *dmaddr;        /* ns */
-    adns_rr_strpair *strpair;      /* hinfo, rp, rp_raw */
+    adns_rr_strpair *strpair;      /* hinfo ??fixme, rp, rp_raw */
     adns_rr_intdmaddr *intdmaddr;  /* mx */
     adns_rr_intstr *intstr;        /* mx_raw */
     adns_rr_soa *soa;              /* soa, soa_raw */

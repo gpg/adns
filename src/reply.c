@@ -20,24 +20,25 @@
  *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
  */
 
-#include "internal.h"
+#include <stdlib.h>
+#include <string.h>
 
-static void cname_recurse(adns_query qu, adns_queryflags xflags) {
-  adns__diag(qu->ads,-1,qu,"cname following not implemented fixme");
-  adns__query_fail(qu,adns_s_notimplemented);
-}
+#include "internal.h"
     
 void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
 		     int serv, struct timeval now) {
   int cbyte, rrstart, wantedrrs, rri, foundsoa, foundns, cname_here;
   int id, f1, f2, qdcount, ancount, nscount, arcount;
   int flg_ra, flg_rd, flg_tc, flg_qr, opcode;
-  int rrtype, rrclass, rdlength, rdstart, ownermatched, l;
+  int rrtype, rrclass, rdlength, rdstart;
   int anstart, nsstart, arstart;
+  int ownermatched, l, nrrs, place;
+  const typeinfo *typei;
   adns_query qu, nqu;
   dns_rcode rcode;
   adns_status st;
   vbuf tempvb;
+  byte *newquery, *rrsdata;
   
   if (dglen<DNS_HDRSIZE) {
     adns__diag(ads,serv,0,"received datagram too short for message header (%d)",dglen);
@@ -55,7 +56,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
 
   flg_qr= f1&0x80;
   opcode= (f1&0x78)>>3;
-  flg_tc= f1&0x20;
+  flg_tc= f1&0x02;
   flg_rd= f1&0x01;
   flg_ra= f2&0x80;
   rcode= (f2&0x0f);
@@ -154,11 +155,9 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
       }
       continue;
     }
-    if (rrtype == adns_r_cname &&
+    if (rrtype == adns_r_cname && /* fixme - implement adns_qf_nocname */
 	(qu->typei->type & adns__rrt_typemask) != adns_r_cname) {
       if (!qu->cname_dgram) { /* Ignore second and subsequent CNAMEs */
-	qu->cname_dgram= adns__alloc_mine(qu,dglen);
-	if (!qu->cname_dgram) return;
 	qu->cname_begin= rdstart;
 	qu->cname_dglen= dglen;
 	st= adns__parse_domain(ads,serv,qu, &qu->vb,qu->flags,
@@ -167,7 +166,11 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
 	if (st) { adns__query_fail(qu,st); return; }
 	l= strlen(qu->vb.buf)+1;
 	qu->answer->cname= adns__alloc_interim(qu,l);
-	if (!qu->answer->cname) return;
+	if (!qu->answer->cname) { adns__query_fail(qu,adns_s_nolocalmem); return; }
+
+	qu->cname_dgram= adns__alloc_mine(qu,dglen);
+	memcpy(qu->cname_dgram,dgram,dglen);
+
 	memcpy(qu->answer->cname,qu->vb.buf,l);
 	cname_here= 1;
 	/* If we find the answer section truncated after this point we restart
@@ -188,7 +191,11 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
     }
   }
 
-  /* If we got here then the answer section is intact. */
+  /* We defer handling truncated responses here, in case there was a CNAME
+   * which we could use.
+   */
+  if (flg_tc) goto x_truncated;
+  
   nsstart= cbyte;
 
   if (!wantedrrs) {
@@ -228,7 +235,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
      * a CNAME in this datagram then we should probably do our own CNAME
      * lookup now in the hope that we won't get a referral again.
      */
-    if (cname_here) { cname_recurse(qu,0); return; }
+    if (cname_here) goto x_restartquery;
 
     /* Bloody hell, I thought we asked for recursion ? */
     if (flg_rd) {
@@ -247,10 +254,21 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
   /* Now, we have some RRs which we wanted. */
 
   qu->answer->rrs.untyped= adns__alloc_interim(qu,qu->typei->rrsz*wantedrrs);
-  if (!qu->answer->rrs.untyped) return;
+  if (!qu->answer->rrs.untyped) { adns__query_fail(qu,adns_s_nolocalmem); return; }
 
+  typei= qu->typei;
   cbyte= anstart;
   arstart= -1;
+  rrsdata= qu->answer->rrs.bytes;
+  
+  if (typei->diff_needswap) {
+    if (!adns__vbuf_ensure(&qu->vb,typei->rrsz)) {
+      adns__query_fail(qu,adns_s_nolocalmem);
+      return;
+    }
+  }
+  nrrs= 0;
+  
   for (rri=0; rri<ancount; rri++) {
     st= adns__findrr(qu,serv, dgram,dglen,&cbyte,
 		     &rrtype,&rrclass,&rdlength,&rdstart,
@@ -260,14 +278,28 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
 	rrtype != (qu->typei->type & adns__rrt_typemask) ||
 	!ownermatched)
       continue;
-    assert(qu->answer->nrrs<wantedrrs);
-    st= qu->typei->parse(qu,serv,
-			 dgram,dglen, rdstart,rdstart+rdlength,
-			 qu->answer->rrs.bytes+qu->answer->nrrs*qu->typei->rrsz);
+    st= typei->parse(qu,serv, dgram,dglen, rdstart,rdstart+rdlength,
+		     rrsdata+nrrs*typei->rrsz);
     if (st) { adns__query_fail(qu,st); return; }
     if (rdstart==-1) goto x_truncated;
-    qu->answer->nrrs++;
+
+    if (typei->diff_needswap) {
+      for (place= nrrs;
+	   place>0 && typei->diff_needswap(rrsdata+(place-1)*typei->rrsz,
+					   rrsdata+nrrs*typei->rrsz);
+	   place--);
+      if (place != nrrs) {
+	memcpy(qu->vb.buf,rrsdata+nrrs*typei->rrsz,typei->rrsz);
+	memmove(rrsdata+(place+1)*typei->rrsz,
+		rrsdata+place*typei->rrsz,
+		(nrrs-place)*typei->rrsz);
+	memcpy(rrsdata+place*typei->rrsz,qu->vb.buf,typei->rrsz);
+      }
+    }
+    nrrs++;
   }
+  assert(nrrs==wantedrrs);
+  qu->answer->nrrs= nrrs;
 
   /* This may have generated some child queries ... */
   if (qu->children.head) {
@@ -280,13 +312,30 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
   return;
 
  x_truncated:
+  
   if (!flg_tc) {
     adns__diag(ads,serv,qu,"server sent datagram which points outside itself");
     adns__query_fail(qu,adns_s_serverfaulty);
     return;
   }
-  if (qu->cname_dgram) { cname_recurse(qu,adns_qf_usevc); return; }
-  adns__reset_cnameonly(qu);
   qu->flags |= adns_qf_usevc;
+  
+ x_restartquery:
+  
+  if (qu->cname_dgram) {
+    st= adns__mkquery_frdgram(qu->ads,&qu->vb,&qu->id,
+			      qu->cname_dgram, qu->cname_dglen, qu->cname_begin,
+			      qu->typei->type, qu->flags);
+    if (st) { adns__query_fail(qu,st); return; }
+    
+    newquery= realloc(qu->query_dgram,qu->vb.used);
+    if (!newquery) { adns__query_fail(qu,adns_s_nolocalmem); return; }
+    
+    qu->query_dgram= newquery;
+    qu->query_dglen= qu->vb.used;
+    memcpy(newquery,qu->vb.buf,qu->vb.used);
+  }
+  
+  adns__reset_cnameonly(qu);
   adns__query_udp(qu,now);
 }

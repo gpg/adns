@@ -39,26 +39,54 @@ static const adns_rrtype defaulttypes[]= {
   adns_r_ns_raw,
   adns_r_cname,
   adns_r_ptr_raw,
+  adns_r_mx_raw,
+  adns_r_rp_raw,
   adns_r_txt,
   adns_r_none
 };
 
-int main(int argc, const char *const *argv) {
+static void dumptype(adns_status ri, const char *rrtn, const char *fmtn) {
+  fprintf(stdout, "%s(%s)%s%s",
+	  ri ? "?" : rrtn, ri ? "?" : fmtn ? fmtn : "-",
+	  ri ? " " : "", ri ? adns_strerror(ri) : "");
+}
+
+int main(int argc, char *const *argv) {
   adns_state ads;
   adns_query *qus, qu;
   adns_answer *ans;
-  const char *rrtn, *fmtn;
-  char *show;
-  int len, i, qc, qi, tc, ti;
+  const char *rrtn, *fmtn, *const *domlist;
+  char *show, *cp;
+  int len, i, qc, qi, tc, ti, ch;
   adns_status r, ri;
   const adns_rrtype *types;
+  adns_rrtype *types_a;
 
-  if (argv[0] && argv[1]) argv++;
-  else argv= defaultargv;
+  if (argv[0] && argv[1] && argv[1][0] == ':') {
+    for (cp= argv[1]+1, tc=1; (ch= *cp); cp++)
+      if (ch==',') tc++;
+    types_a= malloc(sizeof(*types_a)*tc);
+    if (!types_a) { perror("malloc types"); exit(3); }
+    for (cp= argv[1]+1, ti=0; ti<tc; ti++) {
+      types_a[ti]= strtoul(cp,&cp,10);
+      if ((ch= *cp)) {
+	if (ch != ':') {
+	  fputs("usage: dtest [:<typenum>,...] [<domain> ...]",stderr);
+	  exit(4);
+	}
+	cp++;
+      }
+    }
+    types= types_a;
+    argv++;
+  } else {
+    types= defaulttypes;
+  }
+  
+  if (argv[0] && argv[1]) domlist= (const char *const*)argv+1;
+  else domlist= defaultargv;
 
-  types= defaulttypes;
-
-  for (qc=0; qc[argv]; qc++);
+  for (qc=0; qc[domlist]; qc++);
   for (tc=0; types[tc] != adns_r_none; tc++);
   qus= malloc(sizeof(qus)*qc*tc);
   if (!qus) { perror("malloc qus"); exit(3); }
@@ -68,14 +96,17 @@ int main(int argc, const char *const *argv) {
 
   for (qi=0; qi<qc; qi++) {
     for (ti=0; ti<tc; ti++) {
-      fprintf(stdout,"%s type %d",argv[qi],types[ti]);
-      r= adns_submit(ads,argv[qi],types[ti],0,0,&qus[qi*tc+ti]);
+      fprintf(stdout,"%s type %d",domlist[qi],types[ti]);
+      r= adns_submit(ads,domlist[qi],types[ti],0,0,&qus[qi*tc+ti]);
       if (r == adns_s_notimplemented) {
 	fprintf(stdout," not implemented\n");
 	qus[qi*tc+ti]= 0;
       } else if (r) {
 	failure("submit",r);
       } else {
+	ri= adns_rr_info(types[ti], &rrtn,&fmtn,0, 0,0);
+	putchar(' ');
+	dumptype(ri,rrtn,fmtn);
 	fprintf(stdout," submitted\n");
       }
     }
@@ -89,11 +120,9 @@ int main(int argc, const char *const *argv) {
       if (r) failure("wait",r);
 
       ri= adns_rr_info(ans->type, &rrtn,&fmtn,&len, 0,0);
-      fprintf(stdout, "%s type %s(%s)%s%s: ",
-	      argv[qi],
-	      ri ? "?" : rrtn, ri ? "?" : fmtn ? fmtn : "-",
-	      ri ? " " : "", ri ? adns_strerror(ri) : "");
-      fprintf(stdout, "%s; nrrs=%d; cname=%s\n",
+      fprintf(stdout, "%s type ", domlist[qi]);
+      dumptype(ri,rrtn,fmtn);
+      fprintf(stdout, ": %s; nrrs=%d; cname=%s\n",
 	      adns_strerror(ans->status),
 	      ans->nrrs, ans->cname ? ans->cname : "$");
       if (ans->nrrs) {
