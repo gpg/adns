@@ -156,7 +156,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
       }
       continue;
     }
-    if (rrtype == adns_r_cname && /* fixme - implement adns_qf_nocname */
+    if (rrtype == adns_r_cname &&
 	(qu->typei->type & adns__rrt_typemask) != adns_r_cname) {
       if (qu->flags & adns_qf_cname_forbid) {
 	adns__query_fail(qu,adns_s_prohibitedcname);
