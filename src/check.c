@@ -83,11 +83,13 @@ static void checkc_global(adns_state ads) {
   case server_connecting:
     assert(ads->tcpsocket >= 0);
   case server_disconnected: /* fall through */
-    assert(!ads->tcprecv.used);
     assert(!ads->tcpsend.used);
+    assert(!ads->tcprecv.used);
+    assert(!ads->tcprecv_skip);
     break;
   case server_ok:
     assert(ads->tcpsocket >= 0);
+    assert(ads->tcprecv_skip <= ads->tcprecv.used);
     break;
   default:
     assert(!"ads->tcpstate value");

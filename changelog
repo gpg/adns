@@ -13,12 +13,14 @@ adns (0.5) unstable; urgency=medium
   * Better usage messages (and no default query domain) for adnstest.
   
   Bugfixes:
+  * Do not invoke __autosys indirectly from __procdgram (result: coredump
+    usually in memmove, unless adns_if_noautosys was used).
+  * Do not scramble innards when a query on the output queue is cancelled.
   * Mailboxes containing spaces in their names are quoted.
   * adns_rr_hostaddr naddrs is -1 on temporary failure (as documented).
   * Reject TXT RRs with no strings.
-  * Do not scramble innards when a query on the output queue is cancelled.
   * Correct error messages for qname CNAME foo, foo CNAME bar.
-  * Fixed typo in adns.h.
+  * Fixed typos in adns.h.
 
   General improvements:
   * Promise not to change fds in adns_beforepoll (if now is specified).

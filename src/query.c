@@ -105,7 +105,6 @@ static void query_submit(adns_state ads, adns_query qu,
   memcpy(qu->query_dgram,qu->vb.buf,qu->vb.used);
   
   adns__query_send(qu,now);
-  adns__autosys(ads,now);
 }
 
 adns_status adns__internal_submit(adns_state ads, adns_query *query_r,
@@ -243,6 +242,7 @@ int adns_submit(adns_state ads,
     }
     query_simple(ads,qu, owner,ol, typei,flags, now);
   }
+  adns__autosys(ads,now);
   adns__consistency(ads,qu,cc_entex);
   return 0;
 

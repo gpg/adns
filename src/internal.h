@@ -43,6 +43,7 @@ typedef unsigned char byte;
 #include <sys/time.h>
 
 #include "adns.h"
+#include "dlist.h"
 
 /* Configuration and constants */
 
@@ -279,7 +280,7 @@ struct adns__state {
   adns_query forallnext;
   int nextid, udpsocket, tcpsocket;
   vbuf tcpsend, tcprecv;
-  int nservers, nsortlist, nsearchlist, searchndots, tcpserver;
+  int nservers, nsortlist, nsearchlist, searchndots, tcpserver, tcprecv_skip;
   enum adns__tcpstate { server_disconnected, server_connecting, server_ok } tcpstate;
   struct timeval tcptimeout;
   struct sigaction stdsigpipe;
@@ -631,7 +632,10 @@ void adns__tcp_closenext(adns_state ads);
 void adns__tcp_tryconnect(adns_state ads, struct timeval now);
 
 void adns__autosys(adns_state ads, struct timeval now);
-/* Make all the system calls we want to if the application wants us to. */
+/* Make all the system calls we want to if the application wants us to.
+ * Must not be called from within adns internal processing functions,
+ * lest we end up in recursive descent !
+ */
 
 void adns__must_gettimeofday(adns_state ads, const struct timeval **now_io,
 			     struct timeval *tv_buf);
@@ -679,28 +683,6 @@ static inline int errno_resources(int e) { return e==ENOMEM || e==ENOBUFS; }
 #define MEM_ROUND(sz) \
   (( ((sz)+sizeof(union maxalign)-1) / sizeof(union maxalign) ) \
    * sizeof(union maxalign) )
-
-#define LIST_INIT(list) ((list).head= (list).tail= 0)
-#define LINK_INIT(link) ((link).next= (link).back= 0)
-
-#define LIST_UNLINK_PART(list,node,part) \
-  do { \
-    if ((node)->part back) (node)->part back->part next= (node)->part next; \
-      else                                  (list).head= (node)->part next; \
-    if ((node)->part next) (node)->part next->part back= (node)->part back; \
-      else                                  (list).tail= (node)->part back; \
-  } while(0)
-
-#define LIST_LINK_TAIL_PART(list,node,part) \
-  do { \
-    (node)->part next= 0; \
-    (node)->part back= (list).tail; \
-    if ((list).tail) (list).tail->part next= (node); else (list).head= (node); \
-    (list).tail= (node); \
-  } while(0)
-
-#define LIST_UNLINK(list,node) LIST_UNLINK_PART(list,node,)
-#define LIST_LINK_TAIL(list,node) LIST_LINK_TAIL_PART(list,node,)
 
 #define GETIL_B(cb) (((dgram)[(cb)++]) & 0x0ff)
 #define GET_B(cb,tv) ((tv)= GETIL_B((cb)))

@@ -48,7 +48,7 @@ void adns__tcp_closenext(adns_state ads) {
   serv= ads->tcpserver;
   close(ads->tcpsocket);
   ads->tcpstate= server_disconnected;
-  ads->tcprecv.used= ads->tcpsend.used= 0;
+  ads->tcprecv.used= ads->tcprecv_skip= ads->tcpsend.used= 0;
   ads->tcpserver= (serv+1)%ads->nservers;
 }
 
@@ -97,6 +97,7 @@ void adns__tcp_tryconnect(adns_state ads, struct timeval now) {
     assert(ads->tcpstate == server_disconnected);
     assert(!ads->tcpsend.used);
     assert(!ads->tcprecv.used);
+    assert(!ads->tcprecv_skip);
 
     proto= getprotobyname("tcp");
     if (!proto) { adns__diag(ads,-1,0,"unable to find protocol no. for TCP !"); return; }
@@ -240,7 +241,7 @@ int adns__pollfds(adns_state ads, struct pollfd pollfds_buf[MAX_POLLFDS]) {
 }
 
 int adns_processreadable(adns_state ads, int fd, const struct timeval *now) {
-  int skip, want, dgramlen, r, udpaddrlen, serv;
+  int want, dgramlen, r, udpaddrlen, serv, old_skip;
   byte udpbuf[DNS_MAXUDP];
   struct sockaddr_in udpaddr;
   
@@ -252,22 +253,26 @@ int adns_processreadable(adns_state ads, int fd, const struct timeval *now) {
     break;
   case server_ok:
     if (fd != ads->tcpsocket) break;
-    skip= 0;
+    assert(!ads->tcprecv_skip);
     for (;;) {
-      if (ads->tcprecv.used<skip+2) {
-	want= 2;
-      } else {
-	dgramlen= (ads->tcprecv.buf[skip]<<8) | ads->tcprecv.buf[skip+1];
-	if (ads->tcprecv.used<skip+2+dgramlen) {
-	  want= 2+dgramlen;
+      if (ads->tcprecv.used >= ads->tcprecv_skip+2) {
+	dgramlen= ((ads->tcprecv.buf[ads->tcprecv_skip]<<8) |
+	           ads->tcprecv.buf[ads->tcprecv_skip+1]);
+	if (ads->tcprecv.used >= ads->tcprecv_skip+2+dgramlen) {
+	  old_skip= ads->tcprecv_skip;
+	  ads->tcprecv_skip += 2+dgramlen;
+	  adns__procdgram(ads, ads->tcprecv.buf+old_skip+2,
+			  dgramlen, ads->tcpserver, 1,*now);
+	  continue;
 	} else {
-	  adns__procdgram(ads,ads->tcprecv.buf+skip+2,dgramlen,ads->tcpserver,1,*now);
-	  skip+= 2+dgramlen; continue;
+	  want= 2+dgramlen;
 	}
+      } else {
+	want= 2;
       }
-      ads->tcprecv.used -= skip;
-      memmove(ads->tcprecv.buf,ads->tcprecv.buf+skip,ads->tcprecv.used);
-      skip= 0;
+      ads->tcprecv.used -= ads->tcprecv_skip;
+      memmove(ads->tcprecv.buf,ads->tcprecv.buf+ads->tcprecv_skip,ads->tcprecv.used);
+      ads->tcprecv_skip= 0;
       if (!adns__vbuf_ensure(&ads->tcprecv,want)) { r= ENOMEM; goto xit; }
       assert(ads->tcprecv.used <= ads->tcprecv.avail);
       if (ads->tcprecv.used == ads->tcprecv.avail) continue;
@@ -345,6 +350,7 @@ int adns_processwriteable(adns_state ads, int fd, const struct timeval *now) {
   case server_connecting:
     if (fd != ads->tcpsocket) break;
     assert(ads->tcprecv.used==0);
+    assert(ads->tcprecv_skip==0);
     for (;;) {
       if (!adns__vbuf_ensure(&ads->tcprecv,1)) { r= ENOMEM; goto xit; }
       r= read(ads->tcpsocket,&ads->tcprecv.buf,1);

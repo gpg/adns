@@ -469,6 +469,7 @@ static int init_begin(adns_state *ads_r, adns_initflags flags, FILE *diagfile) {
   ads->udpsocket= ads->tcpsocket= -1;
   adns__vbuf_init(&ads->tcpsend);
   adns__vbuf_init(&ads->tcprecv);
+  ads->tcprecv_skip= 0;
   ads->nservers= ads->nsortlist= ads->nsearchlist= ads->tcpserver= 0;
   ads->searchndots= 1;
   ads->tcpstate= server_disconnected;
