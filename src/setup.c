@@ -2,33 +2,39 @@
 
 #include "adns-internal.h"
 
-static void vdebug(adns_state ads, const char *fmt, va_list al) {
-  if (!(ads->iflags & adns_if_debug)) return;
-  fputs("adns debug: ",stderr);
+void adns__vdiag(adns_state ads, adns_initflags prevent, const char *pfx,
+			int serv, const char *fmt, va_list al) {
+  if (!(ads->iflags & adns_if_debug) && (!prevent || (ads->iflags & prevent))) return;
+  if (serv>=0) {
+    fprintf(stderr,"adns%s: nameserver %s: ",pfx,inet_ntoa(ads->servers[serv].addr));
+  } else {
+    fprintf(stderr,"adns%s: ",pfx);
+  }
   vfprintf(stderr,fmt,al);
   fputc('\n',stderr);
 }
 
-void adns__debug(adns_state ads, const char *fmt, ...) {
+void adns__debug(adns_state ads, int serv, const char *fmt, ...) {
   va_list al;
 
   va_start(al,fmt);
-  vdebug(ads,fmt,al);
+  vdiag(ads," debug",0,serv,fmt,al);
   va_end(al);
 }
 
-static void vdiag(adns_state ads, const char *fmt, va_list al) {
-  if (ads->iflags & adns_if_noerrprint) return;
-  fputs("adns: ",stderr);
-  vfprintf(stderr,fmt,al);
-  fputc('\n',stderr);
-}
-
-void adns__diag(adns_state ads, const char *fmt, ...) {
+void adns__swarn(adns_state ads, int serv, const char *fmt, ...) {
   va_list al;
 
   va_start(al,fmt);
-  vdiag(ads,fmt,al);
+  vdiag(ads," warning",adns_if_noerrprint|adns_if_noserverwarn,serv,fmt,al);
+  va_end(al);
+}
+
+void adns__diag(adns_state ads, int serv, const char *fmt, ...) {
+  va_list al;
+
+  va_start(al,fmt);
+  vdiag(ads,"",adns_if_noerrprint,serv,fmt,al);
   va_end(al);
 }
 
@@ -109,9 +115,6 @@ static const struct configcommandinfo {
   { "clearnameservers",  ccf_clearnss    },
   {  0                                   }
 };
-
-static int ctype_whitespace(int c) { return c==' ' || c=='\n' || c=='\t'; }
-static int ctype_digit(int c) { return c>='0' && c<='9'; }
 
 static void readconfig(adns_state ads, const char *filename) {
   char linebuf[2000], *p, *q;

@@ -1,5 +1,7 @@
 /**/
 
+#include "adns-internal.h"
+
 static void autosys(adns_state ads, struct timeval now) {
   if (ads->iflags & adns_if_noautosys) return;
   adns_callback(ads,-1,0,0,0);
@@ -10,11 +12,21 @@ static int callb_checkfd(int maxfd, const fd_set *fds, int fd) {
          fd<maxfd && FD_ISSET(fd,fds);
 }
 
+static void tcpserver_broken(adns_state ads, const char *what, const char *why) {
+  assert(ads->tcpstate == server_connecting || ads->tcpstate == server_connected);
+  warn("nameserver %s TCP connection lost: %s: %s",
+       inet_ntoa(ads->servers[tcpserver].addr,what,why));
+  close(ads->tcpsocket);
+  ads->tcpstate= server_disconnected;
+  
+       
 int adns_callback(adns_state ads, int maxfd,
 		  const fd_set *readfds, const fd_set *writefds,
 		  const fd_set *exceptfds) {
-  int skip, dgramlen, count;
+  int skip, dgramlen, count, udpaddrlen;
   enum adns__tcpstate oldtcpstate;
+  unsigned char udpbuf[UDPMAXDGRAM];
+  struct sockaddr_in udpaddr;
 
   count= 0;
   oldtcpstate= ads->tcpstate;
@@ -27,8 +39,8 @@ int adns_callback(adns_state ads, int maxfd,
       if (ads->tcprecv.buf) {
 	r= read(ads->tcpsocket,&ads->tcprecv.buf,1);
 	if (r==0 || (r<0 && (errno==EAGAIN || errno==EWOULDBLOCK))) {
-	  diag("nameserver %s TCP connection made",
-	       inet_ntoa(ads->servers[ads->tcpserver].addr));
+	  debug("nameserver %s TCP connected",
+		inet_ntoa(ads->servers[ads->tcpserver].addr));
 	  ads->tcpstate= server_connected;
 	} else if (r>0) {
 	  tcpserver_broken(ads,"connect/read","sent data before first request");
@@ -53,11 +65,11 @@ int adns_callback(adns_state ads, int maxfd,
 	  if (ads->tcprecv.used<skip+2+dgramlen) {
 	    want= 2+dgramlen;
 	  } else {
-	    procdgram(ads,ads->tcprecv.buf+skip+2,dgramlen,-1);
+	    procdgram(ads,ads->tcprecv.buf+skip+2,dgramlen,ads->tcpserver);
 	    skip+= 2+dgramlen; continue;
 	  }
 	}
-	Ads->tcprecv.used -= skip;
+	ads->tcprecv.used -= skip;
 	memmove(ads->tcprecv.buf,ads->tcprecv.buf+skip,ads->tcprecv.used);
 	vbuf_ensure(&ads->tcprecv,want);
 	if (ads->tcprecv.used >= ads->tcprecv.avail) break;
@@ -90,39 +102,44 @@ int adns_callback(adns_state ads, int maxfd,
     }
   }
 
-  if (
-    break;
-	
-      
-	}
-	  
-  tcpserver_broken(
-		
-	    if (ads-
-	  used= 0;
-	  for (;;) {
-	  vbuf_ensure(&ads->tcprecv,2);
-	  vbuf_ensure(&ads->tcprecv,
-	  if (ads->tcprecv.avail<2) break;
-      if (ads->tcprecv.used
-      
-      if (ads->tcprecv.used<2 && ads->tcprecv.avail
-      if (ads->tcprecv.used<2 && ads->tcprecv.avail
-      r= read(ads->tcpsocket,
-      if (adns->tcprecv.used<2) {
-	if (
-	  
-  if (ads->tcpstate != server_disc) {
-    
-      
+  if (callb_checkfd(maxfd,readfds,ads->udpsocket)) {
+    count++;
+    for (;;) {
+      udpaddrlen= sizeof(udpaddr);
+      r= recvfrom(ads->udpsocket,udpbuf,sizeof(udpbuf),0,&udpaddr,&udpaddrlen);
+      if (r<0) {
+	if (!(errno == EAGAIN || errno == EWOULDBLOCK ||
+	      errno == EINTR || errno == ENOMEM || errno == ENOBUFS))
+	  warn("datagram receive error: %s",strerror(errno));
+	break;
+      }
+      if (udpaddrlen != sizeof(udpaddr)) {
+	diag("datagram received with wrong address length %d (expected %d)",
+	     udpaddrlen,sizeof(udpaddr));
+	continue;
+      }
+      if (udpaddr.sin_family != AF_INET) {
+	diag("datagram received with wrong protocol family %u (expected %u)",
+	     udpaddr.sin_family,AF_INET);
+	continue;
+      }
+      if (ntohs(udpaddr.sin_port) != NSPORT) {
+	diag("datagram received from wrong port %u (expected %u)",
+	     ntohs(udpaddr.sin_port),NSPORT);
+	continue;
+      }
+      for (serv= 0;
+	   serv < ads->nservers &&
+	     ads->servers[serv].addr.s_addr != udpaddr.sin_addr.s_addr;
+	   serv++);
+      if (serv >= ads->nservers) {
+	warn("datagram received from unknown nameserver %s",inet_ntoa(udpaddr.sin_addr));
+	continue;
+      }
+      procdgram(ads,udpbuf,r,serv);
     }
-  if (maxfd<0 || !readfds || (FD_ISSET
-      ads->
-      
-  abort(); /* FIXME */
+  }
 }
-	  diag("nameserver #%d (%s) TCP connection died: %s",
-	       inet_ntoa(ads->servers[tcpserver].addr),
 
 static void inter_maxto(struct timeval **tv_io, struct timeval *tvbuf,
 			struct timeval maxto) {
@@ -149,7 +166,7 @@ static void localresourcerr(struct timeval **tv_io, struct timeval *tvbuf,
 			    const char *syscall) {
   struct timeval tvto_lr;
   
-  diag(ads,"local system resources scarce (during %s): %s",syscall,strerror(errno));
+  warn(ads,"local system resources scarce (during %s): %s",syscall,strerror(errno));
   timerclear(&tvto_lr); timevaladd(&tvto_lr,LOCALRESOURCEMS);
   inter_maxto(tv_io, tvbuf, tvto_lr);
   return;
@@ -190,6 +207,7 @@ void adns_interest(adns_state ads, int *maxfd,
   }
 
   inter_addfd(maxfd,readfds,ads->udpsocket);
+
   switch (ads->tcpstate) {
   case server_disc:
     break;
@@ -203,7 +221,6 @@ void adns_interest(adns_state ads, int *maxfd,
   default:
     abort();
   }
-  
 }
 
 static int internal_check(adns_state ads,
@@ -237,8 +254,8 @@ int adns_wait(adns_state ads,
   for (;;) {
     r= internal_check(ads,query_io,answer_r,context_r);
     if (r && r != EWOULDBLOCK) return r;
-    FD_ZERO(&readfds); FD_ZERO(&writefds); FD_ZERO(&exceptfds);
     maxfd= 0; tvp= 0;
+    FD_ZERO(&readfds); FD_ZERO(&writefds); FD_ZERO(&exceptfds);
     adns_interest(ads,&maxfd,&readfds,&writefds,&exceptfds,&tvp,&tvbuf);
     rsel= select(maxfd,&readfds,&writefds,&exceptfds,tvp);
     if (rsel==-1) return r;

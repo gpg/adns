@@ -10,10 +10,11 @@ typedef struct adns__state *adns_state;
 typedef struct adns__query *adns_query;
 
 typedef enum {
-  adns_if_noenv=      0x0001, /* do not look at environment */
-  adns_if_noerrprint= 0x0002, /* never print output to stderr */
-  adns_if_debug=      0x0004, /* print debugging output to stderr */
-  adns_if_noautosys=  0x0008, /* do not do full flow-of-control whenever we can */
+  adns_if_noenv=        0x0001, /* do not look at environment */
+  adns_if_noerrprint=   0x0002, /* never print output to stderr (_debug overrides) */
+  adns_if_noserverwarn= 0x0004, /* do not warn to stderr about duff nameservers etc */
+  adns_if_debug=        0x0008, /* enable all output to stderr plus debug msgs*/
+  adns_if_noautosys=    0x0010, /* do not make syscalls at every opportunity */
 } adns_initflags;
 
 typedef enum {
@@ -60,23 +61,17 @@ typedef enum {
 
 typedef enum {
   adns_s_ok,
-  adns_s_notresponding,
-  adns_s_serverfailure,
+  adns_s_timeout,
   adns_s_unknownqtype,
-  adns_s_remoteerror,
   adns_s_nolocalmem,
   adns_s_max_tempfail= 99,
+  adns_s_inconsistent, /* PTR gives domain whose A does not match */
+  adns_s_badcname, /* CNAME found where actual record expected */
+  adns_s_max_misconfig= 199;
   adns_s_nxdomain,
   adns_s_norecord,
-  adns_s_inconsistent, /* for bad PTR */
   adns_s_invaliddomain
 } adns_status;
-
-/* In dereferenced answers, multiple addresses show up as multiple
- * answers with all the dm pointers being the same, with ref= adns_s_ok.
- * If no address is available then INADDR_NONE is used, and ref indicates
- * the error.
- */
 
 typedef struct {
   char *dm;
@@ -127,7 +122,7 @@ typedef struct {
  *  ands_check and _wait set *answer to 0.
  */
 
-int adns_init(adns_state *newstate_r, adns_initflags flags);
+int adns_init(adns_state *newstate_r, adns_initflags flags, FILE *diagfile/*0=>stderr*/);
 
 int adns_synchronous(adns_state ads,
 		     const char *owner,

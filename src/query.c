@@ -71,7 +71,9 @@ static adns_status mkquery(adns_state ads, const char *owner, int ol, int id,
 }
 
 void adns__quproc_tosend(adns_state ads, adns_query qu, struct timeval now) {
-  /* Query must be on the `tosend' queue, and guarantees to remove it. */
+  /* Query must be on the `tosend' queue, and guarantees to remove it.
+   * fixme: Do not send more than 512-byte udp datagrams
+   */
   struct sockaddr_in servaddr;
   int serv;
 
@@ -85,13 +87,13 @@ void adns__quproc_tosend(adns_state ads, adns_query qu, struct timeval now) {
     memset(&servaddr,0,sizeof(servaddr));
     servaddr.sin_family= AF_INET;
     servaddr.sin_addr= ads->servers[serv].addr;
-    servaddr.sin_port= htons(53);
+    servaddr.sin_port= htons(NSPORT);
     r= sendto(ads->udpsocket,qu->querymsg,qu->querylen,0,&servaddr,sizeof(servaddr));
     if (r<0 && errno == EMSGSIZE) {
       qu->nextudpserver= -1;
     } else {
       if (r<0) {
-	diag("sendto %s failed: %s",inet_ntoa(servaddr.sin_addr),strerror(errno));
+	warn("sendto %s failed: %s",inet_ntoa(servaddr.sin_addr),strerror(errno));
       }
       DLIST_UNLINK(ads->tosend,qu);
       timevaladd(&now,UDPRETRYMS);
@@ -104,6 +106,7 @@ void adns__quproc_tosend(adns_state ads, adns_query qu, struct timeval now) {
     }
   }
 
+  /* fixme: TCP queries preceded by length */
   for (;;) {
     serv= tcpserver_get(ads);
     if (serv<0) { r=0; break; }
