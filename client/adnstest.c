@@ -21,6 +21,7 @@
  */
 
 #include <stdio.h>
+#include <sys/time.h>
 #include <unistd.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -76,6 +77,7 @@ int main(int argc, char *const *argv) {
   int len, i, qc, qi, tc, ti, ch;
   adns_status r, ri;
   const adns_rrtype *types;
+  struct timeval now;
   adns_rrtype *types_a;
 
   if (argv[0] && argv[1] && argv[1][0] == '/') {
@@ -146,12 +148,15 @@ int main(int argc, char *const *argv) {
       r= adns_wait(ads,&qu,&ans,0);
       if (r) failure("wait",r);
 
+      if (gettimeofday(&now,0)) { perror("gettimeofday"); exit(3); }
+      
       ri= adns_rr_info(ans->type, &rrtn,&fmtn,&len, 0,0);
       fprintf(stdout, "%s type ", domlist[qi]);
       dumptype(ri,rrtn,fmtn);
-      fprintf(stdout, ": %s; nrrs=%d; cname=%s\n",
+      fprintf(stdout, ": %s; nrrs=%d; cname=%s; ttl=%ld\n",
 	      adns_strerror(ans->status),
-	      ans->nrrs, ans->cname ? ans->cname : "$");
+	      ans->nrrs, ans->cname ? ans->cname : "$",
+	      (long)ans->expires - (long)now.tv_sec);
       if (ans->nrrs) {
 	assert(!ri);
 	for (i=0; i<ans->nrrs; i++) {

@@ -40,11 +40,14 @@ ALLOBJS=	$(HARNLOBJS) dtest.o hrecord.o hplayback.o hcommon.o
 check:		$(TARGETS)
 		./checkall
 
-hrecord:	$(srcdir)/../client/adnstest.o hrecord.o hcommon.o $(HARNLOBJS)
-hplayback:	$(srcdir)/../client/adnstest.o hplayback.o hcommon.o $(HARNLOBJS)
+hrecord:	adnstest_c.o hrecord.o hcommon.o $(HARNLOBJS)
+hplayback:	adnstest_c.o hplayback.o hcommon.o $(HARNLOBJS)
 
 %_d.o:		$(srcdir)/../src/%.c
 		$(CC) $(HCPPFLAGS) -c -g -o $@ $<
+
+%_c.o:		$(srcdir)/../client/%.c
+		$(CC) $(HCPPFLAGS) -I $(srcdir)/../src -c -g -o $@ $<
 
 $(ALLOBJS):	$(srcdir)/../src/adns.h $(srcdir)/../src/internal.h harness.h
 

@@ -195,6 +195,7 @@ typedef struct {
   adns_status status;
   char *cname; /* always NULL if query was for CNAME records */
   adns_rrtype type; /* guaranteed to be same as in query */
+  time_t expires; /* expiry time, defined only if _s_ok, nxdomain or nodata. NOT TTL! */
   int nrrs, rrsz;
   union {
     void *untyped;
@@ -268,8 +269,8 @@ int adns_wait(adns_state ads,
 	      adns_query *query_io,
 	      adns_answer **answer_r,
 	      void **context_r);
-/* fixme: include TTL in answer somehow */
 /* fixme: easy way to get lists of fd's */
+/* fixme: minor cache */
 
 void adns_cancel(adns_query query);
 

@@ -381,11 +381,12 @@ static adns_status pap_findaddrs(const parseinfo *pai, adns_rr_hostaddr *ha,
 				 int *cbyte_io, int count, int dmstart) {
   int rri, naddrs;
   int type, class, rdlen, rdstart, ownermatched;
+  unsigned long ttl;
   adns_status st;
   
   for (rri=0, naddrs=-1; rri<count; rri++) {
     st= adns__findrr_anychk(pai->qu, pai->serv, pai->dgram, pai->dglen, cbyte_io,
-			    &type, &class, &rdlen, &rdstart,
+			    &type, &class, &ttl, &rdlen, &rdstart,
 			    pai->dgram, pai->dglen, dmstart, &ownermatched);
     if (st) return st;
     if (!ownermatched || class != DNS_CLASS_IN || type != adns_r_a) {
@@ -395,6 +396,7 @@ static adns_status pap_findaddrs(const parseinfo *pai, adns_rr_hostaddr *ha,
       naddrs= 0;
     }
     if (!adns__vbuf_ensure(&pai->qu->vb, (naddrs+1)*sizeof(adns_rr_addr))) R_NOMEM;
+    adns__update_expires(pai->qu,ttl,pai->now);
     st= pa_addr(pai, rdstart,rdstart+rdlen,
 		pai->qu->vb.buf + naddrs*sizeof(adns_rr_addr));
     if (st) return st;

@@ -44,6 +44,7 @@ typedef unsigned char byte;
 #define UDPRETRYMS 2000
 #define TCPMS 30000
 #define LOCALRESOURCEMS 20
+#define MAXTTLBELIEVE (7*86400) /* any TTL > 7 days is capped */
 
 #define DNS_PORT 53
 #define DNS_MAXUDP 512
@@ -181,6 +182,7 @@ struct adns__query {
   int udpnextserver;
   unsigned long udpsent, tcpfailed; /* bitmap indexed by server */
   struct timeval timeout;
+  time_t expires; /* Earliest expiry time of any record we used. */
 
   qcontext ctx;
 
@@ -379,6 +381,10 @@ void adns__transfer_interim(adns_query from, adns_query to, void *block, size_t 
  *
  * It is legal to call adns__transfer_interim with a null pointer; this
  * has no effect.
+ *
+ * _transfer_interim also ensures that the expiry time of the `to' query
+ * is no later than that of the `from' query, so that child queries'
+ * TTLs get inherited by their parents.
  */
 
 void *adns__alloc_mine(adns_query qu, size_t sz);
@@ -478,16 +484,17 @@ adns_status adns__parse_domain(adns_state ads, int serv, adns_query qu,
 
 adns_status adns__findrr(adns_query qu, int serv,
 			 const byte *dgram, int dglen, int *cbyte_io,
-			 int *type_r, int *class_r, int *rdlen_r, int *rdstart_r,
+			 int *type_r, int *class_r, unsigned long *ttl_r,
+			 int *rdlen_r, int *rdstart_r,
 			 int *ownermatchedquery_r);
 /* Finds the extent and some of the contents of an RR in a datagram
  * and does some checks.  The datagram is *dgram, length dglen, and
  * the RR starts at *cbyte_io (which is updated afterwards to point
  * to the end of the RR).
  *
- * The type, class and RRdata length and start are returned iff
- * the corresponding pointer variables are not null.  type_r and
- * class_r may not be null.
+ * The type, class, TTL and RRdata length and start are returned iff
+ * the corresponding pointer variables are not null.  type_r, class_r
+ * and ttl_r may not be null.  The TTL will be capped.
  *
  * If ownermatchedquery_r != 0 then the owner domain of this
  * RR will be compared with that in the query (or, if the query
@@ -506,7 +513,8 @@ adns_status adns__findrr(adns_query qu, int serv,
 
 adns_status adns__findrr_anychk(adns_query qu, int serv,
 				const byte *dgram, int dglen, int *cbyte_io,
-				int *type_r, int *class_r, int *rdlen_r, int *rdstart_r,
+				int *type_r, int *class_r, unsigned long *ttl_r,
+				int *rdlen_r, int *rdstart_r,
 				const byte *eo_dgram, int eo_dglen, int eo_cbyte,
 				int *eo_matched_r);
 /* Like adns__findrr_checked, except that the datagram and
@@ -521,6 +529,11 @@ adns_status adns__findrr_anychk(adns_query qu, int serv,
  * must both be null (in which case eo_dglen and eo_cbyte will be ignored).
  * The eo datagram and contained owner domain MUST be valid and
  * untruncated.
+ */
+
+void adns__update_expires(adns_query qu, unsigned long ttl, struct timeval now);
+/* Updates the `expires' field in the query, so that it doesn't exceed
+ * now + ttl.
  */
 
 int vbuf__append_quoted1035(vbuf *vb, const byte *buf, int len);
@@ -581,5 +594,11 @@ static inline int ctype_alpha(int c) {
 #define GETIL_B(cb) (((dgram)[(cb)++]) & 0x0ff)
 #define GET_B(cb,tv) ((tv)= GETIL_B((cb)))
 #define GET_W(cb,tv) ((tv)=0, (tv)|=(GETIL_B((cb))<<8), (tv)|=GETIL_B(cb), (tv))
+#define GET_L(cb,tv) ( (tv)=0, \
+		       (tv)|=(GETIL_B((cb))<<24), \
+		       (tv)|=(GETIL_B((cb))<<16), \
+		       (tv)|=(GETIL_B((cb))<<8), \
+		       (tv)|=GETIL_B(cb), \
+		       (tv) )
 
 #endif

@@ -33,6 +33,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
   int rrtype, rrclass, rdlength, rdstart;
   int anstart, nsstart, arstart;
   int ownermatched, l, nrrs;
+  unsigned long ttl, soattl;
   const typeinfo *typei;
   adns_query qu, nqu;
   dns_rcode rcode;
@@ -138,7 +139,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
   for (rri= 0; rri<ancount; rri++) {
     rrstart= cbyte;
     st= adns__findrr(qu,serv, dgram,dglen,&cbyte,
-		     &rrtype,&rrclass,&rdlength,&rdstart,
+		     &rrtype,&rrclass,&ttl, &rdlength,&rdstart,
 		     &ownermatched);
     if (st) { adns__query_fail(qu,st); return; }
     if (rrtype == -1) goto x_truncated;
@@ -177,6 +178,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
 
 	memcpy(qu->answer->cname,qu->vb.buf,l);
 	cname_here= 1;
+	adns__update_expires(qu,ttl,now);
 	/* If we find the answer section truncated after this point we restart
 	 * the query at the CNAME; if beforehand then we obviously have to use
 	 * TCP.  If there is no truncation we can use the whole answer if
@@ -203,18 +205,13 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
 
   if (!wantedrrs) {
     /* Oops, NODATA or NXDOMAIN or perhaps a referral (which would be a problem) */
-    
-    if (rcode == rcode_nxdomain) {
-      adns__query_fail(qu,adns_s_nxdomain);
-      return;
-    }
 
     /* RFC2308: NODATA has _either_ a SOA _or_ _no_ NS records in authority section */
-    foundsoa= 0; foundns= 0;
+    foundsoa= 0; soattl= 0; foundns= 0;
     for (rri= 0; rri<nscount; rri++) {
       rrstart= cbyte;
       st= adns__findrr(qu,serv, dgram,dglen,&cbyte,
-		       &rrtype,&rrclass,&rdlength,&rdstart, 0);
+		       &rrtype,&rrclass,&ttl, &rdlength,&rdstart, 0);
       if (st) { adns__query_fail(qu,st); return; }
       if (rrtype==-1) goto x_truncated;
       if (rrclass != DNS_CLASS_IN) {
@@ -223,12 +220,20 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
 		   rrclass,DNS_CLASS_IN);
 	continue;
       }
-      if (rrtype == adns_r_soa_raw) { foundsoa= 1; break; }
+      if (rrtype == adns_r_soa_raw) { foundsoa= 1; soattl= ttl; break; }
       else if (rrtype == adns_r_ns_raw) { foundns= 1; }
+    }
+    
+    if (rcode == rcode_nxdomain) {
+      /* We still wanted to look for the SOA so we could find the TTL. */
+      adns__update_expires(qu,soattl,now);
+      adns__query_fail(qu,adns_s_nxdomain);
+      return;
     }
 
     if (foundsoa || !foundns) {
       /* Aha !  A NODATA response, good. */
+      adns__update_expires(qu,soattl,now);
       adns__query_fail(qu,adns_s_nodata);
       return;
     }
@@ -275,13 +280,14 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
 
   for (rri=0, nrrs=0; rri<ancount; rri++) {
     st= adns__findrr(qu,serv, dgram,dglen,&cbyte,
-		     &rrtype,&rrclass,&rdlength,&rdstart,
+		     &rrtype,&rrclass,&ttl, &rdlength,&rdstart,
 		     &ownermatched);
     assert(!st); assert(rrtype != -1);
     if (rrclass != DNS_CLASS_IN ||
 	rrtype != (qu->typei->type & adns__rrt_typemask) ||
 	!ownermatched)
       continue;
+    adns__update_expires(qu,ttl,now);
     st= typei->parse(&pai, rdstart,rdstart+rdlength, rrsdata+nrrs*typei->rrsz);
     if (st) { adns__query_fail(qu,st); return; }
     if (rdstart==-1) goto x_truncated;

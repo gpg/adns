@@ -64,6 +64,7 @@ int adns__internal_submit(adns_state ads, adns_query *query_r,
   qu->udpsent= qu->tcpfailed= 0;
   timerclear(&qu->timeout);
   memcpy(&qu->ctx,ctx,sizeof(qu->ctx));
+  qu->expires= now.tv_sec + MAXTTLBELIEVE;
 
   qu->answer->status= adns_s_ok;
   qu->answer->cname= 0;
@@ -192,6 +193,8 @@ void adns__transfer_interim(adns_query from, adns_query to, void *block, size_t 
 
   from->interim_allocd -= sz;
   to->interim_allocd += sz;
+
+  if (to->expires > from->expires) to->expires= from->expires;
 }
 
 void *adns__alloc_final(adns_query qu, size_t sz) {
@@ -255,6 +258,15 @@ void adns_cancel(adns_query qu) {
   free(qu);
 }
 
+void adns__update_expires(adns_query qu, unsigned long ttl, struct timeval now) {
+  time_t max;
+
+  assert(ttl <= MAXTTLBELIEVE);
+  max= now.tv_sec + ttl;
+  if (qu->expires < max) return;
+  qu->expires= max;
+}
+
 static void makefinal_query(adns_query qu) {
   adns_answer *ans;
   int rrn;
@@ -276,7 +288,7 @@ static void makefinal_query(adns_query qu) {
     for (rrn=0; rrn<ans->nrrs; rrn++)
       qu->typei->makefinal(qu, ans->rrs.bytes + rrn*ans->rrsz);
   }
-    
+  
   free_query_allocs(qu);
   return;
   
@@ -305,6 +317,7 @@ void adns__query_done(adns_query qu) {
 		qu->ads);
   }
 
+  ans->expires= qu->expires;
   parent= qu->parent;
   if (parent) {
     LIST_UNLINK_PART(parent->children,qu,siblings.);

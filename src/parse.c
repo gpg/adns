@@ -150,13 +150,15 @@ adns_status adns__parse_domain(adns_state ads, int serv, adns_query qu,
 	
 adns_status adns__findrr_anychk(adns_query qu, int serv,
 				const byte *dgram, int dglen, int *cbyte_io,
-				int *type_r, int *class_r, int *rdlen_r, int *rdstart_r,
+				int *type_r, int *class_r, unsigned long *ttl_r,
+				int *rdlen_r, int *rdstart_r,
 				const byte *eo_dgram, int eo_dglen, int eo_cbyte,
 				int *eo_matched_r) {
   findlabel_state fls, eo_fls;
   int cbyte;
   
   int tmp, rdlen, mismatch;
+  unsigned long ttl;
   int lablen, labstart, ch;
   int eo_lablen, eo_labstart, eo_ch;
   adns_status st;
@@ -193,7 +195,11 @@ adns_status adns__findrr_anychk(adns_query qu, int serv,
   if (cbyte+10>dglen) goto x_truncated;
   GET_W(cbyte,tmp); *type_r= tmp;
   GET_W(cbyte,tmp); *class_r= tmp;
-  cbyte+= 4; /* we skip the TTL */
+
+  GET_L(cbyte,ttl);
+  if (ttl > MAXTTLBELIEVE) ttl= MAXTTLBELIEVE;
+  *ttl_r= ttl;
+  
   GET_W(cbyte,rdlen); if (rdlen_r) *rdlen_r= rdlen;
   if (rdstart_r) *rdstart_r= cbyte;
   cbyte+= rdlen;
@@ -208,23 +214,24 @@ adns_status adns__findrr_anychk(adns_query qu, int serv,
 
 adns_status adns__findrr(adns_query qu, int serv,
 			 const byte *dgram, int dglen, int *cbyte_io,
-			 int *type_r, int *class_r, int *rdlen_r, int *rdstart_r,
+			 int *type_r, int *class_r, unsigned long *ttl_r,
+			 int *rdlen_r, int *rdstart_r,
 			 int *ownermatchedquery_r) {
   if (!ownermatchedquery_r) {
     return adns__findrr_anychk(qu,serv,
 			       dgram,dglen,cbyte_io,
-			       type_r,class_r,rdlen_r,rdstart_r,
+			       type_r,class_r,ttl_r,rdlen_r,rdstart_r,
 			       0,0,0, 0);
   } else if (!qu->cname_dgram) {
     return adns__findrr_anychk(qu,serv,
 			       dgram,dglen,cbyte_io,
-			       type_r,class_r,rdlen_r,rdstart_r,
+			       type_r,class_r,ttl_r,rdlen_r,rdstart_r,
 			       qu->query_dgram,qu->query_dglen,DNS_HDRSIZE,
 			       ownermatchedquery_r);
   } else {
     return adns__findrr_anychk(qu,serv,
 			       dgram,dglen,cbyte_io,
-			       type_r,class_r,rdlen_r,rdstart_r,
+			       type_r,class_r,ttl_r,rdlen_r,rdstart_r,
 			       qu->cname_dgram,qu->cname_dglen,qu->cname_begin,
 			       ownermatchedquery_r);
   }
