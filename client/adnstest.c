@@ -166,9 +166,11 @@ int main(int argc, char *const *argv) {
       ri= adns_rr_info(ans->type, &rrtn,&fmtn,&len, 0,0);
       fprintf(stdout, "%s type ",domain);
       dumptype(ri,rrtn,fmtn);
-      fprintf(stdout, " flags %d: %s; nrrs=%d; cname=%s; ttl=%ld\n",
+      fprintf(stdout, " flags %d: %s; nrrs=%d; cname=%s; owner=%s; ttl=%ld\n",
 	      qflags, adns_strerror(ans->status),
-	      ans->nrrs, ans->cname ? ans->cname : "$",
+	      ans->nrrs,
+	      ans->cname ? ans->cname : "$",
+	      ans->owner ? ans->owner : "$",
 	      (long)ans->expires - (long)now.tv_sec);
       if (ans->nrrs) {
 	assert(!ri);

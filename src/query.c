@@ -72,7 +72,7 @@ static adns_query query_alloc(adns_state ads, const typeinfo *typei,
   memset(&qu->ctx,0,sizeof(qu->ctx));
 
   qu->answer->status= adns_s_ok;
-  qu->answer->cname= 0;
+  qu->answer->cname= qu->answer->owner= 0;
   qu->answer->type= typei->type;
   qu->answer->expires= -1;
   qu->answer->nrrs= 0;
@@ -174,6 +174,20 @@ x_fail:
   adns__query_fail(qu,stat);
 }
 
+static int save_owner(adns_query qu, const char *owner, int ol) {
+  /* Returns 1 if OK, otherwise there was no memory. */
+  adns_answer *ans;
+
+  ans= qu->answer;
+  assert(!ans->owner);
+
+  ans->owner= adns__alloc_interim(qu,ol+1);  if (!ans->owner) return 0;
+
+  memcpy(ans->owner,owner,ol);
+  ans->owner[ol]= 0;
+  return 1;
+}
+
 int adns_submit(adns_state ads,
 		const char *owner,
 		adns_rrtype type,
@@ -214,6 +228,9 @@ int adns_submit(adns_state ads,
     qu->search_origlen= ol;
     adns__search_next(ads,qu,now);
   } else {
+    if (flags & adns_qf_owner) {
+      if (!save_owner(qu,owner,ol)) { stat= adns_s_nomemory; goto x_adnsfail; }
+    }
     query_simple(ads,qu, owner,ol, typei,flags, now);
   }
   return 0;
@@ -368,6 +385,7 @@ static void makefinal_query(adns_query qu) {
 
   qu->final_allocspace= (byte*)ans + MEM_ROUND(sizeof(*ans));
   adns__makefinal_str(qu,&ans->cname);
+  adns__makefinal_str(qu,&ans->owner);
   
   if (ans->nrrs) {
     adns__makefinal_block(qu, &ans->rrs.untyped, ans->nrrs*ans->rrsz);
@@ -392,6 +410,14 @@ void adns__query_done(adns_query qu) {
 
   qu->id= -1;
   ans= qu->answer;
+
+  if (qu->flags & adns_qf_owner && qu->flags & adns_qf_search &&
+      ans->status != adns_s_nomemory) {
+    if (!save_owner(qu, qu->search_vb.buf, qu->search_vb.used)) {
+      adns__query_fail(qu,adns_s_nomemory);
+      return;
+    }
+  }
 
   if (ans->nrrs && qu->typei->diff_needswap) {
     if (!adns__vbuf_ensure(&qu->vb,qu->typei->rrsz)) {

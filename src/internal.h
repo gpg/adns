@@ -174,6 +174,8 @@ struct adns__query {
    * we found a cname (this corresponds to cname_dgram in the query
    * structure).  type is set from the word go.  nrrs and rrs
    * are set together, when we find how many rrs there are.
+   * owner is set during querying unless we're doing searchlist,
+   * in which case it is set only when we find an answer.
    */
   
   byte *cname_dgram;
@@ -189,8 +191,6 @@ struct adns__query {
    * absolute query yet (0=not yet, 1=done, -1=must do straight away,
    * but not done yet).  If flags doesn't have adns_qf_search then
    * the vbuf is initialised but empty and everything else is zero.
-   *
-   * fixme: actually implement this!
    */
   
   int id, flags, udpretries;
