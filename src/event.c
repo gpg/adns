@@ -83,6 +83,21 @@ static void tcp_connected(adns_state ads, struct timeval now) {
   }
 }
 
+static void tcp_broken_events(adns_state ads) {
+  adns_query qu, nqu;
+  
+  assert(ads->tcpstate == server_broken);
+  for (qu= ads->tcpw.head; qu; qu= nqu) {
+    nqu= qu->next;
+    assert(qu->state == query_tcpw);
+    if (qu->retries > ads->nservers) {
+      LIST_UNLINK(ads->tcpw,qu);
+      adns__query_fail(qu,adns_s_allservfail);
+    }
+  }
+  ads->tcpstate= server_disconnected;
+}
+
 void adns__tcp_tryconnect(adns_state ads, struct timeval now) {
   int r, fd, tries;
   struct sockaddr_in addr;
@@ -135,7 +150,7 @@ void adns__tcp_tryconnect(adns_state ads, struct timeval now) {
       return;
     }
     adns__tcp_broken(ads,"connect",strerror(errno));
-    ads->tcpstate= server_disconnected;
+    tcp_broken_events(ads);
   }
 }
 
@@ -222,21 +237,11 @@ static void timeouts_queue(adns_state ads, int act,
 static void tcp_events(adns_state ads, int act,
 		       struct timeval **tv_io, struct timeval *tvbuf,
 		       struct timeval now) {
-  adns_query qu, nqu;
-  
   for (;;) {
     switch (ads->tcpstate) {
     case server_broken:
       if (!act) { inter_immed(tv_io,tvbuf); return; }
-      for (qu= ads->tcpw.head; qu; qu= nqu) {
-	nqu= qu->next;
-	assert(qu->state == query_tcpw);
-	if (qu->retries > ads->nservers) {
-	  LIST_UNLINK(ads->tcpw,qu);
-	  adns__query_fail(qu,adns_s_allservfail);
-	}
-      }
-      ads->tcpstate= server_disconnected;
+      tcp_broken_events(ads);
     case server_disconnected: /* fall through */
       if (!ads->tcpw.head) return;
       if (!act) { inter_immed(tv_io,tvbuf); return; }
