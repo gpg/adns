@@ -168,6 +168,8 @@ typedef struct {
  *  Must always be non-null pointer;
  *  If *query_io is 0 to start with then any query may be returned;
  *  If *query_io is !0 adns_query then only that query may be returned.
+ *  If the call is successful, *query_io, *answer_r, and *context_r
+ *  will all be set.
  * Errors:
  *  Return values are 0 or an errno value;
  *  Seriously fatal system errors (eg, failure to create sockets,
