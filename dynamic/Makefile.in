@@ -24,7 +24,7 @@
 srcdir=		@srcdir@
 VPATH=		@srcdir@
 
-TARGETS=	$(SHLIBFILE)
+TARGETS=	$(SHLIBFILE) $(SHLIBSONAME) $(SHLIBFORLINK)
 include		$(srcdir)/../settings.make
 include		$(srcdir)/../src/adns.make
 
@@ -35,6 +35,12 @@ install:
 
 uninstall:
 		rm -f $(lib_dir)/$(SHLIBFILE)
+
+$(SHLIBFORLINK):
+		ln -s $(SHLIBSONAME) $(SHLIBFORLINK)
+
+$(SHLIBSONAME):
+		ln -s $(SHLIBFILE) $(SHLIBSONAME)
 
 $(SHLIBFILE):	$(ALLOBJS)
 		rm -f $@

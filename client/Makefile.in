@@ -34,6 +34,10 @@ DIRCFLAGS=	-I$(srcdir)/../src
 
 ADH_OBJS=	adh-main.o adh-opts.o adh-query.o
 
+STATIC_LIB=	$(srcdir)/../src/libadns.a
+DYNAMIC_DEP=	$(srcdir)/../dynamic/$(SHLIBFILE)
+DYNAMIC_LINK=	-L$(srcdir)/../dynamic -ladns
+
 all:		$(TARGETS)
 
 install:	$(TARG_INSTALL)
@@ -45,14 +49,14 @@ uninstall:
 
 $(ADH_OBJS):	adnshost.h
 
-adnshost:	$(ADH_OBJS) $(srcdir)/../dynamic/$(SHLIBFILE)
-		$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
+adnshost:	$(ADH_OBJS) $(DYNAMIC_DEP)
+		$(CC) $(LDFLAGS) $(ADH_OBJS) $(DYNAMIC_LINK) -o $@ $(LDLIBS)
 
-adnshost_s:	$(ADH_OBJS) $(srcdir)/../src/libadns.a
-		$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
+adnshost_s:	$(ADH_OBJS) $(STATIC_LIB)
+		$(CC) $(LDFLAGS) $(ADH_OBJS) $(STATIC_LIB) -o $@ $(LDLIBS)
 
-%:		%.o $(srcdir)/../dynamic/$(SHLIBFILE)
-		$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
+%:		%.o $(DYNAMIC_DEP)
+		$(CC) $(LDFLAGS) $< $(DYNAMIC_LINK) -o $@ $(LDLIBS)
 
-%_s:		%.o $(srcdir)/../src/libadns.a
-		$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
+%_s:		%.o $(STATIC_LIB)
+		$(CC) $(LDFLAGS) $< -o $@ $(LDLIBS)
