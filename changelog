@@ -23,7 +23,7 @@ adns (0.3) unstable; urgency=low
   * Added TODO file.
   * Made adnstest.c test context pointers.
 
- --
+ -- Ian Jackson <ian@davenant.greenend.org.uk>  Thu, 15 Jul 1999 00:23:12 +0100
 
 adns (0.2) experimental; urgency=low
 
