@@ -99,7 +99,7 @@ int main(int argc, char *const *argv) {
   if (argv[0] && argv[1] && argv[1][0] == ':') {
     for (cp= argv[1]+1, tc=1; (ch= *cp); cp++)
       if (ch==',') tc++;
-    types_a= malloc(sizeof(*types_a)*tc);
+    types_a= malloc(sizeof(*types_a)*(tc+1));
     if (!types_a) { perror("malloc types"); exit(3); }
     for (cp= argv[1]+1, ti=0; ti<tc; ti++) {
       types_a[ti]= strtoul(cp,&cp,10);
@@ -111,6 +111,7 @@ int main(int argc, char *const *argv) {
 	cp++;
       }
     }
+    *cp++= adns_r_none;
     types= types_a;
     argv++;
   } else {
@@ -175,7 +176,7 @@ int main(int argc, char *const *argv) {
       if (ans->nrrs) {
 	assert(!ri);
 	for (i=0; i<ans->nrrs; i++) {
-	  r= adns_rr_info(ans->type, 0,0,0, ans->rrs.bytes+i*len,&show);
+	  r= adns_rr_info(ans->type, 0,0,0, ans->rrs.bytes + i*len, &show);
 	  if (r) failure("info",r);
 	  fprintf(stdout," %s\n",show);
 	  free(show);
