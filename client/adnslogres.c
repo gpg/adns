@@ -154,7 +154,7 @@ static void proclog(int opts) {
 	err= adns_wait(adns, &head->query, &answer, NULL);
     else
       err= adns_check(adns, &head->query, &answer, NULL);
-    if (err != EWOULDBLOCK) {
+    if (err != EAGAIN) {
 	printline(head->start, head->addr, head->rest,
 		  answer->status == adns_s_ok ? *answer->rrs.str : NULL);
 	line= head; head= head->next;

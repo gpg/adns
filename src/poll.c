@@ -106,7 +106,7 @@ int adns_wait_poll(adns_state ads,
 
   for (;;) {
     r= adns__internal_check(ads,query_io,answer_r,context_r);
-    if (r != EWOULDBLOCK) goto xit;
+    if (r != EAGAIN) goto xit;
     nfds= MAX_POLLFDS; to= -1;
     adns_beforepoll(ads,fds,&nfds,&to,0);
     r= poll(fds,nfds,to);

@@ -11,6 +11,7 @@ adns (0.5) unstable; urgency=medium
   * RRs with mailboxes never rejected due to strange chars if _raw.
   * Lack of a mailbox produces `.' not `<>'.
   * Better usage messages (and no default query domain) for adnstest.
+  * Return EAGAIN from _check instead of EWOULDBLOCK.
   
   Bugfixes:
   * Do not invoke __autosys indirectly from __procdgram (result: coredump

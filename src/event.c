@@ -565,10 +565,10 @@ int adns__internal_check(adns_state ads,
 
   qu= *query_io;
   if (!qu) {
-    if (!ads->output.head) return EWOULDBLOCK;
+    if (!ads->output.head) return EAGAIN;
     qu= ads->output.head;
   } else {
-    if (qu->id>=0) return EWOULDBLOCK;
+    if (qu->id>=0) return EAGAIN;
   }
   LIST_UNLINK(ads->output,qu);
   *answer= qu->answer;
@@ -589,7 +589,7 @@ int adns_wait(adns_state ads,
   adns__consistency(ads,*query_io,cc_entex);
   for (;;) {
     r= adns__internal_check(ads,query_io,answer_r,context_r);
-    if (r != EWOULDBLOCK) break;
+    if (r != EAGAIN) break;
     maxfd= 0; tvp= 0;
     FD_ZERO(&readfds); FD_ZERO(&writefds); FD_ZERO(&exceptfds);
     adns_beforeselect(ads,&maxfd,&readfds,&writefds,&exceptfds,&tvp,&tvbuf,0);
