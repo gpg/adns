@@ -34,6 +34,7 @@ m4_include(hmacros.i4)
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/time.h>
 
 #include <unistd.h>
 #include <fcntl.h>

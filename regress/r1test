@@ -56,10 +56,18 @@ else
 	exec </dev/null
 fi
 
+playback=./${program}_playback
+if test ! -f $playback
+then
+	printf "SKIPPED-$casename "
+	mrc=5
+	exit
+fi
+
 set +e
-ADNS_TEST_REPORT_FD=3 3>>"$ocase.report" >"$ocase.out" 2>"$ocase.err" \
-ADNS_TEST_IN_FD=4 \
- ./${program}_playback $initflags"$initstring" $queryargs
+ADNS_TEST_REPORT_FD=3 ADNS_TEST_IN_FD=4 \
+ 3>>"$ocase.report" >"$ocase.out" 2>"$ocase.err" \
+ $playback $initflags"$initstring" $queryargs
 rc=$?
 set -e
 
@@ -83,7 +91,7 @@ do
 	fi
 done
 
-cat >"$ocase.leftover"
+cat <&4 >"$ocase.leftover"
 if egrep . /dev/null "$ocase.leftover"
 then
 	failwhy="$failwhy EXITED EARLY"

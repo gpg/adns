@@ -14,7 +14,7 @@ adns (0.10) unstable; urgency=low
 
   Portability fixes:
   * Fix <sys/fcntl.h> in client/adnsresfilter.c to <fcntl.h>.
-  * #include <sys/types.h> and <unistd.h> for fcntl in */*.c.
+  * Add missing <sys/types.h>, <unistd.h>, <time.h>, <sys/time.h>.
   * Cope with compilers that don't do `inline'.
   * Do not use variadic macro, use stdarg instead (adnslogres.c).
   * #include "config.h" before "adns.h".
