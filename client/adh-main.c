@@ -26,28 +26,51 @@
  *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <errno.h>
+#include "adnshost.h"
 
 void sysfail(const char *what, int errnoval) {
   fprintf(stderr,"adnshost failed: %s: %s\n",what,strerror(errnoval));
   exit(10);
 }
 
-static void domain_do_arg(const char *domain) {
-  if (ov_pipe) usageerr("-f/--pipe not consistent with domains on command line");
-  domain_do(arg);
+void usageerr(const char *fmt, ...) {
+  va_list al;
+  fputs("adnshost usage error: ",stderr);
+  va_start(al,fmt);
+  vfprintf(stderr,fmt,al);
+  va_end(al);
+  putc('\n',stderr);
+  exit(11);
 }
 
-static void of_type(const struct optinfo *oi, const char *arg) { abort(); }
+static void domain_do_arg(const char *domain) {
+  if (ov_pipe) usageerr("-f/--pipe not consistent with domains on command line");
+  domain_do(domain);
+}
+
+void *xmalloc(size_t sz) {
+  void *p;
+
+  p= malloc(sz); if (!p) sysfail("malloc",sz);
+  return p;
+}
+
+char *xstrsave(const char *str) {
+  char *p;
+  
+  p= xmalloc(strlen(str)+1);
+  strcpy(p,str);
+  return p;
+}
+
+void of_type(const struct optioninfo *oi, const char *arg) { abort(); }
 
 int main(int argc, const char *const *argv) {
   const char *arg;
-  const 
+  const struct optioninfo *oip;
   
-  while (arg= *++argv) {
-    if (arg[0] != '-') {
+  while ((arg= *++argv)) {
+    if (arg[0] == '-') {
       if (arg[1] == '-') {
 	oip= opt_findl(arg+2);
 	if (oip->type == ot_funcarg) {

@@ -28,15 +28,23 @@
 #ifndef ADNSHOST_H_INCLUDED
 #define ADNSHOST_H_INCLUDED
 
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
+#include <signal.h>
+#include <stdarg.h>
+#include <assert.h>
+
 #include "config.h"
 #include "adns.h"
+#include "dlist.h"
 
 /* declarations related to option processing */
 
-struct optinfo;
-typedef void optfunc(const struct optinfo *oi, const char *arg);
+struct optioninfo;
+typedef void optfunc(const struct optioninfo *oi, const char *arg);
 
-struct optinfo {
+struct optioninfo {
   enum oi_type {
     ot_end, ot_desconly,
     ot_flag, ot_value, ot_func, ot_funcarg
@@ -57,6 +65,7 @@ struct perqueryflags_remember {
 
 extern int ov_env, ov_pipe, ov_asynch;
 extern int ov_verbose;
+extern adns_rrtype ov_type;
 extern int ov_search, ov_qc_query, ov_qc_anshost, ov_qc_cname;
 extern int ov_tcp, ov_cname;
 extern char *ov_id;
@@ -64,13 +73,25 @@ extern struct perqueryflags_remember ov_pqfr;
 
 extern optfunc of_help, of_type, of_asynch_id, of_cancel_id;
 
+const struct optioninfo *opt_findl(const char *opt);
+const struct optioninfo *opt_finds(const char **optp);
+void opt_do(const struct optioninfo *oip, const char *arg);
+
 /* declarations related to query processing */
 
-static void of_asynch_id(const struct optinfo *oi, const char *arg) { abort(); }
-static void of_cancel_id(const struct optinfo *oi, const char *arg) { abort(); }
+extern adns_state ads;
+
+void domain_do(const char *domain);
+
+void of_asynch_id(const struct optioninfo *oi, const char *arg);
+void of_cancel_id(const struct optioninfo *oi, const char *arg);
 
 /* declarations related to main program and useful utility functions */
 
 void sysfail(const char *what, int errnoval) NONRETURNING;
+void usageerr(const char *what, ...) NONRETURNPRINTFFORMAT(1,2);
+
+void *xmalloc(size_t sz);
+char *xstrsave(const char *str);
 
 #endif

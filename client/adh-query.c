@@ -26,6 +26,10 @@
  *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
  */
 
+#include "adnshost.h"
+
+adns_state ads;
+
 struct query_node {
   struct query_node *next, *back;
   struct perqueryflags_remember pqfr;
@@ -33,20 +37,20 @@ struct query_node {
   adns_query qu;
 };
 
-static adns_state ads;
 static struct { struct query_node *head, *tail; } outstanding;
 
 static unsigned long idcounter;
 
-static void domain_do(const char *domain) {
+void domain_do(const char *domain) {
   struct query_node *qun;
   char idbuf[20];
+  int r;
 
   if (!ads) {
-    if (signal(SIGPIPE,SIG_IGN) == SIG_ERR) sysfail("ignore SIGPIPE");
+    if (signal(SIGPIPE,SIG_IGN) == SIG_ERR) sysfail("ignore SIGPIPE",errno);
     r= adns_init(&ads,
 		 adns_if_noautosys|adns_if_nosigpipe |
-		 (ov_env ? 0 : adns_ifnoenv) |
+		 (ov_env ? 0 : adns_if_noenv) |
 		 ov_verbose,
 		 0);
     if (r) sysfail("adns_init",r);
@@ -62,7 +66,8 @@ static void domain_do(const char *domain) {
     qun->id= xstrsave(idbuf);
   }
   
-  r= adns_submit(ads, domain, type,
+  r= adns_submit(ads, domain,
+		 ov_type == adns_r_none ? adns_r_addr : ov_type,
 		 (ov_search ? adns_qf_search : 0) |
 		 (ov_tcp ? adns_qf_usevc : 0) |
 		 (ov_pqfr.show_owner ? adns_qf_owner : 0) |
@@ -74,5 +79,8 @@ static void domain_do(const char *domain) {
 		 &qun->qu);
   if (r) sysfail("adns_submit",r);
 
-  DLIST_LINK_TAIL(outstanding,qun);
+  LIST_LINK_TAIL(outstanding,qun);
 }
+
+void of_asynch_id(const struct optioninfo *oi, const char *arg) { abort(); }
+void of_cancel_id(const struct optioninfo *oi, const char *arg) { abort(); }

@@ -26,13 +26,17 @@
  *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
  */
 
+#include "adnshost.h"
+
 int ov_env=1, ov_pipe=0, ov_asynch=0;
 int ov_verbose= 0;
+adns_rrtype ov_type= adns_r_none;
 int ov_search=0, ov_qc_query=0, ov_qc_anshost=0, ov_qc_cname=1;
-struct perqueryflags_remember ov_pqfr = { 1,1,1, tm_none };
 int ov_tcp=0, ov_cname=0;
+char *ov_id= 0;
+struct perqueryflags_remember ov_pqfr = { 1,1,1, tm_none };
 
-static const struct optinfo global_options[]= {
+static const struct optioninfo global_options[]= {
   { ot_desconly, "global binary options:" },
   { ot_flag,             "Do not look at environment variables at all",
     "e", "env",            &ov_env, 0 },
@@ -56,7 +60,7 @@ static const struct optinfo global_options[]= {
   { ot_end }
 };
 
-static const struct optinfo perquery_options[]= {
+static const struct optioninfo perquery_options[]= {
   { ot_desconly, "per-query options:" },
   { ot_funcarg,          "Query type (see below)",
     "t", "type",           0,0, &of_type, "type" },
@@ -105,16 +109,16 @@ static const struct optinfo perquery_options[]= {
 };
 
 static void printusage(void) {
-  static const struct optinfo *const all_optiontables[]= {
+  static const struct optioninfo *const all_optiontables[]= {
     global_options, perquery_options, 0
   };
 
-  const struct optinfo *const *oiap, *oip=0;
+  const struct optioninfo *const *oiap, *oip=0;
   int maxsopt, maxlopt, l;
 
   maxsopt= maxlopt= 0;
   
-  for (oiap=alloptions; *oiap; oiap++) {
+  for (oiap=all_optiontables; *oiap; oiap++) {
     for (oip=*oiap; oip->type != ot_end; oip++) {
       if (oip->type == ot_funcarg) continue;
       if (oip->sopt) { l= strlen(oip->sopt); if (l>maxsopt) maxsopt= l; }
@@ -131,7 +135,7 @@ static void printusage(void) {
 	"       adnshost [global-opts] [query-opts] -f|--pipe\n",
 	stdout);
 
-  for (oiap=alloptions; *oiap; oiap++) {
+  for (oiap=all_optiontables; *oiap; oiap++) {
     putchar('\n');
     for (oip=*oiap; oip->type != ot_end; oip++) {
       switch (oip->type) {
@@ -238,9 +242,66 @@ static void printusage(void) {
   if (ferror(stdout)) sysfail("write usage message",errno);
 }
 
-static void of_help(const struct optinfo *oi, const char *arg) {
+void of_help(const struct optioninfo *oi, const char *arg) {
   printusage();
   if (fclose(stdout)) sysfail("finish writing output",errno);
   exit(0);
 }
 
+typedef int comparer_type(const char **optp, const struct optioninfo *entry);
+
+static int oc_long(const char **optp, const struct optioninfo *entry) {
+  return entry->lopt && !strcmp(*optp,entry->lopt);
+}
+
+static int oc_short(const char **optp, const struct optioninfo *entry) {
+  const char *sopt;
+  int l;
+
+  sopt= entry->sopt;
+  if (!sopt) return 0;
+  l= strlen(sopt);
+  if (memcmp(*optp,sopt,l)) return 0;
+  (*optp) += l;
+  return 1;
+}
+
+static const struct optioninfo *find1(const char **optp,
+				      const struct optioninfo *table,
+				      comparer_type *comparer) {
+  for (;;) {
+    if (table->type == ot_end) return 0;
+    if (comparer(optp,table)) return table;
+    table++;
+  }
+}
+
+static const struct optioninfo *find(const char **optp,
+				     const char *prefix,
+				     comparer_type *comparer) {
+  const struct optioninfo *oip;
+
+  oip= find1(optp,perquery_options,comparer);
+  if (oip) return oip;
+  oip= find1(optp,global_options,comparer);
+  if (!oip) usageerr("unknown option %s%s",prefix,*optp);
+  if (ads) usageerr("global option %s%s specified after query domain(s)",prefix,*optp);
+  return oip;
+}
+
+const struct optioninfo *opt_findl(const char *opt) { return find(&opt,"--",oc_long); }
+const struct optioninfo *opt_finds(const char **optp) { return find(optp,"-",oc_short); }
+
+void opt_do(const struct optioninfo *oip, const char *arg) {
+  switch (oip->type) {
+  case ot_flag: case ot_value:
+    assert(!arg);
+    *oip->storep= oip->value;
+    return;
+  case ot_func: case ot_funcarg:
+    oip->func(oip,0);
+    return;
+  default:
+    abort();
+  }
+}

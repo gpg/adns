@@ -43,6 +43,8 @@ install:	$(TARG_INSTALL)
 uninstall:
 		for f in $(TARGETS); do rm -f $(bin_dir)/$$f; done
 
+$(ADH_OBJS):	adnshost.h
+
 adnshost:	$(ADH_OBJS) $(srcdir)/../dynamic/$(SHLIBFILE)
 		$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
 
