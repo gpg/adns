@@ -12,17 +12,22 @@ adns (0.5) unstable; urgency=medium
   * Lack of a mailbox produces `.' not `<>'.
   * Better usage messages (and no default query domain) for adnstest.
   
-  Bugfixes and portability improvements:
+  Bugfixes:
   * Mailboxes containing spaces in their names are quoted.
   * adns_rr_hostaddr naddrs is -1 on temporary failure (as documented).
-  * Give install the '-c' flag (otherwise some delete the original !).
   * Reject TXT RRs with no strings.
+  * Do not scramble innards when a query on the output queue is cancelled.
+  * Correct error messages for qname CNAME foo, foo CNAME bar.
+
+  General improvements:
+  * Promise not to change fds in adns_beforepoll (if now is specified).
+  * Improved textual error string for _s_prohibitedcname.
+
+  Portability and build improvements:
+  * Give install the '-c' flag (otherwise some delete the original !).
+  * Do not remove top-level Makefile on `make clean'.
   * Don't complain so much about poll(2) tests if not available.
   * Do not give -u 0 -g 0 options to install.
-  * Do not scramble innards when a query on the output queue is cancelled.
-  * Promise not to change fds in adns_beforepoll (if now is specified).
-  * Correct error messages for qname CNAME foo, foo CNAME bar.
-  * Improved textual error string for _s_prohibitedcname.
 
  --
 

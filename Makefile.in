@@ -29,7 +29,7 @@ all install uninstall clean distclean mostlyclean maintainer-clean distprep:
 all-here install-here uninstall-here distprep-here:	README
 
 clean-here mostlyclean-here:
-		rm -f *~ ./#*# core *.orig *.rej Makefile adns-*.tar.gz
+		rm -f *~ ./#*# core *.orig *.rej adns-*.tar.gz
 		rm -rf dist_tmp
 
 distclean-here maintainer-clean-here:	clean-here
