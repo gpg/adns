@@ -627,8 +627,3 @@ adns_query adns_forallqueries_next(adns_state ads, void **context_r) {
   if (context_r) *context_r= qu->ctx.ext;
   return qu;
 }
-
-void adns__checkqueues(adns_state ads) {
-  adns_forallqueries_begin(ads);
-  while (adns_forallqueries_next(ads,0));
-}

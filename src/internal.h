@@ -298,7 +298,6 @@ struct adns__state {
 /* From setup.c: */
 
 int adns__setnonblock(adns_state ads, int fd); /* => errno value */
-void adns__checkqueues(adns_state ads); /* expensive walk, for checking */
 
 /* From general.c: */
 
@@ -347,7 +346,8 @@ void adns__sigpipe_unprotect(adns_state);
 /* If SIGPIPE protection is not disabled, will block all signals except
  * SIGPIPE, and set SIGPIPE's disposition to SIG_IGN.  (And then restore.)
  * Each call to _protect must be followed by a call to _unprotect before
- * any significant amount of code gets to run.
+ * any significant amount of code gets to run, since the old signal mask
+ * is stored in the adns structure.
  */
 
 /* From transmit.c: */
@@ -373,7 +373,7 @@ void adns__query_tcp(adns_query qu, struct timeval now);
  *
  * adns__tcp_tryconnect should already have been called - _tcp
  * will only use an existing connection (if there is one), which it
- * may break.  If the conn list lost then the caller is responsible for any
+ * may break.  If the conn is lost then the caller is responsible for any
  * reestablishment and retry.
  */
 
@@ -493,6 +493,11 @@ void adns__query_fail(adns_query qu, adns_status stat);
 
 void adns__procdgram(adns_state ads, const byte *dgram, int len,
 		     int serv, int viatcp, struct timeval now);
+/* This function is allowed to cause new datagrams to be constructed
+ * and sent, or even new queries to be started.  However,
+ * query-sending functions are not allowed to call any general event
+ * loop functions in case they accidentally call this.
+ */
 
 /* From types.c: */
 
