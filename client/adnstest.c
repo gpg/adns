@@ -45,6 +45,7 @@ static const adns_rrtype defaulttypes[]= {
   adns_r_addr,
   adns_r_ns,
   adns_r_mx,
+  adns_r_ptr,
   adns_r_none
 };
 
@@ -73,8 +74,8 @@ int main(int argc, char *const *argv) {
     for (cp= argv[1]+1, ti=0; ti<tc; ti++) {
       types_a[ti]= strtoul(cp,&cp,10);
       if ((ch= *cp)) {
-	if (ch != ':') {
-	  fputs("usage: dtest [:<typenum>,...] [<domain> ...]",stderr);
+	if (ch != ',') {
+	  fputs("usage: dtest [:<typenum>,...] [<domain> ...]\n",stderr);
 	  exit(4);
 	}
 	cp++;

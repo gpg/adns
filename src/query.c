@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
+#include <string.h>
 
 #include <sys/time.h>
 
@@ -62,7 +63,7 @@ int adns__internal_submit(adns_state ads, adns_query *query_r,
   qu->udpnextserver= 0;
   qu->udpsent= qu->tcpfailed= 0;
   timerclear(&qu->timeout);
-  memcpy(&qu->context,ctx,sizeof(qu->context));
+  memcpy(&qu->ctx,ctx,sizeof(qu->ctx));
 
   qu->answer->status= adns_s_ok;
   qu->answer->cname= 0;
@@ -120,6 +121,9 @@ int adns_submit(adns_state ads,
   if (!typei) return adns_s_notimplemented;
   
   ctx.ext= context;
+  ctx.callback= 0;
+  memset(&ctx.info,0,sizeof(ctx.info));
+  
   r= gettimeofday(&now,0); if (r) return errno;
   id= 0;
 
@@ -296,10 +300,9 @@ void adns__query_done(adns_query qu) {
   parent= qu->parent;
   if (parent) {
     LIST_UNLINK_PART(parent->children,qu,siblings.);
-    qu->context.intern.callback(parent,qu);
+    qu->ctx.callback(parent,qu);
     free_query_allocs(qu);
     free(qu);
-    if (!parent->children.head) adns__query_done(parent);
   } else {
     makefinal_query(qu);
     LIST_LINK_TAIL(qu->ads->output,qu);

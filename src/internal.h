@@ -50,6 +50,8 @@ typedef unsigned char byte;
 #define DNS_HDRSIZE 12
 #define DNS_CLASS_IN 1
 
+#define DNS_INADDR_ARPA "in-addr", "arpa"
+
 typedef enum {
   rcode_noerror,
   rcode_formaterror,
@@ -74,16 +76,6 @@ typedef struct {
   int used, avail;
   byte *buf;
 } vbuf;
-
-typedef union {
-  void *ext;
-  struct {
-    void (*callback)(adns_query parent, adns_query child);
-    union {
-      adns_rr_hostaddr *hostaddr;
-    } info;
-  } intern;
-} qcontext;
 
 typedef struct {
   adns_state ads;
@@ -142,6 +134,15 @@ union maxalign {
   union maxalign *up;
 } data;
 
+typedef struct {
+  void *ext;
+  void (*callback)(adns_query parent, adns_query child);
+  union {
+    adns_rr_addr ptr_parent_addr;
+    adns_rr_hostaddr *hostaddr;
+  } info;
+} qcontext;
+
 struct adns__query {
   adns_state ads;
   enum { query_udp, query_tcpwait, query_tcpsent, query_child, query_done } state;
@@ -179,7 +180,8 @@ struct adns__query {
   int udpnextserver;
   unsigned long udpsent, tcpfailed; /* bitmap indexed by server */
   struct timeval timeout;
-  qcontext context;
+
+  qcontext ctx;
 
   /* Possible states:
    *

@@ -217,7 +217,7 @@ static const struct sinfo {
   SINFO(  invalidanswerdomain, "Received syntactically invalid domain" ),
   SINFO(  nxdomain,            "No such domain"                        ),
   SINFO(  nodata,              "No such data"                          ),
-  SINFO(  invalidquerydomain,  "Domain syntactically invalid"          ),
+  SINFO(  invalidquerydomain,  "Query domain invalid"                  ),
   SINFO(  domaintoolong,       "Domain name too long"                  )
 };
 
