@@ -6,6 +6,10 @@ adns (0.6) BETA; urgency=high
   * Do not fail assertion if _qf_owner, _qf_search, domain ends in `.'.
   * Many memory leaks fixed.
 
+  Cool new utility:
+  * adnsresfilter is like `cat' but converts addresses to names without
+    delaying the output.  Pipe `netstat -n', `tcpdump -ln', etc. into it.
+
   Test and client program bug and portability fixes:
   * Dynamic library building works properly.
   * adnshost prints somewhat better messages about some wrong usages.
@@ -17,12 +21,11 @@ adns (0.6) BETA; urgency=high
   * adnstest uninitialised memory bug fixed.
 
   General improvements
-  * New adns_if_logpid option (functionality suggested by Tony Finch).
   * Better control of adnshost output and error messages (new -F options).
+  * New adns_if_logpid option (functionality suggested by Tony Finch).
   * New fanftest test program from Tony Finch (ignored by `make install').
-  * Declare flags parameters as enums again, not ints.
-  * New adnsresfilter general-purpose number->name mapping filter program.
   * Reads /etc/resolv-adns.conf if it exists.
+  * Declare flags parameters as enums again, not ints.
 
  --
 
