@@ -5,11 +5,13 @@ adns (0.10) unstable; urgency=low
   * Actually compile shared libraries by default !
   * Fix adnsresfilter usage message to include correct default timeout.
 
-  General Improvements:
+  General improvements:
   * adnshost, adnslogres, adnsresfilter have options for config override. 
   * adnsresfilter has --debug option.
   * Improvements to adnslogres (incl. new -c option) from Tony Finch.
-  * Regression tests now include adnshost, adnslogres, adnsresfilter.
+
+  Regression test improvements:
+  * Tests now include adnshost, adnslogres and adnsresfilter.
   * Test cancellation both before and after query completion.
 
   Portability fixes and cleanups:
