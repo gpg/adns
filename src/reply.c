@@ -41,6 +41,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
     adns__diag(ads,serv,0,"received datagram too short for message header (%d)",dglen);
     return;
   }
+  cbyte= 0;
   GET_W(cbyte,id);
   GET_B(cbyte,f1);
   GET_B(cbyte,f2);
@@ -57,7 +58,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
   flg_ra= f2&0x80;
   rcode= (f1&0x0f);
 
-  if (flg_qr) {
+  if (!flg_qr) {
     adns__diag(ads,serv,0,"server sent us a query, not a response");
     return;
   }

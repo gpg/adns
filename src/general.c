@@ -125,7 +125,7 @@ int adns__vbuf_append(vbuf *vb, const byte *data, int len) {
 
 int adns__vbuf_appendstr(vbuf *vb, const char *data) {
   int l;
-  l= strlen(data)+1;
+  l= strlen(data);
   return adns__vbuf_append(vb,data,l);
 }
 

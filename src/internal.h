@@ -239,7 +239,7 @@ void adns__diag(adns_state ads, int serv, adns_query qu,
 		const char *fmt, ...) PRINTFFORMAT(4,5);
 
 int adns__vbuf_ensure(vbuf *vb, int want);
-int adns__vbuf_appendstr(vbuf *vb, const char *data);
+int adns__vbuf_appendstr(vbuf *vb, const char *data); /* does not include nul */
 int adns__vbuf_append(vbuf *vb, const byte *data, int len);
 /* 1=>success, 0=>realloc failed */
 void adns__vbuf_appendq(vbuf *vb, const byte *data, int len);

@@ -200,7 +200,7 @@ void *adns__alloc_final(adns_query qu, size_t sz) {
 }
 
 void adns__reset_cnameonly(adns_query qu) {
-  assert(qu->final_allocspace);
+  assert(!qu->final_allocspace);
   qu->answer->nrrs= 0;
   qu->answer->rrs= 0;
   qu->interim_allocd= qu->answer->cname ? MEM_ROUND(strlen(qu->answer->cname)+1) : 0;
@@ -242,6 +242,7 @@ void adns__makefinal_str(adns_query qu, char **strp) {
   char *before, *after;
 
   before= *strp;
+  if (!before) return;
   l= strlen(before)+1;
   after= adns__alloc_final(qu,l);
   memcpy(after,before,l);
@@ -249,10 +250,12 @@ void adns__makefinal_str(adns_query qu, char **strp) {
 }
 
 void adns__makefinal_block(adns_query qu, void **blpp, size_t sz) {
-  void *after;
+  void *before, *after;
 
+  before= *blpp;
+  if (!before) return;
   after= adns__alloc_final(qu,sz);
-  memcpy(after,*blpp,sz);
+  memcpy(after,before,sz);
   *blpp= after;
 }
 
