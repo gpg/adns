@@ -32,29 +32,31 @@ int adns_beforepoll(adns_state ads, struct pollfd *fds, int *nfds_io, int *timeo
   int space, found, timeout_ms;
   struct pollfd fds_tmp[MAX_POLLFDS];
 
-  adns__must_gettimeofday(ads,&now,&tv_nowbuf);
-  if (!now) { *nfds_io= 0; return 0; }
+  if (timeout_io) {
+    adns__must_gettimeofday(ads,&now,&tv_nowbuf);
+    if (!now) { *nfds_io= 0; return 0; }
 
-  timeout_ms= *timeout_io;
-  if (timeout_ms == -1) {
-    tv_to= 0;
-  } else {
-    tv_tobuf.tv_sec= timeout_ms / 1000;
-    tv_tobuf.tv_usec= (timeout_ms % 1000)*1000;
-    tv_to= &tv_tobuf;
+    timeout_ms= *timeout_io;
+    if (timeout_ms == -1) {
+      tv_to= 0;
+    } else {
+      tv_tobuf.tv_sec= timeout_ms / 1000;
+      tv_tobuf.tv_usec= (timeout_ms % 1000)*1000;
+      tv_to= &tv_tobuf;
+    }
+
+    adns__timeouts(ads, 0, &tv_to,&tv_tobuf, *now);
+
+    if (tv_to) {
+      assert(tv_to == &tv_tobuf);
+      timeout_ms= (tv_tobuf.tv_usec+999)/1000;
+      assert(tv_tobuf.tv_sec < (INT_MAX-timeout_ms)/1000);
+      timeout_ms += tv_tobuf.tv_sec*1000;
+    } else {
+      timeout_ms= -1;
+    }
+    *timeout_io= timeout_ms;
   }
-
-  adns__timeouts(ads, 1, &tv_to,&tv_tobuf, *now);
-
-  if (tv_to) {
-    assert(tv_to == &tv_tobuf);
-    timeout_ms= (tv_tobuf.tv_usec+999)/1000;
-    assert(tv_tobuf.tv_sec < (INT_MAX-timeout_ms)/1000);
-    timeout_ms += tv_tobuf.tv_sec*1000;
-  } else {
-    timeout_ms= -1;
-  }
-  *timeout_io= timeout_ms;
   
   space= *nfds_io;
   if (space >= MAX_POLLFDS) {
@@ -63,7 +65,7 @@ int adns_beforepoll(adns_state ads, struct pollfd *fds, int *nfds_io, int *timeo
   } else {
     found= adns__pollfds(ads,fds_tmp);
     *nfds_io= found;
-    if (found < space) return space ? ERANGE : 0;
+    if (space < found) return ERANGE;
     memcpy(fds,fds_tmp,sizeof(struct pollfd)*found);
   }
   return 0;
@@ -76,7 +78,7 @@ void adns_afterpoll(adns_state ads, const struct pollfd *fds, int nfds,
   adns__must_gettimeofday(ads,&now,&tv_buf);
   if (!now) return;
 
-  adns__timeouts(ads,1, 0,0, *now);
+  adns__timeouts(ads, 1, 0,0, *now);
   adns__fdevents(ads, fds,nfds, 0,0,0,0, *now,0);
 }
 

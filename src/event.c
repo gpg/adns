@@ -454,12 +454,16 @@ void adns_beforeselect(adns_state ads, int *maxfd_io, fd_set *readfds_io,
 void adns_afterselect(adns_state ads, int maxfd, const fd_set *readfds,
 		      const fd_set *writefds, const fd_set *exceptfds,
 		      const struct timeval *now) {
+  struct timeval tv_buf;
   struct pollfd pollfds[MAX_POLLFDS];
-  int npollfds;
+  int npollfds, i;
 
+  adns__must_gettimeofday(ads,&now,&tv_buf);
+  if (!now) return;
   adns_processtimeouts(ads,now);
 
   npollfds= adns__pollfds(ads,pollfds);
+  for (i=0; i<npollfds; i++) pollfds[i].revents= POLLIN|POLLOUT|POLLPRI;
   adns__fdevents(ads,
 		 pollfds,npollfds,
 		 maxfd,readfds,writefds,exceptfds,

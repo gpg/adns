@@ -9,6 +9,8 @@ adns (0.3) unstable; urgency=low
   * New adns_errabbrev() for getting status abbreviation strings.
   * regress/checkall prints summary list of failed tests, if any.
   * Event loop functions for poll(2), and some raw variants.
+  * adnstest has ability to use poll(2), and user can set initflags.
+  * checkall prints passed list as well as failed list, if any failed.
   
   Bugfixes:
   * Non-RFC822 mailbox `domain' formatting now works, and clarified.

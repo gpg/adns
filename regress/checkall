@@ -1,13 +1,14 @@
 #!/bin/sh
 
 failed=''
+passed=''
 
 for f in case-*.sys
 do
 	case="`echo \"$f\" | sed -e 's/^case-//; s/\.sys$//'`"
 	if ./r1test $case
 	then
-		:
+		passed="$passed $case"
 	else
 		echo
 		failed="$failed $case"
@@ -24,7 +25,8 @@ fi
 
 echo >&2 "
 AT LEAST ONE TEST FAILED
-$failed
+passed tests:${passed:- NONE}
+failed tests:$failed
 "
 
 exit 1

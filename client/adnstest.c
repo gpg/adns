@@ -26,6 +26,8 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
+#include <sys/poll.h>
 
 #ifndef OUTPUTSTREAM
 # define OUTPUTSTREAM stdout
@@ -91,6 +93,10 @@ static void fdom_split(const char *fdom, const char **dom_r, int *qf_r,
   *ownflags= 0;
 }
 
+static int consistsof(const char *string, const char *accept) {
+  return strspn(string,accept) == strlen(string);
+}
+
 int main(int argc, char *const *argv) {
   adns_state ads;
   adns_query *qus, qu;
@@ -98,18 +104,41 @@ int main(int argc, char *const *argv) {
   const char *initstring, *rrtn, *fmtn;
   const char *const *fdomlist, *domain;
   char *show, *cp;
-  int len, i, qc, qi, tc, ti, ch, qflags;
+  int len, i, qc, qi, tc, ti, ch, qflags, initflagsnum, npollfds, npollfdsavail, timeout;
+  struct pollfd *pollfds;
   adns_status r, ri;
   const adns_rrtype *types;
   struct timeval now;
   adns_rrtype *types_a;
   char ownflags[10];
+  char *ep;
+  const char *initflags, *owninitflags;
 
+  if (argv[0] && argv[1] && argv[1][0] == '-') {
+    initflags= argv[1]+1;
+    argv++;
+  } else {
+    initflags= "";
+  }
   if (argv[0] && argv[1] && argv[1][0] == '/') {
     initstring= argv[1]+1;
     argv++;
   } else {
     initstring= 0;
+  }
+
+  initflagsnum= strtoul(initflags,&ep,0);
+  if (*ep == ',') {
+    owninitflags= ep+1;
+    if (!consistsof(owninitflags,"p")) {
+      fputs("unknown owninitflag\n",stderr);
+      exit(4);
+    }
+  } else if (!*ep) {
+    owninitflags= "";
+  } else {
+    fputs("bad <initflagsnum>[,<owninitflags>]\n",stderr);
+    exit(4);
   }
   
   if (argv[0] && argv[1] && argv[1][0] == ':') {
@@ -121,7 +150,12 @@ int main(int argc, char *const *argv) {
       types_a[ti]= strtoul(cp,&cp,10);
       if ((ch= *cp)) {
 	if (ch != ',') {
-	  fputs("usage: dtest [/<initstring>] [:<typenum>,...] [<domain> ...]\n",stderr);
+	  fputs("usage: adnstest [-<initflagsnum>[,<owninitflags>]] [/<initstring>]\n"
+		"              [ :<typenum>,... ]\n"
+		"              [ [<queryflagsnum>[,<ownqueryflags>]/]<domain> ... ]\n"
+		"initflags:   p  use poll(2) instead of select(2)\n"
+		"queryflags:  a  print status abbrevs instead of strings\n",
+		stderr);
 	  exit(4);
 	}
 	cp++;
@@ -143,14 +177,25 @@ int main(int argc, char *const *argv) {
   if (!qus) { perror("malloc qus"); exit(3); }
 
   if (initstring) {
-    r= adns_init_strcfg(&ads,adns_if_debug|adns_if_noautosys,stdout,initstring);
+    r= adns_init_strcfg(&ads,
+			(adns_if_debug|adns_if_noautosys)^initflagsnum,
+			stdout,initstring);
   } else {
-    r= adns_init(&ads,adns_if_debug|adns_if_noautosys,0);
+    r= adns_init(&ads,
+		 (adns_if_debug|adns_if_noautosys)^initflagsnum,
+		 0);
   }
   if (r) failure_errno("init",r);
 
+  npollfdsavail= 0;
+  pollfds= 0;
+  
   for (qi=0; qi<qc; qi++) {
     fdom_split(fdomlist[qi],&domain,&qflags,ownflags,sizeof(ownflags));
+    if (!consistsof(ownflags,"a")) {
+      fputs("unknown ownqueryflag\n",stderr);
+      exit(4);
+    }
     for (ti=0; ti<tc; ti++) {
       fprintf(stdout,"%s flags %d type %d",domain,qflags,types[ti]);
       r= adns_submit(ads,domain,types[ti],qflags,0,&qus[qi*tc+ti]);
@@ -174,9 +219,29 @@ int main(int argc, char *const *argv) {
     for (ti=0; ti<tc; ti++) {
       qu= qus[qi*tc+ti];
       if (!qu) continue;
-      
-      r= adns_wait(ads,&qu,&ans,0);
-      if (r) failure_errno("wait",r);
+
+      if (strchr(owninitflags,'p')) {
+	for (;;) {
+	  r= adns_check(ads,&qu,&ans,0);
+	  if (r != EWOULDBLOCK) break;
+	  for (;;) {
+	    npollfds= npollfdsavail;
+	    timeout= -1;
+	    r= adns_beforepoll(ads, pollfds, &npollfds, &timeout, 0);
+	    if (r != ERANGE) break;
+	    pollfds= realloc(pollfds,sizeof(*pollfds)*npollfds);
+	    if (!pollfds) failure_errno("realloc pollfds",errno);
+	    npollfdsavail= npollfds;
+	  }
+	  if (r) failure_errno("beforepoll",r);
+	  r= poll(pollfds,npollfds,timeout);
+	  if (r == -1) failure_errno("poll",errno);
+	  adns_afterpoll(ads,pollfds, r?npollfds:0, 0);
+	}
+      } else {
+	r= adns_wait(ads,&qu,&ans,0);
+      }
+      if (r) failure_errno("wait/check",r);
 
       if (gettimeofday(&now,0)) { perror("gettimeofday"); exit(3); }
       
@@ -185,7 +250,8 @@ int main(int argc, char *const *argv) {
       dumptype(ri,rrtn,fmtn);
       fprintf(stdout, "%s%s: %s; nrrs=%d; cname=%s; owner=%s; ttl=%ld\n",
 	      ownflags[0] ? " ownflags=" : "", ownflags,
-	      strchr(ownflags,'a') ? adns_errabbrev(ans->status)
+	      strchr(ownflags,'a')
+	      ? adns_errabbrev(ans->status)
 	      : adns_strerror(ans->status),
 	      ans->nrrs,
 	      ans->cname ? ans->cname : "$",
