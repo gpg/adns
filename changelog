@@ -1,18 +1,20 @@
-uadns (0.8) BETA; urgency=low
+uadns (0.8) BETA; urgency=medium
 
   * bug_if_query_done feature for debugging (SHOULD BE TAKEN OUT FOR RELEASE) 
 
   Bugfixes:
   * Race near adns_beforeselect which could cause infinite timeout fixed
     (it's now less agressive, and will more often return a zero timeout.)
+  * Fixed infrequent race causing assertion failure in adns__tcp_broken
+    `ads->tcpstate == server_connecting || ads->tcpstate == server_ok'.
   * Spurious `server failure on unidentifiable query' warning suppressed.
+  * If we get a referral, don't also always complain falsely about RD==0.
   * adnslogres: cast chars to unsigned char before using ctype.h macros.
   * In _beforeselect, global failure now means zero timeout, and in
     tcp_events, really never try to do anything with the TCP connection if
     act is zero.  This might possibly cause an infinite delay (ie, lockup)
     if things go badly wrong *and* a really unlikely race happens.
   * Test suite `lines of syscall left' value is correct; !0 is failure.
-  * If we get a referral, don't also always complain falsely about RD==0.
 
   Portability fixes:
   * install-sh (from autoconf 2.12 Debian r13) included.

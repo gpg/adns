@@ -333,7 +333,7 @@ int adns_processreadable(adns_state ads, int fd, const struct timeval *now) {
   case server_ok:
     if (fd != ads->tcpsocket) break;
     assert(!ads->tcprecv_skip);
-    for (;;) {
+    do {
       if (ads->tcprecv.used >= ads->tcprecv_skip+2) {
 	dgramlen= ((ads->tcprecv.buf[ads->tcprecv_skip]<<8) |
 	           ads->tcprecv.buf[ads->tcprecv_skip+1]);
@@ -367,9 +367,9 @@ int adns_processreadable(adns_state ads, int fd, const struct timeval *now) {
 	  if (errno_resources(errno)) { r= errno; goto xit; }
 	}
 	adns__tcp_broken(ads,"read",r?strerror(errno):"closed");
-	r= 0; goto xit;
       }
-    } /* never reached */
+    } while (ads->tcpstate == server_ok);
+    r= 0; goto xit;
   default:
     abort();
   }
