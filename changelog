@@ -1,4 +1,4 @@
-adns (0.5) unstable; urgency=low
+adns (0.5) unstable; urgency=medium
 
   Portability fixes:
   * Give install the '-c' flag (otherwise some delete the original !).
