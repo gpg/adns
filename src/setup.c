@@ -130,7 +130,6 @@ static void ccf_search(adns_state ads, const char *fn, int lno, const char *buf)
   free(ads->searchlist);
   ads->nsearchlist= count;
   ads->searchlist= newptrs;
-  /* fixme: actually pay attention */
 }
 
 static void ccf_sortlist(adns_state ads, const char *fn, int lno, const char *buf) {
