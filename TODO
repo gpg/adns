@@ -1,3 +1,6 @@
+BUGS:
+Arnout Engelen <arnouten@sci.kun.nl> reports servfail is thought conclusive
+
 WISHLIST:
 * Support for as-yet-unrecognised query types.
 * Make timeouts configurable.
