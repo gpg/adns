@@ -272,7 +272,6 @@ int adns_wait(adns_state ads,
 	      adns_query *query_io,
 	      adns_answer **answer_r,
 	      void **context_r);
-/* fixme: minor cache */
 
 void adns_cancel(adns_query query);
 
