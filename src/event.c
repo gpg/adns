@@ -619,7 +619,7 @@ int adns_processany(adns_state ads) {
    * likely just to want to do a read on one or two fds anyway.
    */
   npollfds= adns__pollfds(ads,pollfds);
-  for (i=0; i<npollfds; i++) pollfds[i].revents= pollfds[i].events;
+  for (i=0; i<npollfds; i++) pollfds[i].revents= pollfds[i].events & ~POLLPRI;
   adns__fdevents(ads,
 		 pollfds,npollfds,
 		 0,0,0,0,

@@ -1,8 +1,13 @@
 adns (0.9) unstable; urgency=low
 
-  * Move `extern "C" {' to after #include <...>'s.
+  Bug fixes:
+  * Don't make _processany always kill the TCP connection with the message
+    `TCP connection failed: poll/select: exceptional condition detected'.
   * Call MEM_ROUND in __transfer_interim (avoids assert fail
     `qu->interim_allocd>=0' on some platforms eg 64 bit).
+
+  Portability/compilation fixes:
+  * Move `extern "C" {' to after #include <...>'s.
 
  --
 
