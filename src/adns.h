@@ -269,9 +269,7 @@ int adns_wait(adns_state ads,
 	      adns_answer **answer_r,
 	      void **context_r);
 /* fixme: include TTL in answer somehow */
-/* fixme: multithreading/locking */
 /* fixme: easy way to get lists of fd's */
-/* fixme: IPv6 */
 
 void adns_cancel(adns_query query);
 
