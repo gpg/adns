@@ -39,7 +39,7 @@ initstring="`cat init-$initfile.text`"
 xinitflagsf=$program-xinitflags.text
 if test -f $xinitflagsf
 then
-	initflags="$initflags $(cat $xinitflagsf)";
+	initflags="$initflags `cat $xinitflagsf`";
 else
 	initflags="$initflags /"
 fi

@@ -17,17 +17,18 @@ system.
 The following platforms have been tested at at least some point and
 should work - please report if they don't:
   [adns]       OS
-   pre-1.0	Linux glibc 2.1 (actually tested on Debian 2.2).
-   pre-1.0	FreeBSD 3.2
-   pre-1.0	Solaris 2.6, 2.7, 2.8
-   pre-1.0	HP-UX 10.20, 11.00
-   pre-1.0	IRIX 6.5 *not* with GCC [1], --disable-dynamic
-              AIX no dynamic
+   1.0		Linux glibc 2.1 (actually tested on Debian 2.2).
+   1.0		FreeBSD 3.2
+   1.0		Solaris 2.6, 2.7, 2.8
+   1.0		HP-UX 10.20, 11.00
+   1.0		IRIX 6.5 *not* with GCC [1], --disable-dynamic, [2]
+   1.0		AIX 4.1.5, --disable-dynamic
 Later versions of the same OS should work too.  [adns] is the latest
 version of adns that has been tested.  Usually entries in this table
 mean they pass adns's own regression test, when compiled with GCC.
 Notes/known problems:
     [1] IRIX 6.5 inet_ntoa seems to break with GCC.
+    [2] Many spurious warnings from this platform's native compiler.
 
 The following platforms are known to be deficient and will not work:
     Solaris 2.5			Lacks vsnprintf - install glibc ?
