@@ -390,6 +390,7 @@ static void free_query_allocs(adns_query qu) {
   for (an= qu->allocations.head; an; an= ann) { ann= an->next; free(an); }
   LIST_INIT(qu->allocations);
   adns__vbuf_free(&qu->vb);
+  free(qu->query_dgram);
 }
 
 void adns_cancel(adns_query qu) {
@@ -500,6 +501,7 @@ void adns__query_done(adns_query qu) {
     LIST_UNLINK(qu->ads->childw,parent);
     qu->ctx.callback(parent,qu);
     free_query_allocs(qu);
+    free(qu->answer);
     free(qu);
   } else {
     makefinal_query(qu);

@@ -1,12 +1,15 @@
 adns (0.6) unstable; urgency=high
 
-  Bugfixes:
+  Core library bugfixes:
   * Do not fail assertion if _qf_owner, _qf_search, domain ends in `.'.
   * Avoid infinite timeouts, causing lockup, when they should be zero !
   * TCP handling revamped (avoids recursive-invocation problems).
+  * Two memory leaks (one in all queries, one in cancelled ones) fixed.
+
+  Test and client program bug and portability fixes:
   * Dynamic library building works properly.
   * adnshost prints somewhat better messages about some wrong usages.
-  * Include stdlib.h in adnshost.h.
+  * Include <stdlib.h> and <sys/types.h> in adnshost.h.
   * adnslogres: parsing and error checking improved (Tony Finch).
   * Regresion tests can cope with zero-length reads.
 
