@@ -4,8 +4,8 @@
 #    Copyright (C) 1997-1999 Ian Jackson <ian@davenant.greenend.org.uk>
 #
 #  It is part of adns, which is
-#    Copyright (C) 1997-1999 Ian Jackson <ian@davenant.greenend.org.uk>
-#    Copyright (C) 1999-2000 Tony Finch <dot@dotat.at>
+#    Copyright (C) 1997-2005 Ian Jackson <ian@davenant.greenend.org.uk>
+#    Copyright (C) 1999-2004 Tony Finch <dot@dotat.at>
 #  
 #  This file is part of adns, which is Copyright (C) 1997-1999 Ian Jackson
 #

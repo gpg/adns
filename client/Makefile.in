@@ -27,7 +27,7 @@ VPATH=		@srcdir@
 PROGS_SYSDEP=	@PROGS_HAVE_TSEARCH@
 ENABLE_DYNAMIC=	@ENABLE_DYNAMIC@
 
-PROGRAMS=	adnslogres adnshost $(PROGS_SYSDEP)
+PROGRAMS=	adnslogres adnsheloex adnshost $(PROGS_SYSDEP)
 PROGRAMS_LOCAL=	fanftest adnstest
 PROGRAMS_ALL=	$(PROGRAMS) $(PROGRAMS_LOCAL)
 
