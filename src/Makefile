@@ -7,6 +7,10 @@ WERROR=-Werror
 
 all:		dtest
 
-dtest:		dtest.o event.o query.o setup.o submit.o
+dtest:		dtest.o event.o query.o setup.o submit.o reply.o
 
-%.o:		adns-internal.h adns.h
+clean:
+		rm -f dtest *.o
+
+dtest.o event.o query.o setup.o submit.o reply.o:	internal.h adns.h
+

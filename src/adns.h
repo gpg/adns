@@ -3,6 +3,8 @@
 #ifndef ADNS_H_INCLUDED
 #define ADNS_H_INCLUDED
 
+#include <stdio.h>
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 
@@ -34,39 +36,39 @@ typedef enum {
   adns_r_none=               0,
   
   adns_r_a=                  1,
-  adns_r_a_mf=                  adns_r_a|adns__qtf_mf,
+  adns_r_a_mf=                  adns_r_a|adns__qtf_masterfmt,
   
   adns_r_ns_raw=             2,
   adns_r_ns=                    adns_r_ns_raw|adns__qtf_deref,
-  adns_r_ns_mf=                 adns_r_ns_raw|adns__qtf_mf,
+  adns_r_ns_mf=                 adns_r_ns_raw|adns__qtf_masterfmt,
   
   adns_r_cname=              5,
-  adns_r_cname_mf=              adns_r_cname|adns__qtf_mf,
+  adns_r_cname_mf=              adns_r_cname|adns__qtf_masterfmt,
   
   adns_r_soa_raw=            6,
   adns_r_soa=                   adns_r_soa_raw|adns__qtf_mail822, 
-  adns_r_soa_mf=                adns_r_soa_raw|adns__qtf_mf,
+  adns_r_soa_mf=                adns_r_soa_raw|adns__qtf_masterfmt,
   
   adns_r_null=              10,
-  adns_r_null_mf=               adns_r_null|adns__qtf_mf,
+  adns_r_null_mf=               adns_r_null|adns__qtf_masterfmt,
   
   adns_r_ptr_raw=           12,
   adns_r_ptr=                   adns_r_ptr_raw|adns__qtf_deref,
-  adns_r_ptr_mf=                adns_r_ptr_raw|adns__qtf_mf,
+  adns_r_ptr_mf=                adns_r_ptr_raw|adns__qtf_masterfmt,
   
   adns_r_hinfo=             13,  
-  adns_r_hinfo_mf=              adns_r_hinfo|adns__qtf_mf,
+  adns_r_hinfo_mf=              adns_r_hinfo|adns__qtf_masterfmt,
   
   adns_r_mx_raw=            15,
   adns_r_mx=                    adns_r_mx_raw|adns__qtf_deref,
-  adns_r_mx_mf=                 adns_r_mx_raw|adns__qtf_mf,
+  adns_r_mx_mf=                 adns_r_mx_raw|adns__qtf_masterfmt,
   
   adns_r_txt=               16,
-  adns_r_txt_mf=                adns_r_txt|adns__qtf_mf,
+  adns_r_txt_mf=                adns_r_txt|adns__qtf_masterfmt,
   
   adns_r_rp_raw=            17,
-  adns_r_rp=                    adns_r_rp_raw|adns__qtf_mail822
-  adns_r_rp_mf=                 adns_r_rp_raw|adns__qtf_mf,
+  adns_r_rp=                    adns_r_rp_raw|adns__qtf_mail822,
+  adns_r_rp_mf=                 adns_r_rp_raw|adns__qtf_masterfmt
   
 } adns_rrtype;
 
@@ -95,7 +97,7 @@ typedef enum {
   adns_s_max_tempfail= 99,
   adns_s_inconsistent, /* PTR gives domain whose A does not match */
   adns_s_cname, /* CNAME found where data eg A expected (not if _qf_loosecname) */
-  adns_s_max_misconfig= 199;
+  adns_s_max_misconfig= 199,
   adns_s_nxdomain,
   adns_s_norecord,
   adns_s_invaliddomain
@@ -106,7 +108,26 @@ typedef struct {
   adns_status astatus;
   int naddrs; /* temp fail => -1, perm fail => 0, s_ok => >0 */
   struct in_addr *addrs;
-} adns_dmaddr;
+} adns_rr_dmaddr;
+
+typedef struct {
+  char *a, *b;
+} adns_rr_strpair;
+
+typedef struct {
+  int i;
+  adns_rr_dmaddr dmaddr;
+} adns_rr_intdmaddr;
+
+typedef struct {
+  int i;
+  char *str;
+} adns_rr_intstr;
+
+typedef struct {
+  char *ns0, *rp;
+  unsigned long serial, refresh, retry, expire, minimum;
+} adns_rr_soa;
 
 typedef struct {
   adns_status status;
@@ -114,16 +135,13 @@ typedef struct {
   adns_rrtype type;
   int nrrs;
   union {
-    struct in_addr inaddr[1];                                                    /* a */
-    char (*str)[1];                     /* ns_raw, cname, ptr, ptr_raw, txt, <any>_mf */
-    adns_dmaddr dmaddr[1];                                                      /* ns */
-    struct { char *a, *b; } strpair[1];                          /* hinfo, rp, rp_raw */
-    struct { int pref; adns_dmaddrs dmaddr; } intdmaddr[1];                     /* mx */
-    struct { int pref; char *str; } intstr[1];                              /* mx_raw */
-    struct {
-      char *ns0, *rp;
-      unsigned long serial, refresh, retry, expire, minimum;
-    } soa[1];                                                         /* soa, soa_raw */
+    struct in_addr *inaddr;        /* a */
+    char *(*str);                  /* ns_raw, cname, ptr, ptr_raw, txt, <any>_mf */
+    adns_rr_dmaddr *dmaddr;        /* ns */
+    adns_rr_strpair *strpair;      /* hinfo, rp, rp_raw */
+    adns_rr_intdmaddr *intdmaddr;  /* mx */
+    adns_rr_intstr *intstr;        /* mx_raw */
+    adns_rr_soa *soa;              /* soa, soa_raw */
     /* NULL is empty */
   } rrs;
 } adns_answer;
@@ -131,7 +149,8 @@ typedef struct {
 /* Memory management:
  *  adns_state and adns_query are actually pointers to malloc'd state;
  *  On submission questions are copied, including the owner domain;
- *  Answers are malloc'd as a single piece of memory.
+ *  Answers are malloc'd as a single piece of memory; pointers in the
+ *  answer struct point into further memory in the answer.
  * query_io:
  *  Must always be non-null pointer;
  *  If *query_io is 0 to start with then any query may be returned;
@@ -195,6 +214,8 @@ int adns_callback(adns_state, int maxfd, const fd_set *readfds, const fd_set *wr
  * Other fd's may be in the fd_sets, and will be ignored.
  * _callback returns how many adns fd's were in the various sets, so
  * you can tell if your select handling code has missed something and is going awol.
+ *
+ * May also return -1 if a critical syscall failed, setting errno.
  */
 
 void adns_interest(adns_state, int *maxfd_io, fd_set *readfds_io,

@@ -1,18 +1,23 @@
 /**/
 
+#include <errno.h>
+#include <string.h>
+
+#include <sys/uio.h>
+
 #include "internal.h"
 
 adns_status adns__mkquery(adns_state ads, const char *owner, int ol, int id,
 			  adns_rrtype type, adns_queryflags flags) {
   /* Assembles a query packet in ads->rqbuf. */
   int ll, c, nlabs;
-  unsigned char label[255], *rqp;
+  byte label[255], *rqp;
   const char *p, *pe;
 
 #define MKQUERY_ADDB(b) *rqp++= (b)
 #define MKQUERY_ADDW(w) (MKQUERY_ADDB(((w)>>8)&0x0ff), MKQUERY_ADDB((w)&0x0ff))
 
-  if (!vbuf_ensure(&ads->rqbuf,12+strlen(owner)+3)) return adns_s_nolocalmem;
+  if (!adns__vbuf_ensure(&ads->rqbuf,12+strlen(owner)+3)) return adns_s_nolocalmem;
   rqp= ads->rqbuf.buf;
 
   MKQUERY_ADDW(id);
@@ -29,7 +34,7 @@ adns_status adns__mkquery(adns_state ads, const char *owner, int ol, int id,
     ll= 0;
     while (p!=pe && (c= *p++)!='.') {
       if (c=='\\') {
-	if (!(flags & adns_f_anyquote)) return adns_s_invaliddomain;
+	if (!(flags & adns_qf_anyquote)) return adns_s_invaliddomain;
 	if (ctype_digit(p[0])) {
 	  if (ctype_digit(p[1]) && ctype_digit(p[2])) {
 	    c= (*p++ - '0')*100 + (*p++ - '0')*10 + (*p++ - '0');
@@ -41,7 +46,7 @@ adns_status adns__mkquery(adns_state ads, const char *owner, int ol, int id,
 	  return adns_s_invaliddomain;
 	}
       }
-      if (!(flags & adns_f_anyquote)) {
+      if (!(flags & adns_qf_anyquote)) {
 	if (ctype_digit(c) || c == '-') {
 	  if (!ll) return adns_s_invaliddomain;
 	} else if ((c < 'a' || c > 'z') && (c < 'A' && c > 'Z')) {
@@ -61,13 +66,13 @@ adns_status adns__mkquery(adns_state ads, const char *owner, int ol, int id,
   MKQUERY_ADDW(type & adns__rrt_typemask); /* QTYPE */
   MKQUERY_ADDW(1); /* QCLASS=IN */
 
-  ads->rqbuf.used= rqp - ads->rqbuf.used;
+  ads->rqbuf.used= rqp - ads->rqbuf.buf;
   assert(ads->rqbuf.used < ads->rqbuf.avail);
   
   return adns_s_ok;
 }
 
-void adns__query_tcp(adns_state ads, adns_query qu) {
+void adns__query_tcp(adns_state ads, adns_query qu, struct timeval now) {
   /* Query must be in state tcpwait/timew; it will be moved to a new state
    * if possible and no further processing can be done on it for now.
    * (Resulting state is one of tcpwait/timew (if server not connected),
@@ -78,27 +83,28 @@ void adns__query_tcp(adns_state ads, adns_query qu) {
    * may break.  If the conn list lost then the caller is responsible for any
    * reestablishment and retry.
    */
-  unsigned char length[2];
+  byte length[2];
   struct iovec iov[2];
+  int wr, r;
 
   if (ads->tcpstate != server_ok) return;
 
   length[0]= (qu->querylen&0x0ff00U) >>8;
   length[1]= (qu->querylen&0x0ff);
   
-  if (!vbuf_ensure(&ads->tcpsend,ads->tcpsend.used+qu->querylen+2)) return;
+  if (!adns__vbuf_ensure(&ads->tcpsend,ads->tcpsend.used+qu->querylen+2)) return;
 
   timevaladd(&now,TCPMS);
   qu->timeout= now;
-  qu->senttcpserver= ads->tcpserver;
-  DLIST_LINKTAIL(ads->timew,qu);
+  qu->state= query_tcpsent;
+  LIST_LINK_TAIL(ads->timew,qu);
 
-  if (ads->opbufused) {
+  if (ads->tcpsend.used) {
     wr= 0;
   } else {
-    iov[0].iovbase= length;
+    iov[0].iov_base= length;
     iov[0].iov_len= 2;
-    iov[1].iovbase= qu->querymsg;
+    iov[1].iov_base= qu->querymsg;
     iov[1].iov_len= qu->querylen;
     wr= writev(ads->tcpsocket,iov,2);
     if (wr < 0) {
@@ -112,13 +118,13 @@ void adns__query_tcp(adns_state ads, adns_query qu) {
   }
 
   if (wr<2) {
-    r= vbuf_append(&ads->tcpsend,length,2-wr); assert(r);
+    r= adns__vbuf_append(&ads->tcpsend,length,2-wr); assert(r);
     wr= 0;
-  } esle {
+  } else {
     wr-= 2;
   }
   if (wr<qu->querylen) {
-    r= vbuf_append(&ads->tcpsend,qu->querymsg+wr,qu->querylen-wr); assert(r);
+    r= adns__vbuf_append(&ads->tcpsend,qu->querymsg+wr,qu->querylen-wr); assert(r);
   }
 }
 
@@ -126,9 +132,9 @@ static void query_usetcp(adns_state ads, adns_query qu, struct timeval now) {
   timevaladd(&now,TCPMS);
   qu->timeout= now;
   qu->state= query_tcpwait;
-  DLIST_LINKTAIL(ads->timew,qu);
-  adns__query_tcp(ads,qu);
-  adns__tcp_tryconnect(ads);
+  LIST_LINK_TAIL(ads->timew,qu);
+  adns__query_tcp(ads,qu,now);
+  adns__tcp_tryconnect(ads,now);
 }
 
 void adns__query_udp(adns_state ads, adns_query qu, struct timeval now) {
@@ -138,21 +144,20 @@ void adns__query_udp(adns_state ads, adns_query qu, struct timeval now) {
    *  tcpsent/timew, child/childw or done/output.)
    */
   struct sockaddr_in servaddr;
-  int serv;
+  int serv, r;
 
   assert(qu->state == query_udp);
-  if ((qu->flags & adns_f_usevc) ||
-      (qu->querylen > UDPMAXDGRAM)) {
+  if ((qu->flags & adns_qf_usevc) || (qu->querylen > MAXUDPDGRAM)) {
     query_usetcp(ads,qu,now);
     return;
   }
 
-  if (qu->udpretries >= UDPMAXRETRIES) {
-    query_fail(ads,qu,adns_s_notresponding);
+  if (qu->udpretries >= MAXUDPRETRIES) {
+    adns__query_fail(ads,qu,adns_s_timeout);
     return;
   }
 
-  serv= qu->nextudpserver;
+  serv= qu->udpnextserver;
   memset(&servaddr,0,sizeof(servaddr));
   servaddr.sin_family= AF_INET;
   servaddr.sin_addr= ads->servers[serv].addr;
@@ -160,28 +165,35 @@ void adns__query_udp(adns_state ads, adns_query qu, struct timeval now) {
   
   r= sendto(ads->udpsocket,qu->querymsg,qu->querylen,0,&servaddr,sizeof(servaddr));
   if (r<0 && errno == EMSGSIZE) { query_usetcp(ads,qu,now); return; }
-  if (r<0) warn("sendto %s failed: %s",inet_ntoa(servaddr.sin_addr),strerror(errno));
+  if (r<0) adns__warn(ads,serv,"sendto failed: %s",strerror(errno));
   
   timevaladd(&now,UDPRETRYMS);
   qu->timeout= now;
-  qu->sentudp |= (1<<serv);
-  qu->nextudpserver= (serv+1)%ads->nservers;
+  qu->udpsent |= (1<<serv);
+  qu->udpnextserver= (serv+1)%ads->nservers;
   qu->udpretries++;
-  DLIST_LINKTAIL(ads->timew,qu);
+  LIST_LINK_TAIL(ads->timew,qu);
+}
+
+void adns__query_nomem(adns_state ads, adns_query qu) {
+  qu->answer.used= 0;
+  qu->id= -1;
+  LIST_LINK_TAIL(ads->output,qu);
 }
 
 void adns__query_fail(adns_state ads, adns_query qu, adns_status stat) {
   adns_answer *ans;
-  
-  ans= qu->answer;
-  if (!ans) ans= malloc(sizeof(*qu->answer));
-  if (ans) {
-    ans->status= stat;
-    ans->cname= 0;
-    ans->type= qu->type;
-    ans->nrrs= 0;
+
+  if (!adns__vbuf_ensure(&qu->answer,sizeof(adns_answer))) {
+    adns__query_nomem(ads,qu);
+    return;
   }
-  qu->answer= ans;
+  ans= (adns_answer*)qu->answer.buf;
+  ans->status= stat;
+  ans->cname= 0;
+  ans->type= qu->type;
+  ans->nrrs= 0;
+  qu->answer.used= sizeof(adns_answer);
   qu->id= -1;
   LIST_LINK_TAIL(ads->output,qu);
 }

@@ -1,9 +1,18 @@
 /**/
 
-#include "adns-internal.h"
+#include <stdlib.h>
+#include <errno.h>
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
 
-void adns__vdiag(adns_state ads, adns_initflags prevent, const char *pfx,
-			int serv, const char *fmt, va_list al) {
+#include <netdb.h>
+#include <arpa/inet.h>
+
+#include "internal.h"
+
+void adns__vdiag(adns_state ads, const char *pfx, adns_initflags prevent,
+		 int serv, const char *fmt, va_list al) {
   if (!(ads->iflags & adns_if_debug) && (!prevent || (ads->iflags & prevent))) return;
   if (serv>=0) {
     fprintf(stderr,"adns%s: nameserver %s: ",pfx,inet_ntoa(ads->servers[serv].addr));
@@ -18,15 +27,15 @@ void adns__debug(adns_state ads, int serv, const char *fmt, ...) {
   va_list al;
 
   va_start(al,fmt);
-  vdiag(ads," debug",0,serv,fmt,al);
+  adns__vdiag(ads," debug",0,serv,fmt,al);
   va_end(al);
 }
 
-void adns__swarn(adns_state ads, int serv, const char *fmt, ...) {
+void adns__warn(adns_state ads, int serv, const char *fmt, ...) {
   va_list al;
 
   va_start(al,fmt);
-  vdiag(ads," warning",adns_if_noerrprint|adns_if_noserverwarn,serv,fmt,al);
+  adns__vdiag(ads," warning",adns_if_noerrprint|adns_if_noserverwarn,serv,fmt,al);
   va_end(al);
 }
 
@@ -34,31 +43,33 @@ void adns__diag(adns_state ads, int serv, const char *fmt, ...) {
   va_list al;
 
   va_start(al,fmt);
-  vdiag(ads,"",adns_if_noerrprint,serv,fmt,al);
+  adns__vdiag(ads,"",adns_if_noerrprint,serv,fmt,al);
   va_end(al);
 }
 
-/* FIXME: unsigned char -> byte everywhere */
-
-
-int adns__vbuf_ensure(adns__vbuf *vb, size_t want) {
-  byte *nb;
   
-  if (vb->avail >= want) return;
+void adns__vbuf_init(vbuf *vb) {
+  vb->used= vb->avail= 0; vb->buf= 0;
+}
+
+int adns__vbuf_ensure(vbuf *vb, int want) {
+  void *nb;
+  
+  if (vb->avail >= want) return 1;
   nb= realloc(vb->buf,want); if (!nb) return 0;
   vb->buf= nb;
   vb->avail= want;
   return 1;
 }
   
-void adns__vbuf_appendq(adns__vbuf *vb, const byte *data, size_t len) {
+void adns__vbuf_appendq(vbuf *vb, const byte *data, int len) {
   memcpy(vb->buf+vb->used,data,len);
   vb->used+= len;
 }
 
-int adns__vbuf_append(adns__vbuf *vb, const byte *data, size_t len) {
-  size_t newlen, newalloc;
-  byte *nb;
+int adns__vbuf_append(vbuf *vb, const byte *data, int len) {
+  int newlen;
+  void *nb;
 
   newlen= vb->used+len;
   if (vb->avail < newlen) {
@@ -73,26 +84,25 @@ int adns__vbuf_append(adns__vbuf *vb, const byte *data, size_t len) {
   return 1;
 }
 
+
 static void addserver(adns_state ads, struct in_addr addr) {
   int i;
   struct server *ss;
   
   for (i=0; i<ads->nservers; i++) {
     if (ads->servers[i].addr.s_addr == addr.s_addr) {
-      debug(ads,"duplicate nameserver %s ignored",inet_ntoa(addr));
+      adns__debug(ads,-1,"duplicate nameserver %s ignored",inet_ntoa(addr));
       return;
     }
   }
   
   if (ads->nservers>=MAXSERVERS) {
-    diag(ads,"too many nameservers, ignoring %s",inet_ntoa(addr));
+    adns__diag(ads,-1,"too many nameservers, ignoring %s",inet_ntoa(addr));
     return;
   }
 
   ss= ads->servers+ads->nservers;
   ss->addr= addr;
-  ss->state= server_disc;
-  ss->connw.head= ss->connw.tail= 0;
   ads->nservers++;
 }
 
@@ -116,22 +126,22 @@ static void ccf_nameserver(adns_state ads, const char *fn, int lno, const char *
     configparseerr(ads,fn,lno,"invalid nameserver address `%s'",buf);
     return;
   }
-  debug(ads,"using nameserver %s",inet_ntoa(ia));
+  adns__debug(ads,-1,"using nameserver %s",inet_ntoa(ia));
   addserver(ads,ia);
 }
 
 static void ccf_search(adns_state ads, const char *fn, int lno, const char *buf) {
   if (!buf) return;
-  diag(ads,"warning - `search' ignored FIXME");
+  adns__diag(ads,-1,"warning - `search' ignored FIXME");
 }
 
 static void ccf_sortlist(adns_state ads, const char *fn, int lno, const char *buf) {
-  diag(ads,"warning - `sortlist' ignored FIXME");
+  adns__diag(ads,-1,"warning - `sortlist' ignored FIXME");
 }
 
 static void ccf_options(adns_state ads, const char *fn, int lno, const char *buf) {
   if (!buf) return;
-  diag(ads,"warning - `options' ignored FIXME");
+  adns__diag(ads,-1,"warning - `options' ignored FIXME");
 }
 
 static void ccf_clearnss(adns_state ads, const char *fn, int lno, const char *buf) {
@@ -160,10 +170,11 @@ static void readconfig(adns_state ads, const char *filename) {
   file= fopen(filename,"r");
   if (!file) {
     if (errno == ENOENT) {
-      debug(ads,"configuration file `%s' does not exist",filename);
+      adns__debug(ads,-1,"configuration file `%s' does not exist",filename);
       return;
     }
-    diag(ads,"cannot open configuration file `%s': %s",filename,strerror(errno));
+    adns__diag(ads,-1,"cannot open configuration file `%s': %s",
+	       filename,strerror(errno));
     return;
   }
 
@@ -171,7 +182,7 @@ static void readconfig(adns_state ads, const char *filename) {
     l= strlen(linebuf);
     if (!l) continue;
     if (linebuf[l-1] != '\n' && !feof(file)) {
-      diag(ads,"%s:%d: line too long",filename,lno);
+      adns__diag(ads,-1,"%s:%d: line too long",filename,lno);
       while ((c= getc(file)) != EOF && c != '\n') { }
       if (c == EOF) break;
       continue;
@@ -187,14 +198,15 @@ static void readconfig(adns_state ads, const char *filename) {
 	 ccip->name && strncmp(ccip->name,p,q-p);
 	 ccip++);
     if (!ccip->name) {
-      diag(ads,"%s:%d: unknown configuration directive `%.*s'",filename,lno,q-p,p);
+      adns__diag(ads,-1,"%s:%d: unknown configuration directive `%.*s'",
+		 filename,lno,q-p,p);
       continue;
     }
     while (ctype_whitespace(*q)) q++;
     ccip->fn(ads,filename,lno,q);
   }
   if (ferror(file)) {
-    diag(ads,"%s:%d: read error: %s",filename,lno,strerror(errno));
+    adns__diag(ads,-1,"%s:%d: read error: %s",filename,lno,strerror(errno));
   }
   fclose(file);
 }
@@ -203,8 +215,8 @@ static const char *instrum_getenv(adns_state ads, const char *envvar) {
   const char *value;
 
   value= getenv(envvar);
-  if (!value) debug(ads,"environment variable %s not set",envvar);
-  else debug(ads,"environment variable %s set to `%s'",envvar,value);
+  if (!value) adns__debug(ads,-1,"environment variable %s not set",envvar);
+  else adns__debug(ads,-1,"environment variable %s set to `%s'",envvar,value);
   return value;
 }
 
@@ -212,32 +224,43 @@ static void readconfigenv(adns_state ads, const char *envvar) {
   const char *filename;
 
   if (ads->iflags & adns_if_noenv) {
-    debug(ads,"not checking environment variable `%s'",envvar);
+    adns__debug(ads,-1,"not checking environment variable `%s'",envvar);
     return;
   }
   filename= instrum_getenv(ads,envvar);
   if (filename) readconfig(ads,filename);
 }
+
+
+int adns__setnonblock(adns_state ads, int fd) {
+  int r;
   
-int adns_init(adns_state *ads_r, adns_initflags flags) {
+  r= fcntl(fd,F_GETFL,0); if (r<0) return errno;
+  r |= O_NONBLOCK;
+  r= fcntl(fd,F_SETFL,r); if (r<0) return errno;
+  return 0;
+}
+
+int adns_init(adns_state *ads_r, adns_initflags flags, FILE *diagfile) {
   adns_state ads;
   const char *res_options, *adns_res_options;
   struct protoent *proto;
   int r;
   
   ads= malloc(sizeof(*ads)); if (!ads) return errno;
-  ads->timew.head= ads->timew.tail= 0;
-  ads->childw.head= ads->childw.tail= 0;
-  ads->output.head= ads->output.tail= 0;
+  ads->iflags= flags;
+  ads->diagfile= diagfile ? diagfile : stderr;
+  LIST_INIT(ads->timew);
+  LIST_INIT(ads->childw);
+  LIST_INIT(ads->output);
   ads->nextid= 0x311f;
-  ads->udpsocket= -1;
-  ads->qbufavail= 0;
-  ads->qbuf= 0;
-  ads->tcpbufavail= ads->tcpbufused= ads->tcpbufdone= 0;
-  ads->tcpbuf= 0;
-  ads->iflags= flags;
-  ads->nservers= 0;
-  ads->iflags= flags;
+  ads->udpsocket= ads->tcpsocket= -1;
+  adns__vbuf_init(&ads->rqbuf);
+  adns__vbuf_init(&ads->tcpsend);
+  adns__vbuf_init(&ads->tcprecv);
+  ads->nservers= ads->tcpserver= 0;
+  ads->tcpstate= server_disconnected;
+  timerclear(&ads->tcptimeout);
 
   res_options= instrum_getenv(ads,"RES_OPTIONS");
   adns_res_options= instrum_getenv(ads,"ADNS_RES_OPTIONS");

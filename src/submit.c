@@ -1,39 +1,48 @@
 /**/
 
-#include "adns-internal.h"
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+
+#include <sys/time.h>
+
+#include "internal.h"
 
 static adns_query allocquery(adns_state ads, const char *owner, int ol,
-			     int qml, int id, adns_rrtype type,
-			     adns_queryflags flags, void *context) {
+			     int id, adns_rrtype type,
+			     adns_queryflags flags, const qcontext *ctx) {
+  /* Query message used is the one assembled in ads->rqbuf */
   adns_query qu;
-  unsigned char *qm;
   
-  qu= malloc(sizeof(*qu)+ol+1+qml); if (!qu) return 0;
+  qu= malloc(sizeof(*qu)+ol+1+ads->rqbuf.used); if (!qu) return 0;
+  qu->state= query_udp;
   qu->next= qu->back= qu->parent= 0;
-  qu->children.head= qu->children.tail= 0;
+  LIST_INIT(qu->children);
   qu->siblings.next= qu->siblings.back= 0;
-  qu->id= id;
   qu->type= type;
-  qu->answer= 0;
+  adns__vbuf_init(&qu->answer);
+  qu->id= id;
   qu->flags= flags;
-  qu->context= context;
   qu->udpretries= 0;
-  qu->sentudp= qu->senttcp= 0;
-  qu->nextserver= 0;
+  qu->udpnextserver= 0;
+  qu->udpsent= qu->tcpfailed= 0;
+  timerclear(&qu->timeout);
+  memcpy(&qu->context,ctx,sizeof(qu->context));
   memcpy(qu->owner,owner,ol); qu->owner[ol]= 0;
-  qu->querymsg= qm= qu->owner+ol+1;
-  memcpy(qm,ads->qbuf,qml);
-  qu->querylen= qml;
+  qu->querymsg= qu->owner+ol+1;
+  memcpy(qu->owner+ol+1,ads->rqbuf.buf,ads->rqbuf.used);
+  qu->querylen= ads->rqbuf.used;
   return qu;
 }
 
-static int failsubmit(adns_state ads, void *context, adns_query *query_r,
+static int failsubmit(adns_state ads, const qcontext *ctx, adns_query *query_r,
 		      adns_rrtype type, adns_queryflags flags,
 		      int id, adns_status stat) {
   adns_query qu;
 
-  qu= allocquery(ads,0,0,0,id,type,flags,context); if (!qu) return errno;
-  query_fail(ads,qu,stat);
+  ads->rqbuf.used= 0;
+  qu= allocquery(ads,0,0,id,type,flags,ctx); if (!qu) return errno;
+  adns__query_fail(ads,qu,stat);
   *query_r= qu;
   return 0;
 }
@@ -46,8 +55,11 @@ int adns_submit(adns_state ads,
 		adns_query *query_r) {
   adns_query qu;
   adns_status stat;
-  int ol, id, qml;
+  int ol, id, r;
+  qcontext ctx;
+  struct timeval now;
 
+  ctx.ext= context;
   id= ads->nextid++;
 
   r= gettimeofday(&now,0); if (r) return errno;
@@ -55,14 +67,14 @@ int adns_submit(adns_state ads,
   ol= strlen(owner);
   if (ol<=1 || ol>MAXDNAME+1)
     return failsubmit(ads,context,query_r,type,flags,id,adns_s_invaliddomain);
-  if (owner[ol-1]=='.' && owner[ol-2]!='\\') { flags &= ~adns_f_search; ol--; }
+  if (owner[ol-1]=='.' && owner[ol-2]!='\\') { flags &= ~adns_qf_search; ol--; }
 
-  stat= adns__mkquery(ads,owner,ol,id,type,flags,&qml);
+  stat= adns__mkquery(ads,owner,ol,id,type,flags);
   if (stat) return failsubmit(ads,context,query_r,type,flags,id,stat);
 
-  qu= allocquery(ads,owner,ol,qml,id,type,flags,context); if (!qu) return errno;
+  qu= allocquery(ads,owner,ol,id,type,flags,context); if (!qu) return errno;
   adns__query_udp(ads,qu,now);
-  autosys(ads,now);
+  adns__autosys(ads,now);
 
   *query_r= qu;
   return 0;

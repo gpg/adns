@@ -1,37 +1,47 @@
 /**/
 
-#include "adns-internal.h"
+#include <string.h>
+#include <errno.h>
+#include <stdlib.h>
+
+#include <netdb.h>
+#include <arpa/inet.h>
+
+#include "internal.h"
 
 /* TCP connection management */
 
 void adns__tcp_broken(adns_state ads, const char *what, const char *why) {
   int serv;
+  adns_query qu, nqu;
   
   assert(ads->tcpstate == server_connecting || ads->tcpstate == server_ok);
   serv= ads->tcpserver;
-  warn("TCP connection lost: %s: %s",serv,why);
+  adns__warn(ads,serv,"TCP connection lost: %s: %s",what,why);
   close(ads->tcpsocket);
   ads->tcpstate= server_disconnected;
   
-  for (qu= ads->timew; qu; qu= nqu) {
+  for (qu= ads->timew.head; qu; qu= nqu) {
     nqu= qu->next;
     if (qu->state == query_udp) continue;
     assert(qu->state == query_tcpwait || qu->state == query_tcpsent);
     qu->state= query_tcpwait;
     qu->tcpfailed |= (1<<serv);
     if (qu->tcpfailed == (1<<ads->nservers)-1) {
-      DLIST_UNLINK(ads->timew,qu);
+      LIST_UNLINK(ads->timew,qu);
       adns__query_fail(ads,qu,adns_s_allservfail);
     }
   }
 
-  ads->tcpbuf.used= 0;
+  ads->tcprecv.used= ads->tcpsend.used= 0;
   ads->tcpserver= (serv+1)%ads->nservers;
 }
 
 static void tcp_connected(adns_state ads, struct timeval now) {
-  debug("TCP connected",ads->tcpserver);
-  ads->tcpstate= server_connected;
+  adns_query qu, nqu;
+  
+  adns__debug(ads,ads->tcpserver,"TCP connected");
+  ads->tcpstate= server_ok;
   for (qu= ads->timew.head; qu; qu= nqu) {
     nqu= qu->next;
     if (qu->state == query_udp) continue;
@@ -42,19 +52,29 @@ static void tcp_connected(adns_state ads, struct timeval now) {
 
 void adns__tcp_tryconnect(adns_state ads, struct timeval now) {
   int r, fd, tries;
-  sockaddr_in addr;
+  struct sockaddr_in addr;
+  struct protoent *proto;
   /* fixme: single TCP timeout, not once per server */
 
   for (tries=0; tries<ads->nservers; tries++) {
     if (ads->tcpstate == server_connecting || ads->tcpstate == server_ok) return;
     assert(ads->tcpstate == server_disconnected);
-    assert(!ads->tcpbuf.used);
+    assert(!ads->tcpsend.used);
+    assert(!ads->tcprecv.used);
 
     proto= getprotobyname("tcp");
-    if (!proto) { diag(ads,"unable to find protocol number for TCP !",-1); return; }
+    if (!proto) { adns__diag(ads,-1,"unable to find protocol no. for TCP !"); return; }
     fd= socket(AF_INET,SOCK_STREAM,proto->p_proto);
-    if (fd<0) { diag(ads,"cannot create TCP socket: %s",-1,strerror(errno)); return; }
-    if (!adns__setnonblock(fd)) return;
+    if (fd<0) {
+      adns__diag(ads,-1,"cannot create TCP socket: %s",strerror(errno));
+      return;
+    }
+    r= adns__setnonblock(ads,fd);
+    if (r) {
+      adns__diag(ads,-1,"cannot make TCP socket nonblocking: %s",strerror(r));
+      close(fd);
+      return;
+    }
     memset(&addr,0,sizeof(addr));
     addr.sin_family= AF_INET;
     addr.sin_port= htons(NSPORT);
@@ -62,166 +82,10 @@ void adns__tcp_tryconnect(adns_state ads, struct timeval now) {
     r= connect(fd,&addr,sizeof(addr));
     ads->tcpsocket= fd;
     ads->tcpstate= server_connecting;
-    if (r==0) { tcp_connected(ads); continue; }
+    if (r==0) { tcp_connected(ads,now); continue; }
     if (errno == EWOULDBLOCK || errno == EINPROGRESS) return;
     adns__tcp_broken(ads,"connect",strerror(errno));
   }
-}
-
-/* Callback procedures - these do the real work of reception and timeout, etc. */
-
-static int callb_checkfd(int maxfd, const fd_set *fds, int fd) {
-  return maxfd<0 || !fds ? 1 :
-         fd<maxfd && FD_ISSET(fd,fds);
-}
-
-static int internal_callback(adns_state ads, int maxfd,
-			     const fd_set *readfds, const fd_set *writefds,
-			     const fd_set *exceptfds) {
-  int skip, dgramlen, count, udpaddrlen, oldtcpsocket;
-  enum adns__tcpstate oldtcpstate;
-  unsigned char udpbuf[UDPMAXDGRAM];
-  struct sockaddr_in udpaddr;
-
-  count= 0;
-
-  switch (ads->tcpstate) {
-  case server_disconnected:
-    break;
-  case server_connecting:
-    if (callb_checkfd(maxfd,writefds,ads->tcpsocket)) {
-      count++;
-      assert(ads->tcprecv.used==0);
-      vbuf_ensure(&ads->tcprecv,1);
-      if (ads->tcprecv.buf) {
-	r= read(ads->tcpsocket,&ads->tcprecv.buf,1);
-	if (r==0 || (r<0 && (errno==EAGAIN || errno==EWOULDBLOCK))) {
-	  tcpserver_connected(ads);
-	} else if (r>0) {
-	  tcpserver_broken(ads,"connect/read","sent data before first request");
-	} else if (errno!=EINTR) {
-	  tcpserver_broken(ads,"connect/read",strerror(errno));
-	}
-      }
-    }
-    break;
-  case server_ok:
-    count+= callb_checkfd(maxfd,readfds,ads->tcpsocket) +
-            callb_checkfd(maxfd,exceptfds,ads->tcpsocket) +
-      (ads->tcpsend.used && callb_checkfd(maxfd,writefds,ads->tcpsocket));
-    if (callb_checkfd(maxfd,readfds,ads->tcpsocket)) {
-      skip= 0;
-      for (;;) {
-	if (ads->tcprecv.used<skip+2) {
-	  want= 2;
-	} else {
-	  dgramlen= (ads->tcprecv.buf[skip]<<8) | ads->tcprecv.buf[skip+1];
-	  if (ads->tcprecv.used<skip+2+dgramlen) {
-	    want= 2+dgramlen;
-	  } else {
-	    procdgram(ads,ads->tcprecv.buf+skip+2,dgramlen,ads->tcpserver);
-	    skip+= 2+dgramlen; continue;
-	  }
-	}
-	ads->tcprecv.used -= skip;
-	memmove(ads->tcprecv.buf,ads->tcprecv.buf+skip,ads->tcprecv.used);
-	vbuf_ensure(&ads->tcprecv,want);
-	if (ads->tcprecv.used >= ads->tcprecv.avail) break;
-	r= read(ads->tcpsocket,
-		ads->tcprecv.buf+ads->tcprecv.used,
-		ads->tcprecv.avail-ads->tcprecv.used);
-	if (r>0) {
-	  ads->tcprecv.used+= r;
-	} else {
-	  if (r<0) {
-	    if (errno==EAGAIN || errno==EWOULDBLOCK || errno==ENOMEM) break;
-	    if (errno==EINTR) continue;
-	  }
-	  tcpserver_broken(ads->tcpserver,"read",r?strerror(errno):"closed");
-	  break;
-	}
-      }
-    } else if (callb_checkfd(maxfd,exceptfds,ads->tcpsocket)) {
-      tcpserver_broken(ads->tcpserver,"select","exceptional condition detected");
-    } else if (ads->tcpsend.used && callb_checkfd(maxfd,writefds,ads->tcpsocket)) {
-      r= write(ads->tcpsocket,ads->tcpsend.buf,ads->tcpsend.used);
-      if (r<0) {
-	if (errno!=EAGAIN && errno!=EWOULDBLOCK && errno!=ENOMEM && errno!=EINTR) {
-	  tcpserver_broken(ads->tcpserver,"write",strerror(errno));
-	}
-      } else if (r>0) {
-	ads->tcpsend.used -= r;
-	memmove(ads->tcpsend.buf,ads->tcpsend.buf+r,ads->tcpsend.used);
-      }
-    }
-  default:
-    abort();
-  }
-
-  if (callb_checkfd(maxfd,readfds,ads->udpsocket)) {
-    count++;
-    for (;;) {
-      udpaddrlen= sizeof(udpaddr);
-      r= recvfrom(ads->udpsocket,udpbuf,sizeof(udpbuf),0,&udpaddr,&udpaddrlen);
-      if (r<0) {
-	if (!(errno == EAGAIN || errno == EWOULDBLOCK ||
-	      errno == EINTR || errno == ENOMEM || errno == ENOBUFS))
-	  warn("datagram receive error: %s",strerror(errno));
-	break;
-      }
-      if (udpaddrlen != sizeof(udpaddr)) {
-	diag("datagram received with wrong address length %d (expected %d)",
-	     udpaddrlen,sizeof(udpaddr));
-	continue;
-      }
-      if (udpaddr.sin_family != AF_INET) {
-	diag("datagram received with wrong protocol family %u (expected %u)",
-	     udpaddr.sin_family,AF_INET);
-	continue;
-      }
-      if (ntohs(udpaddr.sin_port) != NSPORT) {
-	diag("datagram received from wrong port %u (expected %u)",
-	     ntohs(udpaddr.sin_port),NSPORT);
-	continue;
-      }
-      for (serv= 0;
-	   serv < ads->nservers &&
-	     ads->servers[serv].addr.s_addr != udpaddr.sin_addr.s_addr;
-	   serv++);
-      if (serv >= ads->nservers) {
-	warn("datagram received from unknown nameserver %s",inet_ntoa(udpaddr.sin_addr));
-	continue;
-      }
-      procdgram(ads,udpbuf,r,serv);
-    }
-  }
-}
-
-static void checktimeouts(adns_state ads, struct timeval now,
-			  struct timeval **tv_io, struct timeval *tvbuf) {
-  for (qu= ads->timew; qu; qu= nqu) {
-    nqu= qu->next;
-    if (timercmp(&now,qu->timeout,>)) {
-      DLIST_UNLINK(ads->timew,qu);
-      if (qu->state != state_udp) {
-	query_fail(ads,qu,adns_s_notresponding);
-      } else {
-	adns__query_udp(ads,qu,now);
-      }
-    } else {
-      inter_maxtoabs(tv_io,tvbuf,now,qu->timeout);
-    }
-  }
-}  
- 
-int adns_callback(adns_state ads, int maxfd,
-		  const fd_set *readfds, const fd_set *writefds,
-		  const fd_set *exceptfds) {
-  struct timeval now;
-
-  r= gettimeofday(&now,0);
-  if (!r) checktimeouts(ads,now,0,0);
-  return internal_callback(ads,maxfd,readfds,writefds,exceptfds);
 }
 
 /* `Interest' functions - find out which fd's we might be interested in,
@@ -230,7 +94,7 @@ int adns_callback(adns_state ads, int maxfd,
 
 static void inter_maxto(struct timeval **tv_io, struct timeval *tvbuf,
 			struct timeval maxto) {
-  struct timeval rbuf;
+  struct timeval *rbuf;
 
   if (!tv_io) return;
   rbuf= *tv_io;
@@ -257,17 +121,35 @@ static void inter_addfd(int *maxfd, fd_set *fds, int fd) {
   FD_SET(fd,fds);
 }
 
+static void checktimeouts(adns_state ads, struct timeval now,
+			  struct timeval **tv_io, struct timeval *tvbuf) {
+  adns_query qu, nqu;
+  
+  for (qu= ads->timew.head; qu; qu= nqu) {
+    nqu= qu->next;
+    if (timercmp(&now,&qu->timeout,>)) {
+      LIST_UNLINK(ads->timew,qu);
+      if (qu->state != query_udp) {
+	adns__query_fail(ads,qu,adns_s_timeout);
+      } else {
+	adns__query_udp(ads,qu,now);
+      }
+    } else {
+      inter_maxtoabs(tv_io,tvbuf,now,qu->timeout);
+    }
+  }
+}  
+ 
 void adns_interest(adns_state ads, int *maxfd,
 		   fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
 		   struct timeval **tv_io, struct timeval *tvbuf) {
   struct timeval now;
   struct timeval tvto_lr;
-  adns_query qu;
   int r;
   
   r= gettimeofday(&now,0);
   if (r) {
-    warn(ads,"gettimeofday failed - will sleep for a bit: %s",-1,strerror(errno));
+    adns__warn(ads,-1,"gettimeofday failed - will sleep for a bit: %s",strerror(errno));
     timerclear(&tvto_lr); timevaladd(&tvto_lr,LOCALRESOURCEMS);
     inter_maxto(tv_io, tvbuf, tvto_lr);
   } else {
@@ -277,23 +159,165 @@ void adns_interest(adns_state ads, int *maxfd,
   inter_addfd(maxfd,readfds,ads->udpsocket);
 
   switch (ads->tcpstate) {
-  case server_disc:
+  case server_disconnected:
     break;
   case server_connecting:
     inter_addfd(maxfd,writefds,ads->tcpsocket);
     break;
-  case server_connected:
+  case server_ok:
     inter_addfd(maxfd,readfds,ads->tcpsocket);
     inter_addfd(maxfd,exceptfds,ads->tcpsocket);
-    if (ads->opbufused) inter_addfd(maxfd,writefds,ads->tcpsocket);
+    if (ads->tcpsend.used) inter_addfd(maxfd,writefds,ads->tcpsocket);
   default:
     abort();
   }
 }
 
+/* Callback procedures - these do the real work of reception and timeout, etc. */
+
+static int callb_checkfd(int maxfd, const fd_set *fds, int fd) {
+  return maxfd<0 || !fds ? 1 :
+         fd<maxfd && FD_ISSET(fd,fds);
+}
+
+static int internal_callback(adns_state ads, int maxfd,
+			     const fd_set *readfds, const fd_set *writefds,
+			     const fd_set *exceptfds,
+			     struct timeval now) {
+  int skip, want, dgramlen, count, udpaddrlen, r, serv;
+  byte udpbuf[MAXUDPDGRAM];
+  struct sockaddr_in udpaddr;
+
+  count= 0;
+
+  switch (ads->tcpstate) {
+  case server_disconnected:
+    break;
+  case server_connecting:
+    if (callb_checkfd(maxfd,writefds,ads->tcpsocket)) {
+      count++;
+      assert(ads->tcprecv.used==0);
+      adns__vbuf_ensure(&ads->tcprecv,1);
+      if (ads->tcprecv.buf) {
+	r= read(ads->tcpsocket,&ads->tcprecv.buf,1);
+	if (r==0 || (r<0 && (errno==EAGAIN || errno==EWOULDBLOCK))) {
+	  tcp_connected(ads,now);
+	} else if (r>0) {
+	  adns__tcp_broken(ads,"connect/read","sent data before first request");
+	} else if (errno!=EINTR) {
+	  adns__tcp_broken(ads,"connect/read",strerror(errno));
+	}
+      }
+    }
+    break;
+  case server_ok:
+    count+= callb_checkfd(maxfd,readfds,ads->tcpsocket) +
+            callb_checkfd(maxfd,exceptfds,ads->tcpsocket) +
+      (ads->tcpsend.used && callb_checkfd(maxfd,writefds,ads->tcpsocket));
+    if (callb_checkfd(maxfd,readfds,ads->tcpsocket)) {
+      skip= 0;
+      for (;;) {
+	if (ads->tcprecv.used<skip+2) {
+	  want= 2;
+	} else {
+	  dgramlen= (ads->tcprecv.buf[skip]<<8) | ads->tcprecv.buf[skip+1];
+	  if (ads->tcprecv.used<skip+2+dgramlen) {
+	    want= 2+dgramlen;
+	  } else {
+	    adns__procdgram(ads,ads->tcprecv.buf+skip+2,dgramlen,ads->tcpserver);
+	    skip+= 2+dgramlen; continue;
+	  }
+	}
+	ads->tcprecv.used -= skip;
+	memmove(ads->tcprecv.buf,ads->tcprecv.buf+skip,ads->tcprecv.used);
+	adns__vbuf_ensure(&ads->tcprecv,want);
+	if (ads->tcprecv.used >= ads->tcprecv.avail) break;
+	r= read(ads->tcpsocket,
+		ads->tcprecv.buf+ads->tcprecv.used,
+		ads->tcprecv.avail-ads->tcprecv.used);
+	if (r>0) {
+	  ads->tcprecv.used+= r;
+	} else {
+	  if (r<0) {
+	    if (errno==EAGAIN || errno==EWOULDBLOCK || errno==ENOMEM) break;
+	    if (errno==EINTR) continue;
+	  }
+	  adns__tcp_broken(ads,"read",r?strerror(errno):"closed");
+	  break;
+	}
+      }
+    } else if (callb_checkfd(maxfd,exceptfds,ads->tcpsocket)) {
+      adns__tcp_broken(ads,"select","exceptional condition detected");
+    } else if (ads->tcpsend.used && callb_checkfd(maxfd,writefds,ads->tcpsocket)) {
+      r= write(ads->tcpsocket,ads->tcpsend.buf,ads->tcpsend.used);
+      if (r<0) {
+	if (errno!=EAGAIN && errno!=EWOULDBLOCK && errno!=ENOMEM && errno!=EINTR) {
+	  adns__tcp_broken(ads,"write",strerror(errno));
+	}
+      } else if (r>0) {
+	ads->tcpsend.used -= r;
+	memmove(ads->tcpsend.buf,ads->tcpsend.buf+r,ads->tcpsend.used);
+      }
+    }
+  default:
+    abort();
+  }
+
+  if (callb_checkfd(maxfd,readfds,ads->udpsocket)) {
+    count++;
+    for (;;) {
+      udpaddrlen= sizeof(udpaddr);
+      r= recvfrom(ads->udpsocket,udpbuf,sizeof(udpbuf),0,&udpaddr,&udpaddrlen);
+      if (r<0) {
+	if (!(errno == EAGAIN || errno == EWOULDBLOCK ||
+	      errno == EINTR || errno == ENOMEM || errno == ENOBUFS))
+	  adns__warn(ads,-1,"datagram receive error: %s",strerror(errno));
+	break;
+      }
+      if (udpaddrlen != sizeof(udpaddr)) {
+	adns__diag(ads,-1,"datagram received with wrong address length %d (expected %d)",
+		   udpaddrlen,sizeof(udpaddr));
+	continue;
+      }
+      if (udpaddr.sin_family != AF_INET) {
+	adns__diag(ads,-1,"datagram received with wrong protocol family"
+		   " %u (expected %u)",udpaddr.sin_family,AF_INET);
+	continue;
+      }
+      if (ntohs(udpaddr.sin_port) != NSPORT) {
+	adns__diag(ads,-1,"datagram received from wrong port %u (expected %u)",
+		   ntohs(udpaddr.sin_port),NSPORT);
+	continue;
+      }
+      for (serv= 0;
+	   serv < ads->nservers &&
+	     ads->servers[serv].addr.s_addr != udpaddr.sin_addr.s_addr;
+	   serv++);
+      if (serv >= ads->nservers) {
+	adns__warn(ads,-1,"datagram received from unknown nameserver %s",
+		   inet_ntoa(udpaddr.sin_addr));
+	continue;
+      }
+      adns__procdgram(ads,udpbuf,r,serv);
+    }
+  }
+  return count;
+}
+
+int adns_callback(adns_state ads, int maxfd,
+		  const fd_set *readfds, const fd_set *writefds,
+		  const fd_set *exceptfds) {
+  struct timeval now;
+  int r;
+
+  r= gettimeofday(&now,0); if (r) return -1;
+  checktimeouts(ads,now,0,0);
+  return internal_callback(ads,maxfd,readfds,writefds,exceptfds,now);
+}
+
 /* User-visible functions and their implementation. */
 
-static void autosys(adns_state ads, struct timeval now) {
+void adns__autosys(adns_state ads, struct timeval now) {
   if (ads->iflags & adns_if_noautosys) return;
   adns_callback(ads,-1,0,0,0);
 }
@@ -312,8 +336,8 @@ static int internal_check(adns_state ads,
     if (qu->id>=0) return EWOULDBLOCK;
   }
   LIST_UNLINK(ads->output,qu);
-  *answer= qu->answer;
-  if (context_r) *context_r= qu->context;
+  *answer= (adns_answer*)qu->answer.buf;
+  if (context_r) *context_r= qu->context.ext;
   free(qu);
   return 0;
 }
@@ -334,7 +358,7 @@ int adns_wait(adns_state ads,
     adns_interest(ads,&maxfd,&readfds,&writefds,&exceptfds,&tvp,&tvbuf);
     rsel= select(maxfd,&readfds,&writefds,&exceptfds,tvp);
     if (rsel==-1) return r;
-    rcb= internal_callback(ads,maxfd,&readfds,&writefds,&exceptfds);
+    rcb= adns_callback(ads,maxfd,&readfds,&writefds,&exceptfds);
     assert(rcb==rsel);
   }
 }
@@ -343,6 +367,10 @@ int adns_check(adns_state ads,
 	       adns_query *query_io,
 	       adns_answer **answer_r,
 	       void **context_r) {
-  autosys(ads);
+  struct timeval now;
+  int r;
+  
+  r= gettimeofday(&now,0); if (r) return errno;
+  adns__autosys(ads,now);
   return internal_check(ads,query_io,answer_r,context_r);
 }
