@@ -93,7 +93,7 @@ typedef enum {
   adns_s_timeout,
   adns_s_nolocalmem,
   adns_s_allservfail,
-  adns_s_serverfailure,
+  adns_s_servfail,
   adns_s_notimplemented,
   adns_s_refused,
   adns_s_reasonunknown,
@@ -106,8 +106,9 @@ typedef enum {
   /* fixme: implement _s_cname */
   adns_s_max_remotemisconfig= 199,
   adns_s_nxdomain,
-  adns_s_norecord,
-  adns_s_invaliddomain
+  adns_s_nodata,
+  adns_s_invaliddomain,
+  adns_s_domaintoolong,
 } adns_status;
 
 typedef struct {

@@ -49,13 +49,19 @@ typedef union {
   int dmaddr_index;
 } qcontext;
 
+typedef struct {
+  unsigned long searchkey; /* flags and typecode swapped */
+  adns_rrtype type;
+} typeinfo;
+
 struct adns__query {
   /* FIXME: make sure this is all init'd properly */
   enum { query_udp, query_tcpwait, query_tcpsent, query_child, query_done } state;
   adns_query back, next, parent;
   struct { adns_query head, tail; } children;
   struct { adns_query back, next; } siblings;
-  adns_rrtype type;
+  
+  const typeinfo *typei;
   vbuf ans;
   int id, flags, udpretries;
   int udpnextserver;
