@@ -8,19 +8,22 @@
 
 #include "internal.h"
 
-adns_status adns__mkquery(adns_state ads, const char *owner, int ol, int id,
+adns_status adns__mkquery(adns_state ads, vbuf *vb,
+			  const char *owner, int ol, int *id_r,
 			  const typeinfo *typei, adns_queryflags flags) {
-  /* Assembles a query packet in ads->rqbuf. */
-  int ll, c, nlabs;
+  int ll, c, nlabs, id;
   byte label[255], *rqp;
   const char *p, *pe;
 
 #define MKQUERY_ADDB(b) *rqp++= (b)
 #define MKQUERY_ADDW(w) (MKQUERY_ADDB(((w)>>8)&0x0ff), MKQUERY_ADDB((w)&0x0ff))
 
-  if (!adns__vbuf_ensure(&ads->rqbuf,DNS_HDRSIZE+strlen(owner)+1+5))
+  vb->used= 0;
+  if (!adns__vbuf_ensure(vb,DNS_HDRSIZE+strlen(owner)+1+5))
     return adns_s_nolocalmem;
-  rqp= ads->rqbuf.buf;
+  rqp= vb->buf;
+
+  *id_r= id= (ads->nextid++) & 0x0ffff;
 
   MKQUERY_ADDW(id);
   MKQUERY_ADDB(0x01); /* QR=Q(0), OPCODE=QUERY(0000), !AA, !TC, RD */
@@ -68,8 +71,8 @@ adns_status adns__mkquery(adns_state ads, const char *owner, int ol, int id,
   MKQUERY_ADDW(typei->type & adns__rrt_typemask); /* QTYPE */
   MKQUERY_ADDW(DNS_CLASS_IN); /* QCLASS=IN */
 
-  ads->rqbuf.used= rqp - ads->rqbuf.buf;
-  assert(ads->rqbuf.used <= ads->rqbuf.avail);
+  vb->used= rqp - vb->buf;
+  assert(vb->used <= vb->avail);
   
   return adns_s_ok;
 }
@@ -91,10 +94,10 @@ void adns__query_tcp(adns_state ads, adns_query qu, struct timeval now) {
 
   if (ads->tcpstate != server_ok) return;
 
-  length[0]= (qu->querylen&0x0ff00U) >>8;
-  length[1]= (qu->querylen&0x0ff);
+  length[0]= (qu->query_dglen&0x0ff00U) >>8;
+  length[1]= (qu->query_dglen&0x0ff);
   
-  if (!adns__vbuf_ensure(&ads->tcpsend,ads->tcpsend.used+qu->querylen+2)) return;
+  if (!adns__vbuf_ensure(&ads->tcpsend,ads->tcpsend.used+qu->query_dglen+2)) return;
 
   timevaladd(&now,TCPMS);
   qu->timeout= now;
@@ -106,8 +109,8 @@ void adns__query_tcp(adns_state ads, adns_query qu, struct timeval now) {
   } else {
     iov[0].iov_base= length;
     iov[0].iov_len= 2;
-    iov[1].iov_base= qu->querymsg;
-    iov[1].iov_len= qu->querylen;
+    iov[1].iov_base= qu->query_dgram;
+    iov[1].iov_len= qu->query_dglen;
     wr= writev(ads->tcpsocket,iov,2);
     if (wr < 0) {
       if (!(errno == EAGAIN || errno == EINTR || errno == ENOSPC ||
@@ -125,8 +128,8 @@ void adns__query_tcp(adns_state ads, adns_query qu, struct timeval now) {
   } else {
     wr-= 2;
   }
-  if (wr<qu->querylen) {
-    r= adns__vbuf_append(&ads->tcpsend,qu->querymsg+wr,qu->querylen-wr); assert(r);
+  if (wr<qu->query_dglen) {
+    r= adns__vbuf_append(&ads->tcpsend,qu->query_dgram+wr,qu->query_dglen-wr); assert(r);
   }
 }
 
@@ -149,7 +152,7 @@ void adns__query_udp(adns_state ads, adns_query qu, struct timeval now) {
   int serv, r;
 
   assert(qu->state == query_udp);
-  if ((qu->flags & adns_qf_usevc) || (qu->querylen > DNS_MAXUDP)) {
+  if ((qu->flags & adns_qf_usevc) || (qu->query_dglen > DNS_MAXUDP)) {
     query_usetcp(ads,qu,now);
     return;
   }
@@ -165,9 +168,9 @@ void adns__query_udp(adns_state ads, adns_query qu, struct timeval now) {
   servaddr.sin_addr= ads->servers[serv].addr;
   servaddr.sin_port= htons(DNS_PORT);
   
-  r= sendto(ads->udpsocket,qu->querymsg,qu->querylen,0,&servaddr,sizeof(servaddr));
+  r= sendto(ads->udpsocket,qu->query_dgram,qu->query_dglen,0,&servaddr,sizeof(servaddr));
   if (r<0 && errno == EMSGSIZE) { query_usetcp(ads,qu,now); return; }
-  if (r<0) adns__warn(ads,serv,"sendto failed: %s",strerror(errno));
+  if (r<0) adns__warn(ads,serv,0,"sendto failed: %s",strerror(errno));
   
   timevaladd(&now,UDPRETRYMS);
   qu->timeout= now;
@@ -180,11 +183,12 @@ void adns__query_udp(adns_state ads, adns_query qu, struct timeval now) {
 static void adns__query_done(adns_state ads, adns_query qu) {
   adns_answer *ans;
   allocnode *an, *ann;
+  int i;
 
   qu->answer= ans= realloc(qu->answer,
 			   MEM_ROUND(MEM_ROUND(sizeof(*ans)) +
 				     qu->interim_allocd));
-  qu->final_used= MEM_ROUND(sizeof(*ans));
+  qu->final_allocspace= (byte*)qu->answer + MEM_ROUND(sizeof(*ans));
 
   adns__makefinal_str(qu,&ans->cname);
   if (ans->nrrs) {
@@ -202,14 +206,14 @@ static void adns__query_done(adns_state ads, adns_query qu) {
 }
 
 void adns__reset_cnameonly(adns_state ads, adns_query qu) {
+  assert(qu->final_allocspace);
   qu->answer->nrrs= 0;
   qu->answer->rrs= 0;
-  qu->permalloclen= qu->answer->cname ? MEM_ROUND(strlen(qu->answer->cname)+1) : 0;
+  qu->interim_allocd= qu->answer->cname ? MEM_ROUND(strlen(qu->answer->cname)+1) : 0;
 }
 
 void adns__query_fail(adns_state ads, adns_query qu, adns_status stat) {
   adns__reset_cnameonly(ads,qu);
   qu->answer->status= stat;
-  qu->answer->type= qu->type;
-  adns__query_done(ads,qu,stat);
+  adns__query_done(ads,qu);
 }

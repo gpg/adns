@@ -60,6 +60,7 @@ typedef union {
 
 typedef struct {
   adns_rrtype type;
+  const char *name;
   int rrsz;
 
   adns_status (*parse)(adns_state ads, adns_query qu, int serv,
@@ -99,7 +100,8 @@ struct adns__query {
   struct { adns_query head, tail; } children;
   struct { adns_query back, next; } siblings;
   struct allocnode *allocations;
-  int interim_alloced, final_used;
+  int interim_allocd;
+  void *final_allocspace;
   
   const typeinfo *typei;
   char *query_dgram;
@@ -199,14 +201,14 @@ struct adns__state {
 /* From setup.c: */
 
 void adns__vdiag(adns_state ads, const char *pfx, adns_initflags prevent,
-		 int serv, const char *fmt, va_list al);
+		 int serv, adns_query qu, const char *fmt, va_list al);
 
 void adns__debug(adns_state ads, int serv, adns_query qu,
-		 const char *fmt, ...) PRINTFFORMAT(3,4);
+		 const char *fmt, ...) PRINTFFORMAT(4,5);
 void adns__warn(adns_state ads, int serv, adns_query qu,
-		const char *fmt, ...) PRINTFFORMAT(3,4);
+		const char *fmt, ...) PRINTFFORMAT(4,5);
 void adns__diag(adns_state ads, int serv, adns_query qu,
-		const char *fmt, ...) PRINTFFORMAT(3,4);
+		const char *fmt, ...) PRINTFFORMAT(4,5);
 
 int adns__vbuf_ensure(vbuf *vb, int want);
 int adns__vbuf_appendstr(vbuf *vb, const char *data);
@@ -221,15 +223,16 @@ int adns__setnonblock(adns_state ads, int fd); /* => errno value */
 /* From submit.c: */
 
 int adns__internal_submit(adns_state ads, adns_query *query_r,
-			  adns_rrtype type, char *query_dgram, int query_len,
+			  adns_rrtype type, vbuf *qumsg_vb, int id,
 			  adns_queryflags flags, struct timeval now,
 			  adns_status failstat, const qcontext *ctx);
 /* Submits a query (for internal use, called during external submits).
  *
  * The new query is returned in *query_r, or we return adns_s_nomemory.
  *
- * The query datagram should already have been assembled; memory for it
- * is taken over by this routine whether it succeeds or fails.
+ * The query datagram should already have been assembled in qumsg_vb;
+ * the memory for it is _taken over_ by this routine whether it
+ * succeeds or fails (if it succeeds, the vbuf is reused for qu->vb).
  *
  * If failstat is nonzero then if we are successful in creating the query
  * it is immediately failed with code failstat (but _submit still succeds).
@@ -255,16 +258,29 @@ void *adns__alloc_final(adns_query qu, size_t sz);
 /* Cannot fail.
  */
 
+void adns__makefinal_block(adns_query qu, void **blpp, size_t sz);
+void adns__makefinal_str(adns_query qu, char **strp);
+
 /* From query.c: */
 
 void adns__query_udp(adns_state ads, adns_query qu, struct timeval now);
 void adns__query_tcp(adns_state ads, adns_query qu, struct timeval now);
-adns_status adns__mkquery(adns_state ads, const char *owner, int ol, int id,
+adns_status adns__mkquery(adns_state ads, vbuf *vb,
+			  const char *owner, int ol, int *id_r,
 			  const typeinfo *typei, adns_queryflags flags);
+/* Assembles a query packet in vb, and returns id at *id_r. */
 
 void adns__query_ok(adns_state ads, adns_query qu);
 void adns__query_fail(adns_state ads, adns_query qu, adns_status stat);
 
+void adns__reset_cnameonly(adns_state ads, adns_query qu);
+/* Resets all of the memory management stuff etc. to
+ * take account of only the CNAME.  Used when we find an error somewhere
+ * and want to just report the error (with perhaps CNAME info), and also
+ * when we're halfway through RRs in a datagram and discover that we
+ * need to retry the query.
+ */
+   
 /* From reply.c: */
 
 void adns__procdgram(adns_state ads, const byte *dgram, int len,
@@ -277,7 +293,8 @@ const typeinfo *adns__findtype(adns_rrtype type);
 /* From parse.c: */
 
 typedef struct {
-  adns_state ads, int serv;
+  adns_state ads;
+  int serv;
   const byte *dgram;
   int dglen, max, cbyte, namelen;
   int *dmend_rlater, *namelen_rlater;

@@ -17,7 +17,7 @@ void adns__tcp_broken(adns_state ads, const char *what, const char *why) {
   
   assert(ads->tcpstate == server_connecting || ads->tcpstate == server_ok);
   serv= ads->tcpserver;
-  adns__warn(ads,serv,"TCP connection lost: %s: %s",what,why);
+  adns__warn(ads,serv,0,"TCP connection lost: %s: %s",what,why);
   close(ads->tcpsocket);
   ads->tcpstate= server_disconnected;
   
@@ -40,7 +40,7 @@ void adns__tcp_broken(adns_state ads, const char *what, const char *why) {
 static void tcp_connected(adns_state ads, struct timeval now) {
   adns_query qu, nqu;
   
-  adns__debug(ads,ads->tcpserver,"TCP connected");
+  adns__debug(ads,ads->tcpserver,0,"TCP connected");
   ads->tcpstate= server_ok;
   for (qu= ads->timew.head; qu; qu= nqu) {
     nqu= qu->next;
@@ -63,15 +63,15 @@ void adns__tcp_tryconnect(adns_state ads, struct timeval now) {
     assert(!ads->tcprecv.used);
 
     proto= getprotobyname("tcp");
-    if (!proto) { adns__diag(ads,-1,"unable to find protocol no. for TCP !"); return; }
+    if (!proto) { adns__diag(ads,-1,0,"unable to find protocol no. for TCP !"); return; }
     fd= socket(AF_INET,SOCK_STREAM,proto->p_proto);
     if (fd<0) {
-      adns__diag(ads,-1,"cannot create TCP socket: %s",strerror(errno));
+      adns__diag(ads,-1,0,"cannot create TCP socket: %s",strerror(errno));
       return;
     }
     r= adns__setnonblock(ads,fd);
     if (r) {
-      adns__diag(ads,-1,"cannot make TCP socket nonblocking: %s",strerror(r));
+      adns__diag(ads,-1,0,"cannot make TCP socket nonblocking: %s",strerror(r));
       close(fd);
       return;
     }
@@ -159,7 +159,8 @@ fprintf(stderr,"adns_interest\n");
 
 r= gettimeofday(&now,0);
   if (r) {
-    adns__warn(ads,-1,"gettimeofday failed - will sleep for a bit: %s",strerror(errno));
+    adns__warn(ads,-1,0,"gettimeofday failed - will sleep for a bit: %s",
+	       strerror(errno));
     timerclear(&tvto_lr); timevaladd(&tvto_lr,LOCALRESOURCEMS);
     inter_maxto(tv_io, tvbuf, tvto_lr);
   } else {
@@ -281,21 +282,21 @@ static int internal_callback(adns_state ads, int maxfd,
       if (r<0) {
 	if (!(errno == EAGAIN || errno == EWOULDBLOCK ||
 	      errno == EINTR || errno == ENOMEM || errno == ENOBUFS))
-	  adns__warn(ads,-1,"datagram receive error: %s",strerror(errno));
+	  adns__warn(ads,-1,0,"datagram receive error: %s",strerror(errno));
 	break;
       }
       if (udpaddrlen != sizeof(udpaddr)) {
-	adns__diag(ads,-1,"datagram received with wrong address length %d (expected %d)",
-		   udpaddrlen,sizeof(udpaddr));
+	adns__diag(ads,-1,0,"datagram received with wrong address length %d"
+		   " (expected %d)", udpaddrlen,sizeof(udpaddr));
 	continue;
       }
       if (udpaddr.sin_family != AF_INET) {
-	adns__diag(ads,-1,"datagram received with wrong protocol family"
+	adns__diag(ads,-1,0,"datagram received with wrong protocol family"
 		   " %u (expected %u)",udpaddr.sin_family,AF_INET);
 	continue;
       }
       if (ntohs(udpaddr.sin_port) != DNS_PORT) {
-	adns__diag(ads,-1,"datagram received from wrong port %u (expected %u)",
+	adns__diag(ads,-1,0,"datagram received from wrong port %u (expected %u)",
 		   ntohs(udpaddr.sin_port),DNS_PORT);
 	continue;
       }
@@ -304,7 +305,7 @@ static int internal_callback(adns_state ads, int maxfd,
 	     ads->servers[serv].addr.s_addr != udpaddr.sin_addr.s_addr;
 	   serv++);
       if (serv >= ads->nservers) {
-	adns__warn(ads,-1,"datagram received from unknown nameserver %s",
+	adns__warn(ads,-1,0,"datagram received from unknown nameserver %s",
 		   inet_ntoa(udpaddr.sin_addr));
 	continue;
       }

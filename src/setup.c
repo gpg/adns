@@ -12,38 +12,56 @@
 #include "internal.h"
 
 void adns__vdiag(adns_state ads, const char *pfx, adns_initflags prevent,
-		 int serv, const char *fmt, va_list al) {
+		 int serv, const char *fmt, adns_query qu, va_list al) {
+  const char *bef, *aft;
+  vbuf vb;
   if (!(ads->iflags & adns_if_debug) && (!prevent || (ads->iflags & prevent))) return;
-  if (serv>=0) {
-    fprintf(stderr,"adns%s: nameserver %s: ",pfx,inet_ntoa(ads->servers[serv].addr));
-  } else {
-    fprintf(stderr,"adns%s: ",pfx);
-  }
+
+  fprintf(stderr,"adns%s: ",pfx);
+
   vfprintf(stderr,fmt,al);
-  fputc('\n',stderr);
+
+  bef= " (";
+  aft= "\n";
+
+  if (qu && qu->query_dgram) {
+    adns__vbuf_init(&vb);
+    fprintf(stderr,"%sQNAME=%s, QTYPE=%s",
+	    bef,
+	    adns__diag_domain(ads,-1,0,&vb,qu->query_dgram,qu->query_dglen,DNS_HDRSIZE),
+	    qu->typei ? qu->typei->name : "<unknown>");
+    bef=", "; aft=")\n";
+  }
+  
+  if (serv>=0) {
+    fprintf(stderr,"%sNS=%s",bef,inet_ntoa(ads->servers[serv].addr));
+    bef=", "; aft=")\n";
+  }
+
+  fputs(aft,stderr);
 }
 
-void adns__debug(adns_state ads, int serv, const char *fmt, ...) {
+void adns__debug(adns_state ads, int serv, adns_query qu, const char *fmt, ...) {
   va_list al;
 
   va_start(al,fmt);
-  adns__vdiag(ads," debug",0,serv,fmt,al);
+  adns__vdiag(ads," debug",0,serv,qu,fmt,al);
   va_end(al);
 }
 
-void adns__warn(adns_state ads, int serv, const char *fmt, ...) {
+void adns__warn(adns_state ads, int serv, adns_query qu, const char *fmt, ...) {
   va_list al;
 
   va_start(al,fmt);
-  adns__vdiag(ads," warning",adns_if_noerrprint|adns_if_noserverwarn,serv,fmt,al);
+  adns__vdiag(ads," warning",adns_if_noerrprint|adns_if_noserverwarn,serv,qu,fmt,al);
   va_end(al);
 }
 
-void adns__diag(adns_state ads, int serv, const char *fmt, ...) {
+void adns__diag(adns_state ads, int serv, adns_query qu, const char *fmt, ...) {
   va_list al;
 
   va_start(al,fmt);
-  adns__vdiag(ads,"",adns_if_noerrprint,serv,fmt,al);
+  adns__vdiag(ads,"",adns_if_noerrprint,serv,qu,fmt,al);
   va_end(al);
 }
 

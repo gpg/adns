@@ -9,29 +9,15 @@
 #include "internal.h"
 
 int adns__internal_submit(adns_state ads, adns_query *query_r,
-			  adns_rrtype type, char *query_dgram, int query_len,
+			  adns_rrtype type, vbuf *qumsg_vb, int id,
 			  adns_queryflags flags, struct timeval now,
 			  adns_status failstat, const qcontext *ctx) {
-  /* Submits a query (for internal use, called during external submits).
-   *
-   * The new query is returned in *query_r, or we return adns_s_nomemory.
-   *
-   * The query datagram should already have been assembled; memory for it
-   * is taken over by this routine whether it succeeds or fails.
-   *
-   * If failstat is nonzero then if we are successful in creating the query
-   * it is immediately failed with code failstat (but _submit still succeds).
-   *
-   * ctx is copied byte-for-byte into the query.
-   */
   adns_query qu;
   adns_status stat;
   int ol, id, r;
   struct timeval now;
   const typeinfo *typei;
   adns_query qu;
-
-  id= ads->nextid++;
 
   qu= malloc(sizeof(*qu)); if (!qu) goto x_nomemory;
   qu->answer= malloc(sizeof(*qu->answer)); if (!qu->answer) goto x_freequ_nomemory;
@@ -45,8 +31,6 @@ int adns__internal_submit(adns_state ads, adns_query *query_r,
   qu->perm_used= 0;
 
   qu->typei= adns__findtype(type);
-  qu->query_dgram= query_dgram;
-  qu->query_dglen= query_dglen;
   adns__vbuf_init(&qu->vb);
 
   qu->cname_dgram= 0;
@@ -67,19 +51,28 @@ int adns__internal_submit(adns_state ads, adns_query *query_r,
   qu->answer->nrrs= 0;
   qu->answer->rrs= 0;
 
-  *query_r= qu;
-
   if (qu->typei) {
     qu->answer->rrsz= qu->rrsz;
   } else {
     qu->answer->rrsz= -1;
     failstat= adns_s_notimplemented;
   }
+  
+  *query_r= qu;
+
+  qu->query_dgram= malloc(qumsg_vb->used);
+  if (!qu->query_dgram) {
+    adns__query_fail(ads,qu,adns_s_nomemory);
+    return;
+  }
+  memcpy(qu->query_dgram,qumsg_vb->buf,qumsg_vb->used);
+  qu->vb= *qumsg_vb;
+  adns__vbuf_init(qumsg_vb);
+  
   if (failstat) {
     adns__query_fail(ads,qu,failstat);
     return;
   }
-
   adns__query_udp(ads,qu,now);
   adns__autosys(ads,now);
 
@@ -99,19 +92,24 @@ int adns_submit(adns_state ads,
 		void *context,
 		adns_query *query_r) {
   qcontext ctx;
+  int id;
+  vbuf vb;
 
   ctx.ext= context;
   r= gettimeofday(&now,0); if (r) return errno;
+  id= 0;
+
+  adns__vbuf_init(&vb);
 
   ol= strlen(owner);
-  if (ol<=1 || ol>DNS_MAXDOMAIN+1)
-    return failsubmit(ads,context,query_r,flags,id,adns_s_invaliddomain);
+  if (ol<=1 || ol>DNS_MAXDOMAIN+1) { stat= adns_s_invaliddomain; goto xit; }
+				 
   if (owner[ol-1]=='.' && owner[ol-2]!='\\') { flags &= ~adns_qf_search; ol--; }
 
-  stat= adns__mkquery(ads,owner,ol,id,typei,flags);
-  if (stat) return failsubmit(ads,context,query_r,flags,id,stat);
-  
-  adns__internal_submit(ads,type,flags,now,query_r
+  stat= adns__mkquery(ads,&vb, &id, owner,ol, typei,flags);
+			
+ xit:
+  return adns__internal_submit(ads,query_r, type,&vb,id, flags,now, stat,&ctx);	
 }
 
 int adns_synchronous(adns_state ads,
@@ -136,9 +134,29 @@ void adns_cancel(adns_state ads, adns_query query) {
   abort(); /* fixme */
 }
 
+void adns__makefinal_str(adns_query qu, char **strp) {
+  int l;
+  char *before, *after;
+
+  before= *strp;
+  l= strlen(before)+1;
+  after= adns__alloc_final(qu,l);
+  memcpy(after,before,l);
+  *strp= after;  
+}
+
+void adns__makefinal_block(adns__query qu, void **blpp, size_t sz) {
+  void *after;
+
+  after= adns__alloc_final(qu,sz);
+  memcpy(after,*blpp,sz);
+  *blpp= after;
+}
+
 void *adns__alloc_interim(adns_state ads, adns_query qu, size_t sz) {
   allocnode *an;
 
+  assert(!qu->final_allocspace);
   sz= MEM_ROUND(sz);
   an= malloc(MEM_ROUND(MEM_ROUND(sizeof(*an)) + sz));
   if (!an) {
@@ -149,4 +167,20 @@ void *adns__alloc_interim(adns_state ads, adns_query qu, size_t sz) {
   an->next= qu->allocations;
   qu->allocations= an;
   return (byte*)an + MEM_ROUND(sizeof(*an));
+}
+
+void *adns__alloc_final(adns_query qu, size_t sz) {
+  /* When we're in the _final stage, we _subtract_ from interim_alloc'd
+   * each allocation, and use final_allocspace to point to the next free
+   * bit.
+   */
+  void *rp;
+
+  sz= MEM_ROUND(sz);
+  rp= qu->final_allocspace;
+  assert(rp);
+  qu->interim_allocd -= sz;
+  assert(qu->interim_allocd>=0);
+  qu->final_allocspace= (byte*)rp + sz;
+  return rp;
 }

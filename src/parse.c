@@ -54,7 +54,7 @@ adns_status adns__findlabel_next(findlabel_state fls,
     if (!(lablen & 0x0c000)) break;
     if ((lablen & 0x0c000) != 0x0c000) return adns_s_unknownreply;
     if (jumped++) {
-      adns__diag(ads,serv,"compressed datagram contains loop");
+      adns__diag(ads,fls->serv,fls->qu,"compressed datagram contains loop");
       return adns_s_serverfaulty;
     }
     if (fls->dmend_r) *(fls->dmend_r)= fls->cbyte;
@@ -81,7 +81,7 @@ adns_status adns__findlabel_next(findlabel_state fls,
   return adns_s_ok;
 
  x_serverfaulty: 
-  adns__diag(ads,serv,"label in domain runs beyond end of domain");
+  adns__diag(ads,fls->serv,fls->qu,"label in domain runs beyond end of domain");
   return adns_s_serverfaulty;
 }
 
@@ -120,17 +120,22 @@ adns_status adns__parse_domain(adns_state ads, int serv, vbuf *vb, int flags,
   return adns_s_ok;
 }
 	
-const char *adns__diag_domain(adns_state ads, int serv, vbuf *vb, int flags,
-			      const byte *dgram, int dglen, int cbyte) {
+const char *adns__diag_domain(adns_state ads, int serv, adns_query qu, vbuf *vb,
+			      int flags, const byte *dgram, int dglen, int cbyte) {
   adns_status st;
 
   st= adns__parse_domain(ads,serv,vb,qu->flags, dgram,dglen, &cbyte,dglen);
+  if (st == adns_s_nomemory) {
+    return "<cannot report domain... out of memory>";
+  }
   if (st) {
     vb->used= 0;
-    adns__vbuf_appendstr(vb,"<bad format... ");
-    adns__vbuf_appendstr(vb,adns_strerror(st));
-    adns__vbuf_appendstr(vb,">");
-    adns__vbuf_append(vb,"",1);
+    if (!(adns__vbuf_appendstr(vb,"<bad format... ") &&
+	  adns__vbuf_appendstr(vb,adns_strerror(st)) &&
+	  adns__vbuf_appendstr(vb,">") &&
+	  adns__vbuf_append(vb,"",1))) {
+      return "<cannot report bad format... out of memory>";
+    }
   }
   if (!vb.used) {
     adns__vbuf_appendstr(vb,"<truncated ...>");
