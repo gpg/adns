@@ -474,6 +474,7 @@ static int init_begin(adns_state *ads_r, adns_initflags flags, FILE *diagfile) {
   ads->forallnext= 0;
   ads->nextid= 0x311f;
   ads->udpsocket= ads->tcpsocket= -1;
+  ads->bug_if_query_done_now= 0;
   adns__vbuf_init(&ads->tcpsend);
   adns__vbuf_init(&ads->tcprecv);
   ads->tcprecv_skip= 0;

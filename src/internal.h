@@ -282,6 +282,7 @@ struct adns__state {
   struct query_queue udpw, tcpw, childw, output;
   adns_query forallnext;
   int nextid, udpsocket, tcpsocket;
+  int bug_if_query_done_now;
   vbuf tcpsend, tcprecv;
   int nservers, nsortlist, nsearchlist, searchndots, tcpserver, tcprecv_skip;
   enum adns__tcpstate {
