@@ -8,3 +8,5 @@ WERROR=-Werror
 all:		dtest
 
 dtest:		dtest.o event.o query.o setup.o submit.o
+
+%.o:		adns-internal.h adns.h
