@@ -57,6 +57,9 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
   flg_rd= f1&0x01;
   flg_ra= f2&0x80;
   rcode= (f1&0x0f);
+  /* fixme: change this to f2 (which is where rcode really is), BUT
+   * not until we've figured out why the error code is wrong (bad format code 203)
+   */
 
   if (!flg_qr) {
     adns__diag(ads,serv,0,"server sent us a query, not a response");
