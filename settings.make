@@ -42,5 +42,5 @@ all:		$(TARGETS)
 clean:
 		rm -f *.o 
 
-distclean:	clean
+maintainer-clean distclean:	clean
 		rm -f $(TARGETS) *~ ./#*# core *.orig *.rej

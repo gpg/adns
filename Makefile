@@ -32,3 +32,6 @@ clean:
 
 distclean:
 	set -e; for d in $(SUBDIRS); do $(MAKE) -C $$d distclean; done
+
+maintainer-clean:
+	set -e; for d in $(SUBDIRS); do $(MAKE) -C $$d maintainer-clean; done
