@@ -127,6 +127,7 @@ static void usage(void) {
 	     "Timeout is the maximum amount to delay any particular bit of output for.\n"
 	     "Lookups will go on in the background.  Default timeout = 1000 (ms).\n")
       == EOF) outputerr();
+  if (fflush(stdout)) sysfail("flush stdout");
 }
 
 static void usageerr(const char *why) NONRETURNING;
@@ -467,7 +468,6 @@ int main(int argc, const char *const *argv) {
   }
   if (nonblock(0,0)) sysfail("un-nonblock stdin");
   if (nonblock(1,0)) sysfail("un-nonblock stdout");
-  if (ferror(stdin) || fclose(stdin)) sysfail("read stdin");
-  if (fclose(stdout)) sysfail("close stdout");
+  adns_finish(ads);
   exit(0);
 }

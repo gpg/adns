@@ -28,8 +28,9 @@ set -e
 if [ $# -lt 3 ]
 then
 	echo >&2 \
-'usage: m1test <name> <initfile> [-<initflags>]
-              [=<hrecord-command-args>] <queryargs>'
+'usage: m1test <name> <initfile> [-<initflags>] ["<"]
+              [=<hrecord-command-args>] <queryargs>
+("<" means read input from case-<name>.in)'
 	exit 1
 fi
 
@@ -41,6 +42,11 @@ hrecord="./adnstest_record"
 case "$1" in
 -*)	initflags="$1"; shift
 esac
+
+if test "x$1" = "x<"
+then
+	shift; exec <"$case.in"
+fi
 
 case "$1" in
 =*)	hrecord="`echo \"$1\" | sed -e 's/^=//'`"; shift

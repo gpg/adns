@@ -9,7 +9,7 @@ adns (0.10) unstable; urgency=low
   * adnshost, adnslogres, adnsresfilter have options for config override. 
   * adnsresfilter has --debug option.
   * Improvements to adnslogres (incl. new -c option) from Tony Finch.
-  * Regression tests now include `adnshost' invocations.
+  * Regression tests now include adnshost, adnslogres, adnsresfilter.
   * Test cancellation both before and after query completion.
 
   Portability fixes:

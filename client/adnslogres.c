@@ -47,6 +47,10 @@ static const char * const cvsid =
 #include "config.h"
 #include "adns.h"
 
+#ifdef ADNS_REGRESS_TEST
+# include "hredirect.h"
+#endif
+
 /* maximum number of concurrent DNS queries */
 #define MAXMAXPENDING 64000
 #define DEFMAXPENDING 2000
@@ -58,7 +62,7 @@ static const char * const cvsid =
 #define OPT_DEBUG 1
 #define OPT_POLL 2
 
-static const char *progname;
+static const char *const progname= "adnslogres";
 static const char *config_text;
 
 #define guard_null(str) ((str) ? (str) : "")
@@ -180,7 +184,7 @@ static void proclog(FILE *inf, FILE *outf, int maxpending, int opts) {
       if (opts & OPT_DEBUG)
 	msg("%d in queue; checking %.*s", len,
 	    head->rest-head->addr, guard_null(head->addr));
-      if (eof || len > maxpending) {
+      if (eof || len >= maxpending) {
 	if (opts & OPT_POLL)
 	  err= adns_wait_poll(adns, &head->query, &answer, NULL);
 	else
@@ -189,10 +193,15 @@ static void proclog(FILE *inf, FILE *outf, int maxpending, int opts) {
 	err= adns_check(adns, &head->query, &answer, NULL);
       }
       if (err == EAGAIN) break;
+      if (err) {
+	fprintf(stderr, "%s: adns_wait/check: %s", progname, strerror(err));
+	exit(1);
+      }
       printline(outf, head->start, head->addr, head->rest,
 		answer->status == adns_s_ok ? *answer->rrs.str : NULL);
       line= head; head= head->next;
-      free(line); free(answer);
+      free(line);
+      free(answer);
       len--;
     }
     if (!eof) {
@@ -219,12 +228,6 @@ int main(int argc, char *argv[]) {
   int c, opts, maxpending;
   extern char *optarg;
   FILE *inf;
-
-  progname= strrchr(*argv, '/');
-  if (progname)
-    progname++;
-  else
-    progname= *argv;
 
   maxpending= DEFMAXPENDING;
   opts= 0;

@@ -24,7 +24,7 @@
 srcdir=		@srcdir@
 VPATH=		@srcdir@
 
-CLIENTS=	adnstest adnshost
+CLIENTS=	adnstest adnshost adnslogres adnsresfilter
 AUTOCHDRS=	harness.h hsyscalls.h hredirect.h
 AUTOCSRCS=	hrecord.c hplayback.c hcommon.c
 include		$(srcdir)/../settings.make

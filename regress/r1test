@@ -31,9 +31,9 @@ casename="$1"
 case="case-$casename"
 ocase="output-$casename"
 
-exec <"$case.sys"
-read program initfile initflags
-read queryargs
+exec 4<"$case.sys"
+read <&4 program initfile initflags
+read <&4 queryargs
 
 initstring="`cat init-$initfile.text`"
 xinitflagsf=$program-xinitflags.text
@@ -49,8 +49,16 @@ rm -f $ocase.*
 EF_DISABLE_BANNER=1
 export EF_DISABLE_BANNER
 
+if test -f "$case.in"
+then
+	exec <"$case.in"
+else
+	exec </dev/null
+fi
+
 set +e
 ADNS_TEST_REPORT_FD=3 3>>"$ocase.report" >"$ocase.out" 2>"$ocase.err" \
+ADNS_TEST_IN_FD=4 \
  ./${program}_playback $initflags"$initstring" $queryargs
 rc=$?
 set -e
