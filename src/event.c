@@ -565,8 +565,13 @@ int adns__internal_check(adns_state ads,
 
   qu= *query_io;
   if (!qu) {
-    if (!ads->output.head) return EAGAIN;
-    qu= ads->output.head;
+    if (ads->output.head) {
+      qu= ads->output.head;
+    } else if (ads->timew.head) {
+      return EAGAIN;
+    } else {
+      return ESRCH;
+    }
   } else {
     if (qu->id>=0) return EAGAIN;
   }
