@@ -1,3 +1,9 @@
+adns (1.2); urgency=medium
+
+  * Fix error in prototype in definition of adns__parse_domain.
+
+ --
+
 adns (1.1); urgency=medium
 
   Major bugfixes:
