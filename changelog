@@ -16,6 +16,7 @@ adns (0.5) unstable; urgency=medium
   * Do not invoke __autosys indirectly from __procdgram (result: coredump
     usually in memmove, unless adns_if_noautosys was used).
   * Do not scramble innards when a query on the output queue is cancelled.
+  * Do not close tcp socket twice.
   * Mailboxes containing spaces in their names are quoted.
   * adns_rr_hostaddr naddrs is -1 on temporary failure (as documented).
   * Reject TXT RRs with no strings.

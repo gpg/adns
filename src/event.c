@@ -47,6 +47,7 @@ void adns__tcp_closenext(adns_state ads) {
   
   serv= ads->tcpserver;
   close(ads->tcpsocket);
+  ads->tcpsocket= -1;
   ads->tcpstate= server_disconnected;
   ads->tcprecv.used= ads->tcprecv_skip= ads->tcpsend.used= 0;
   ads->tcpserver= (serv+1)%ads->nservers;
