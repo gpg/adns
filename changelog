@@ -1,11 +1,18 @@
 adns (0.3) unstable; urgency=low
 
+  Features / improvements:
+  * New adns_errabbrev() for getting status abbreviation strings.
+  * regress/checkall prints summary list of failed tests, if any.
+  
   Bugfixes:
+  * Non-RFC822 mailbox `domain' formatting now works, and clarified.
+  * Rejection of bad characters in domains (without quoteok) works.
   * Clean up parents from adns->childw (otherwise would abort/segfault).
   * In adnstest, allocate enough space for, and terminate, query types.
+  * In adnstest, don't print errno values as adns_status values.
  
   * Added TODO file.
-  
+
  --
 
 adns (0.2) experimental; urgency=low

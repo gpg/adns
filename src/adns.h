@@ -91,15 +91,15 @@ typedef enum {
   
 } adns_rrtype;
 
-/* In queries without qtf_quoteok_*, all domains must have standard
- * legal syntax.  In queries _with_ qtf_anyquote, domains in the query
- * or response may contain any characters, quoted according to
- * RFC1035 5.1.  On input to adns, the char* is a pointer to the
- * interior of a " delimited string, except that " may appear in it,
- * and on output, the char* is a pointer to a string which would be
- * legal either inside or outside " delimiters, and any characters
- * not usually legal in domain names will be quoted as \X
- * (if the character is 33-126 except \ and ") or \DDD.
+/* In queries without qf_quoteok_*, all domains must have standard
+ * legal syntax.  In queries _with_ qf_quoteok_*, domains in the query
+ * or response may contain any characters, quoted according to RFC1035
+ * 5.1.  On input to adns, the char* is a pointer to the interior of a
+ * " delimited string, except that " may appear in it, and on output,
+ * the char* is a pointer to a string which would be legal either
+ * inside or outside " delimiters, and any characters not usually
+ * legal in domain names will be quoted as \X (if the character is
+ * 33-126 except \ and ") or \DDD.
  *
  * Do not ask for _raw records containing mailboxes without
  * specifying _qf_anyquote.
@@ -356,5 +356,6 @@ adns_status adns_rr_info(adns_rrtype type,
  */
 
 const char *adns_strerror(adns_status st);
+const char *adns_errabbrev(adns_status st);
 
 #endif

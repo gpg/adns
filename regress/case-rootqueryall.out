@@ -46,7 +46,7 @@ adns debug: using nameserver 172.18.45.6
  "D.ROOT-SERVERS.NET"
 . flags 0 type CNAME(-): No such data; nrrs=0; cname=$; owner=$; ttl=86400
 . flags 0 type SOA(raw): OK; nrrs=1; cname=$; owner=$; ttl=54334
- "A.ROOT-SERVERS.NET" "hostmaster@INTERNIC.NET" 1999041600 1800 900 604800 86400
+ "A.ROOT-SERVERS.NET" "hostmaster.INTERNIC.NET" 1999041600 1800 900 604800 86400
 . flags 0 type PTR(raw): No such data; nrrs=0; cname=$; owner=$; ttl=599
 adns debug: reply not found, id 3123, query owner  (NS=172.18.45.6)
 . flags 0 type HINFO(-): No such data; nrrs=0; cname=$; owner=$; ttl=86400
@@ -93,7 +93,7 @@ adns debug: reply not found, id 312e, query owner  (NS=172.18.45.6)
  "I.ROOT-SERVERS.NET"
 . flags 1 type CNAME(-): No such data; nrrs=0; cname=$; owner=$; ttl=86400
 . flags 1 type SOA(raw): OK; nrrs=1; cname=$; owner=$; ttl=49034
- "A.ROOT-SERVERS.NET" "hostmaster@INTERNIC.NET" 1999041600 1800 900 604800 86400
+ "A.ROOT-SERVERS.NET" "hostmaster.INTERNIC.NET" 1999041600 1800 900 604800 86400
 . flags 1 type PTR(raw): No such data; nrrs=0; cname=$; owner=$; ttl=599
 . flags 1 type HINFO(-): No such data; nrrs=0; cname=$; owner=$; ttl=599
 adns debug: reply not found, id 3132, query owner  (NS=172.18.45.6)

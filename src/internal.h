@@ -618,7 +618,7 @@ static inline void timevaladd(struct timeval *tv_io, long ms) {
 static inline int ctype_whitespace(int c) { return c==' ' || c=='\n' || c=='\t'; }
 static inline int ctype_digit(int c) { return c>='0' && c<='9'; }
 static inline int ctype_alpha(int c) {
-  return (c >= 'a' && c <= 'z') || (c >= 'A' || c <= 'Z');
+  return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }
 
 /* Useful macros */

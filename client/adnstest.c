@@ -25,6 +25,7 @@
 #include <unistd.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 #ifndef OUTPUTSTREAM
 # define OUTPUTSTREAM stdout
@@ -32,8 +33,13 @@
 
 #include "adns.h"
 
-static void failure(const char *what, adns_status st) {
+static void failure_status(const char *what, adns_status st) {
   fprintf(stderr,"adns failure: %s: %s\n",what,adns_strerror(st));
+  exit(2);
+}
+
+static void failure_errno(const char *what, int errnoval) {
+  fprintf(stderr,"adns failure: %s: errno=%d\n",what,errnoval);
   exit(2);
 }
 
@@ -67,13 +73,22 @@ static void dumptype(adns_status ri, const char *rrtn, const char *fmtn) {
 	  ri ? " " : "", ri ? adns_strerror(ri) : "");
 }
 
-static void fdom_split(const char *fdom, const char **dom_r, int *qf_r) {
+static void fdom_split(const char *fdom, const char **dom_r, int *qf_r,
+		       char *ownflags, int ownflags_l) {
   int qf;
   char *ep;
 
   qf= strtoul(fdom,&ep,0);
+  if (*ep == ',' && strchr(ep,'/')) {
+    ep++;
+    while (*ep != '/') {
+      if (--ownflags_l <= 0) { fputs("too many flags\n",stderr); exit(3); }
+      *ownflags++= *ep++;
+    }
+  }
   if (*ep != '/') { *dom_r= fdom; *qf_r= 0; }
   else { *dom_r= ep+1; *qf_r= qf; }
+  *ownflags= 0;
 }
 
 int main(int argc, char *const *argv) {
@@ -88,6 +103,7 @@ int main(int argc, char *const *argv) {
   const adns_rrtype *types;
   struct timeval now;
   adns_rrtype *types_a;
+  char ownflags[10];
 
   if (argv[0] && argv[1] && argv[1][0] == '/') {
     initstring= argv[1]+1;
@@ -131,10 +147,10 @@ int main(int argc, char *const *argv) {
   } else {
     r= adns_init(&ads,adns_if_debug|adns_if_noautosys,0);
   }
-  if (r) failure("init",r);
+  if (r) failure_errno("init",r);
 
   for (qi=0; qi<qc; qi++) {
-    fdom_split(fdomlist[qi],&domain,&qflags);
+    fdom_split(fdomlist[qi],&domain,&qflags,ownflags,sizeof(ownflags));
     for (ti=0; ti<tc; ti++) {
       fprintf(stdout,"%s flags %d type %d",domain,qflags,types[ti]);
       r= adns_submit(ads,domain,types[ti],qflags,0,&qus[qi*tc+ti]);
@@ -142,7 +158,7 @@ int main(int argc, char *const *argv) {
 	fprintf(stdout," not implemented\n");
 	qus[qi*tc+ti]= 0;
       } else if (r) {
-	failure("submit",r);
+	failure_errno("submit",r);
       } else {
 	ri= adns_rr_info(types[ti], &rrtn,&fmtn,0, 0,0);
 	putc(' ',stdout);
@@ -153,22 +169,24 @@ int main(int argc, char *const *argv) {
   }
 
   for (qi=0; qi<qc; qi++) {
-    fdom_split(fdomlist[qi],&domain,&qflags);
+    fdom_split(fdomlist[qi],&domain,&qflags,ownflags,sizeof(ownflags));
       
     for (ti=0; ti<tc; ti++) {
       qu= qus[qi*tc+ti];
       if (!qu) continue;
       
       r= adns_wait(ads,&qu,&ans,0);
-      if (r) failure("wait",r);
+      if (r) failure_errno("wait",r);
 
       if (gettimeofday(&now,0)) { perror("gettimeofday"); exit(3); }
       
       ri= adns_rr_info(ans->type, &rrtn,&fmtn,&len, 0,0);
       fprintf(stdout, "%s flags %d type ",domain,qflags);
       dumptype(ri,rrtn,fmtn);
-      fprintf(stdout, ": %s; nrrs=%d; cname=%s; owner=%s; ttl=%ld\n",
-	      adns_strerror(ans->status),
+      fprintf(stdout, "%s%s: %s; nrrs=%d; cname=%s; owner=%s; ttl=%ld\n",
+	      ownflags[0] ? " ownflags=" : "", ownflags,
+	      strchr(ownflags,'a') ? adns_errabbrev(ans->status)
+	      : adns_strerror(ans->status),
 	      ans->nrrs,
 	      ans->cname ? ans->cname : "$",
 	      ans->owner ? ans->owner : "$",
@@ -177,7 +195,7 @@ int main(int argc, char *const *argv) {
 	assert(!ri);
 	for (i=0; i<ans->nrrs; i++) {
 	  r= adns_rr_info(ans->type, 0,0,0, ans->rrs.bytes + i*len, &show);
-	  if (r) failure("info",r);
+	  if (r) failure_status("info",r);
 	  fprintf(stdout," %s\n",show);
 	  free(show);
 	}
