@@ -1,4 +1,4 @@
-adns (0.5) unstable; urgency=medium
+adns (0.5) unstable; urgency=high
 
   New features:
   * adnslogres, ~100x faster replacement for Apache logresolve;
