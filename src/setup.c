@@ -416,7 +416,7 @@ static void readconfiggeneric(adns_state ads, const char *filename,
     linebuf[l]= 0;
     p= linebuf;
     while (ctype_whitespace(*p)) p++;
-    if (*p == '#' || !*p) continue;
+    if (*p == '#' || *p == ';' || !*p) continue;
     q= p;
     while (*q && !ctype_whitespace(*q)) q++;
     dirl= q-p;

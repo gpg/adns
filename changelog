@@ -3,8 +3,9 @@ adns (1.2); urgency=medium
   * Fix error in prototype in definition of adns__parse_domain.
   * New LICENCE.WAIVERS file for GPL-incompatility workarounds.
   * Clarified GPL-vs-LGPL: a bit less hostile and a bit more mercenary.
+  * Allow `;'-comments in resolv.conf (report from Colin Charles).    
 
-  --
+ --
 
 adns (1.1); urgency=medium
 
