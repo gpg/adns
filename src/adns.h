@@ -91,13 +91,16 @@ typedef enum {
 typedef enum {
   adns_s_ok,
   adns_s_timeout,
-  adns_s_unknownqtype,
   adns_s_nolocalmem,
   adns_s_allservfail,
+  adns_s_serverfailure,
   adns_s_max_tempfail= 99,
+  adns_s_norecurse,
+  adns_s_serverfaulty,
+  adns_s_max_localmisconfig= 199,
   adns_s_inconsistent, /* PTR gives domain whose A does not match */
   adns_s_cname, /* CNAME found where data eg A expected (not if _qf_loosecname) */
-  adns_s_max_misconfig= 199,
+  adns_s_max_remotemisconfig= 299,
   adns_s_nxdomain,
   adns_s_norecord,
   adns_s_invaliddomain
