@@ -56,9 +56,12 @@ static const char * const cvsid =
 
 static const char *progname;
 
-static void aargh(const char *msg) {
-  fprintf(stderr, "%s: %s: %s (%d)\n", progname, msg,
-	  strerror(errno) ? strerror(errno) : "Unknown error", errno);
+#define msg(fmt, args...) fprintf(stderr, "%s: " fmt "\n", progname, ##args)
+
+static void aargh(const char *cause) {
+  const char *why = strerror(errno);
+  if (!why) why = "Unknown error";
+  msg("%s: %s (%d)", cause, why, errno);
   exit(1);
 }
 
