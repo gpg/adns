@@ -225,7 +225,7 @@ static const struct sinfo {
   SINFO(  rcodeunknown,        "Nameserver sent unknown response code"         ),
   
   SINFO(  inconsistent,        "Inconsistent resource records in DNS"          ),
-  SINFO(  prohibitedcname,     "DNS data refers to an alias"                   ),
+  SINFO(  prohibitedcname,     "DNS alias found where canonical name wanted"   ),
   SINFO(  answerdomaininvalid, "Found syntactically invalid domain name"       ),
   SINFO(  answerdomaintoolong, "Found overly-long domain name"                 ),
   SINFO(  invaliddata,         "Found invalid DNS data"                        ),
