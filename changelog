@@ -23,6 +23,8 @@ adns (0.9) unstable; urgency=high
   * m1test script can invoke `hrecord' differently.
   * regress/output-<case>.report file contains more useful info.
   * TODO list and other docs updated slightly.
+  * Referrals with RD+RA set, or RCODE=Refused, don't generate warnings,
+    just debug messages.  BIND does this kind of thing all the time.
 
  --
 
