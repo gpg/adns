@@ -1,4 +1,4 @@
-adns (0.9) unstable; urgency=low
+adns (0.9) unstable; urgency=high
 
   Bug fixes:
   * Don't make _processany always kill the TCP connection with the message
@@ -7,6 +7,9 @@ adns (0.9) unstable; urgency=low
     `qu->interim_allocd>=0' on some platforms eg 64 bit).
   * adnsresfilter doesn't resolve textual prefixes of addresses (eg,
     10.0.0.1 out of 10.0.0.123) if input happens to block at that point.
+  * Do not spin if TCP connection blocks for writing (and add test case).
+  * Fail queries if TCP dies repeatedly, rather than retrying many times.
+  * Do not abort in a couple of places if TCP unexpectedly broken.
 
   Portability/compilation fixes:
   * Move `extern "C" {' to after #include <...>'s.
