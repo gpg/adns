@@ -25,14 +25,17 @@ m4_dnl  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
 m4_include(hmacros.i4)
 
-#include <fcntl.h>
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
 
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+
+#include <unistd.h>
+#include <fcntl.h>
 
 #include "harness.h"
 #include "internal.h"

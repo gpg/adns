@@ -1,6 +1,8 @@
 adns (0.10) unstable; urgency=low
 
   * Fix <sys/fcntl.h> in client/adnsresfilter.c to <fcntl.h>.
+  * Kill bogus warning, adh-main.c: `arg2' might be used uninitialized ...
+  * #include <sys/types.h> and <unistd.h> for fcntl in */*.c.
 
  --
 

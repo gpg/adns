@@ -125,7 +125,7 @@ static void process_optarg(const char *arg,
       } else if (oip->type == ot_funcarg2) {
 	assert(argv_p);
 	arg= *++(*argv_p);
-	if (arg) arg2= *++(*argv_p);
+	arg2= arg ? *++(*argv_p) : 0;
 	if (!arg || !arg2)
 	  usageerr("option --%s requires two more arguments", oip->lopt);
       } else {

@@ -27,13 +27,16 @@ m4_include(hmacros.i4)
 
 #include <assert.h>
 #include <string.h>
-#include <fcntl.h>
 #include <errno.h>
 #include <stdlib.h>
 
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+
+#include <unistd.h>
+#include <fcntl.h>
 
 #include "harness.h"
 
