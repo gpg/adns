@@ -143,8 +143,7 @@ int main(int argc, char *const *argv) {
   const char *initstring, *rrtn, *fmtn;
   const char *const *fdomlist, *domain;
   char *show, *cp;
-  int len, i, qc, qi, tc, ti, ch, qflags, initflagsnum, npollfds, npollfdsavail, timeout;
-  struct pollfd *pollfds;
+  int len, i, qc, qi, tc, ti, ch, qflags, initflagsnum;
   adns_status ri;
   int r;
   const adns_rrtype *types;
@@ -216,9 +215,6 @@ int main(int argc, char *const *argv) {
   }
   if (r) failure_errno("init",r);
 
-  npollfdsavail= 0;
-  pollfds= 0;
-  
   for (qi=0; qi<qc; qi++) {
     fdom_split(fdomlist[qi],&domain,&qflags,ownflags,sizeof(ownflags));
     if (!consistsof(ownflags,"a")) usageerr("unknown ownqueryflag");
