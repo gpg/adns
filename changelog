@@ -12,23 +12,19 @@ adns (0.10) unstable; urgency=low
   * Regression tests now include adnshost, adnslogres, adnsresfilter.
   * Test cancellation both before and after query completion.
 
-  Portability fixes:
-  * Fix <sys/fcntl.h> in client/adnsresfilter.c to <fcntl.h>.
-  * Add missing <sys/types.h>, <unistd.h>, <time.h>, <sys/time.h>.
-  * Cope with compilers that don't do `inline'.
-  * Do not use variadic macro, use stdarg instead (adnslogres.c).
-  * #include "config.h" before "adns.h".
+  Portability fixes and cleanups:
   * adnstest: setvbuf(stdout,...) before we do first output.
+  * Cope with compilers that don't do `inline'.
+  * Add and fix various missing system #includes.
+  * Do not use variadic macro, use stdarg instead (adnslogres.c).
+  * Regression tests work even if some syscalls are already macros.
+  * #include "config.h" before "adns.h".
   * Cast a sizeof(...) in src/event.c to unsigned long before printing.
-  * #include <sys/select.h> if it exists.
-  * Regression tests work better if some syscalls are already macros.
   * Add pre-generated versions of m4-generated files in regress/.
-
-  Portability cleanups:
-  * Add list of tested platforms in INSTALL file.
   * Kill bogus warning, adh-main.c: `arg2' might be used uninitialized ...
   * Add extra {...} near adnslogres.c:167 to kill spurious warning.
   * Use `printf' instead of `echo -n'.
+  * Add list of tested platforms in INSTALL file.
 
  --
 
