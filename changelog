@@ -1,8 +1,10 @@
 adns (0.10) unstable; urgency=low
 
+  * Add list of tested platforms in INSTALL file.
   * Fix <sys/fcntl.h> in client/adnsresfilter.c to <fcntl.h>.
   * Kill bogus warning, adh-main.c: `arg2' might be used uninitialized ...
   * #include <sys/types.h> and <unistd.h> for fcntl in */*.c.
+  * Add extra {...} near adnslogres.c:167 to kill spurious warning.
 
  --
 
