@@ -582,14 +582,33 @@ adns_query adns_forallqueries_next(adns_state ads, void **context_r) {
   for (;;) {
     qu= nqu;
     if (!qu) return 0;
-    nqu=
-      qu->next ? qu->next :
-      qu == ads->timew.tail ? (ads->childw.head ? ads->childw.head : ads->output.head) :
-      qu == ads->childw.tail ? ads->output.head :
-      0;
+    if (qu->next) {
+      nqu= qu->next;
+    } else if (qu == ads->timew.tail) {
+      if (ads->childw.head) {
+	nqu= ads->childw.head;
+      } else {
+	nqu= ads->output.head;
+      }
+    } else if (qu == ads->childw.tail) {
+      nqu= ads->output.head;
+    } else {
+      nqu= 0;
+    }
     if (!qu->parent) break;
   }
   ads->forallnext= nqu;
   if (context_r) *context_r= qu->ctx.ext;
   return qu;
+}
+
+void adns__checkqueues(adns_state ads) {
+  int i;
+
+  i= 0;
+  adns_forallqueries_begin(ads);
+  while (adns_forallqueries_next(ads,0)) {
+    i++;
+    assert(i<1000);
+  }
 }

@@ -285,6 +285,7 @@ struct adns__state {
 /* From setup.c: */
 
 int adns__setnonblock(adns_state ads, int fd); /* => errno value */
+void adns__checkqueues(adns_state ads); /* expensive walk, for checking */
 
 /* From general.c: */
 
@@ -390,12 +391,14 @@ adns_status adns__internal_submit(adns_state ads, adns_query *query_r,
  * child will already have been taken off both the global list of
  * queries in ads and the list of children in the parent.  The child
  * will be freed when the callback returns.  The parent will have been
- * taken off the global childw queue iff this is the last child for
- * that parent.  If there is no error detected in the callback, then
- * it should call adns__query_done if and only if there are no more
- * children (by checking parent->children.head).  If an error is
- * detected in the callback it should call adns__query_fail and any
- * remaining children will automatically be cancelled.
+ * taken off the global childw queue.
+ *
+ * The callback should either call adns__query_done, if it is
+ * complete, or adns__query_fail, if an error has occurred, in which
+ * case the other children (if any) will be cancelled.  If the parent
+ * has more unfinished children (or has just submitted more) then the
+ * callback may choose to wait for them - it must then put the parent
+ * back on the childw queue.
  */
 
 void adns__search_next(adns_state ads, adns_query qu, struct timeval now);

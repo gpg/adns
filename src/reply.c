@@ -307,7 +307,6 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
     LIST_LINK_TAIL(ads->childw,qu);
     return;
   }
-
   adns__query_done(qu);
   return;
 
