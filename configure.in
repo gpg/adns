@@ -29,8 +29,6 @@ ADNS_C_GETFUNC(inet_aton,resolv,[
  AC_MSG_WARN([inet_aton is in libresolv, urgh.  Must use -lresolv.])
 ])
 
-ADNS_C_GETFUNC(mpq_div,gmp)
-
 ADNS_C_GCCATTRIB
 
 AC_SUBST(WARNS)
