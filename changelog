@@ -28,7 +28,7 @@ adns (0.8) BETA; urgency=medium
   * In adns_wait, assert that the timeout is not infinite.
   * Make qu->id start out as -2 when initially allocated.
 
- --
+ -- Ian Jackson <ian@davenant.greenend.org.uk>  Sun,  7 May 2000 23:11:44 +0100
 
 adns (0.7) BETA; urgency=medium
 
