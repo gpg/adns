@@ -1,8 +1,18 @@
+adns (0.2) experimental; urgency=low
+
+  Portability fixes:
+  * Include <sys/socket.h> and <netinet/in.h> in files with <arpa/inet.h>.
+  * Don't use GCC union assignment feature (.rrs=0 => .rrs.untyped=0).
+  * Explictly cast things to [const] struct sockaddr* in syscall args.
+  * Check whether we need -lsocket.
+
+ --
+
 adns (0.1) experimental; urgency=low
 
   * Initial public alpha release.
 
- --
+ -- Ian Jackson <ian@davenant.greenend.org.uk>  Sat, 17 April 1999 17:42:19
 
 Local variables:
 mode: debian-changelog
