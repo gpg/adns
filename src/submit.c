@@ -16,15 +16,8 @@ static adns_query allocquery(adns_state ads, const char *owner, int ol,
   adns_answer *ans;
 
   qu= malloc(sizeof(*qu)+ol+1+ads->rqbuf.used); if (!qu) return 0;
-  
-  adns__vbuf_init(&qu->ans);
-  if (!adns__vbuf_ensure(&qu->ans,sizeof(adns_answer))) { free(qu); return 0; }
-  ans= (adns_answer*)qu->ans.buf;
-  ans->status= adns_s_ok;
-  ans->type= qu->typei->type;
-  ans->nrrs= 0;
-  ans->rrs.str= 0;
-  
+  adns__vbuf_init(&qu->ansbuf);
+  qu->cname= 0;
   qu->state= query_udp;
   qu->next= qu->back= qu->parent= 0;
   LIST_INIT(qu->children);

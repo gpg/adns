@@ -16,9 +16,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
   adns_query qu, nqu;
   dns_rcode rcode;
   adns_status st;
-  adns_answer *ans;
-
-  cbyte= 0;
+= 0;
   
   if (dglen<DNS_HDRSIZE) {
     adns__diag(ads,serv,"received datagram too short for message header (%d)",dglen);
@@ -110,9 +108,9 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
   for (rri= 0; rri<ancount; rri++) {
     rrstart= cbyte;
     if (qu->cnameoff >= 0) {
-      st= adns__get_rr_temp(ads,qu,serv, dgram,dglen,&cbyte,
-			    &rrtype,&rrclass,&rdlength,&rdstart,
-			    dgram,dglen,qu->cnameoff, &ownermatched);
+      st= adns__findrr(ads,serv, dgram,dglen,&cbyte,
+		       &rrtype,&rrclass,&rdlength,&rdstart,
+		       dgram,dglen,qu->cnameoff, &ownermatched);
     } else {
       st= adns__get_rr_temp(ads,qu,serv, dgram,dglen,&cbyte,
 			    &rrtype,&rrclass,&rdlength,&rdstart,
