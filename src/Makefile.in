@@ -16,6 +16,7 @@
 #  along with this program; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
 
+SUBDIR=/src
 TARGETS=	libadns.a
 
 include ../settings.make
@@ -29,4 +30,4 @@ libadns.a:	$(LIBOBJS)
 		rm -f $@
 		$(AR) cqsv $@ $(LIBOBJS)
 
-$(LIBOBJS):	adns.h internal.h
+$(LIBOBJS):	adns.h internal.h config.h

@@ -16,22 +16,24 @@
 #  along with this program; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
 
-TARGETS=	$(LIBFILE)
+SUBDIR=/dynamic
+TARGETS=	$(SHLIBFILE)
 
-include ../settings.make
-include ../src/adns.make
+include $(srcdir)/settings.make
+include $(srcdir)/src/adns.make
 
 ALLOBJS=	$(addsuffix _p.o, $(basename $(LIBOBJS)))
 
 install:
-		$(INSTALL_LIB) $(LIBFILE) $(lib_dir)
-		$(INSTALL_HDR) ../src/adns.h $(include_dir)
+		$(INSTALL_LIB) $(SHLIBFILE) $(lib_dir)
+		$(INSTALL_HDR) $(srcdir)/src/adns.h $(include_dir)
 
-$(LIBFILE):	$(ALLOBJS)
+$(SHLIBFILE):	$(ALLOBJS)
 		rm -f $@
-		$(CC) -shared -Wxl,soname=libadns.so.$(MAJOR) -o $@ $(ALLOBJS) -lc
+		$(MKSHLIB_1) $@ $(MKSHLIB_2) $(ALLOBJS) $(MKSHLIB_3)
 
-%_p.o:		../src/%.c ../src/adns.h ../src/internal.h
-		$(CC) -fpic -I../src -c -o $@ $<
+%_p.o:		$(srcdir)/src/%.c $(srcdir)/src/adns.h \
+			$(srcdir)/src/internal.h $(srcdir)/src/config.h
+		$(SHLIBCC) -I$(srcdir)/src -c -o $@ $<
 
 $(LIBOBJS):	

@@ -1,4 +1,5 @@
-# settings.make - main configuration settings for Makefiles
+# settings.make.in - main configuration settings for Makefiles,
+#  used by autoconf/configure to generate settings.make
 #  
 #  This file is part of adns, which is Copyright (C) 1997, 1998 Ian Jackson
 #
@@ -16,18 +17,27 @@
 #  along with this program; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
 
-MAJOR=		1
-MINOR=		0
-LIBFILE=	libadns.so.$(MAJOR).$(MINOR)
+srcdir=		@srcdir@
+VPATH=		@srcdir@$(SUBDIR)
 
-CC=gcc $(WARNS) $(WERROR) $(OPTIMISE) $(DEBUG) $(XCFLAGS) $(DIRCFLAGS)
-DEBUG=-g
-OPTIMISE=-O2
-WARNS=	-Wall -Wmissing-prototypes -Wwrite-strings -Wstrict-prototypes \
-	-Wcast-qual -Wpointer-arith
-WERROR=-Werror
+MAJOR=		0
+MINOR=		1
+SHLIBFILE=	@SHLIBFILE@
+SHLIBSONAME=	@SHLIBSONAME@
 
-prefix=		/usr/local
+CC=		@CC@
+CFLAGS=		$(AUTOCFLAGS) $(WARNS) $(WERROR) $(DIRCFLAGS) $(XCFLAGS)
+AUTOCFLAGS=	@CFLAGS@
+WARNS=		@WARNS@
+#WERROR=	-Werror
+
+SHLIBCC=	@SHLIBCC@
+
+MKSHLIB_1=	@MKSHLIB_1@
+MKSHLIB_2=	@MKSHLIB_2@
+MKSHLIB_3=	@MKSHLIB_3@
+
+prefix=		@prefix@
 bin_dir=	$(prefix)/bin
 lib_dir=	$(prefix)/lib
 include_dir=	$(prefix)/include

@@ -1,7 +1,7 @@
-# adnsMakefile - top-level Makefile
-# 
-#  This file is part of adns, which is Copyright (C) 1997, 1998 Ian Jackson
+# configure.in - input to autoconf
 #  
+#  This file is part of adns, which is Copyright (C) 1997-1999 Ian Jackson
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2, or (at your option)
@@ -16,23 +16,31 @@
 #  along with this program; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
 
-SUBDIR=
-SUBDIRS= src dynamic client regress
+AC_INIT(src/adns.h)
+AC_CONFIG_HEADER(src/config.h)
+AC_PROG_CC
+ADNS_C_GCCATTRIB
 
-all:
-	set -e; for d in $(SUBDIRS); do $(MAKE) -C $$d all; done
+AC_SUBST(WARNS)
 
-check:	all
-	$(MAKE) -C regress check
+if test "${GCC-no}" = yes; then
+	WARNS="-Wall -Wmissing-prototypes -Wwrite-strings -Wstrict-prototypes -Wcast-qual -Wpointer-arith"
+else
+	WARNS=
+fi
 
-install:
-	set -e; for d in $(SUBDIRS); do $(MAKE) -C $$d install; done
+AC_SUBST(SHLIBCC)
+AC_SUBST(MKSHLIB_1)
+AC_SUBST(MKSHLIB_2)
+AC_SUBST(MKSHLIB_3)
+AC_SUBST(SHLIBFILE)
+AC_SUBST(SHLIBSONAME)
 
-clean:
-	set -e; for d in $(SUBDIRS); do $(MAKE) -C $$d clean; done
+SHLIBCC='$(CC) $(CFLAGS) -fpic'
+MKSHLIB_1='$(CC) $(LDFLAGS) -shared -Wxl,soname=$(SONAME) -o'
+MKSHLIB_2=''
+MKSHLIB_3='-lc'
+SHLIBFILE='libadns.so.$(MAJOR).$(MINOR)'
+SHLIBSONAME='libadns.so.$(MAJOR)'
 
-distclean:
-	set -e; for d in $(SUBDIRS); do $(MAKE) -C $$d distclean; done
-
-maintainer-clean:
-	set -e; for d in $(SUBDIRS); do $(MAKE) -C $$d maintainer-clean; done
+AC_OUTPUT(settings.make)

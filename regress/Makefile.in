@@ -16,7 +16,8 @@
 #  along with this program; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
 
-DIRCFLAGS=	-I../src
+SUBDIR=/regress
+DIRCFLAGS=	-I$(srcdir)/src
 
 HCPPFLAGS:= $(foreach F,			\
 	gettimeofday select			\
@@ -30,21 +31,21 @@ AUTOCSRCS=	harness.h hrecord.c hplayback.c hcommon.c
 
 TARGETS=	hplayback hrecord
 
-include ../settings.make
-include ../src/adns.make
+include $(srcdir)/settings.make
+include $(srcdir)/src/adns.make
 
 .PRECIOUS:	$(AUTOCSRCS)
 
 check:		$(TARGETS)
 		./checkall
 
-hrecord:	../client/adnstest.o hrecord.o hcommon.o $(HARNLOBJS)
-hplayback:	../client/adnstest.o hplayback.o hcommon.o $(HARNLOBJS)
+hrecord:	$(srcdir)/client/adnstest.o hrecord.o hcommon.o $(HARNLOBJS)
+hplayback:	$(srcdir)/client/adnstest.o hplayback.o hcommon.o $(HARNLOBJS)
 
-%_d.o:		../src/%.c
+%_d.o:		$(srcdir)/src/%.c
 		$(CC) $(HCPPFLAGS) -c -g -o $@ $<
 
-$(ALLOBJS):	../src/adns.h ../src/internal.h harness.h
+$(ALLOBJS):	$(srcdir)/src/adns.h $(srcdir)/src/internal.h harness.h
 
 %::	%.m4 hmacros.i4 hsyscalls.i4
 	m4 -P $< >$@-a.new

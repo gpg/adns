@@ -25,7 +25,7 @@
 #ifndef ADNS_INTERNAL_H_INCLUDED
 #define ADNS_INTERNAL_H_INCLUDED
 
-#define PRINTFFORMAT(a,b) __attribute__((format(printf,a,b)))
+#include "config.h"
 typedef unsigned char byte;
 
 #include <stdarg.h>
