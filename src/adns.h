@@ -433,7 +433,7 @@ int adns_processexceptional(adns_state ads, int fd, const struct timeval *now);
  * from, or send outgoing data via, fd.  Very like _processany.  If it
  * returns zero then fd will no longer be readable or writeable
  * (unless of course more data has arrived since).  adns will _only_
- * that fd and only in the manner specified, regardless of whether
+ * use that fd and only in the manner specified, regardless of whether
  * adns_if_noautosys was specified.
  *
  * adns_processexceptional should be called when select(2) reports an

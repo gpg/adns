@@ -18,6 +18,7 @@ adns (0.5) unstable; urgency=medium
   * Reject TXT RRs with no strings.
   * Do not scramble innards when a query on the output queue is cancelled.
   * Correct error messages for qname CNAME foo, foo CNAME bar.
+  * Fixed typo in adns.h.
 
   General improvements:
   * Promise not to change fds in adns_beforepoll (if now is specified).
