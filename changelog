@@ -4,6 +4,7 @@ adns (1.2); urgency=medium
   * New LICENCE.WAIVERS file for GPL-incompatility workarounds.
   * Clarified GPL-vs-LGPL: a bit less hostile and a bit more mercenary.
   * Allow `;'-comments in resolv.conf (report from Colin Charles).    
+  * Added a TODO list item.
 
  --
 
