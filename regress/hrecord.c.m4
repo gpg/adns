@@ -32,6 +32,8 @@ static int begin_set;
 static struct timeval begin;
 static FILE *Toutputfile;
 
+/* fixme: record syscall durations, rather than gettimeofday results */
+
 void Tensureoutputfile(void) {
   const char *fdstr;
   int fd;
