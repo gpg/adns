@@ -24,12 +24,7 @@ ADNS_TEST_OUT_FD=3 3>>"$case.sys" >"$case.out" 2>"$case.err" </dev/null \
 rc=$?
 set -e
 
+echo "rc=$rc" >>$case.out
+
 egrep . -- "$case.err" "$case.out"
 echo "exit status: $rc"
-
-if test $rc = 0
-then
-	echo "test created ok"
-fi
-
-exit $rc

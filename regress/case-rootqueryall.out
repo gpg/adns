@@ -124,3 +124,4 @@ adns debug: reply not found, id 3139, query owner  (NS=172.18.45.6)
 . flags 1 type SOA(822): OK; nrrs=1; cname=$; owner=$; ttl=46580
  "A.ROOT-SERVERS.NET" "hostmaster@INTERNIC.NET" 1999041600 1800 900 604800 86400
 . flags 1 type RP(822): No such data; nrrs=0; cname=$; owner=$; ttl=598
+rc=0

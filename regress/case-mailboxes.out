@@ -7,3 +7,4 @@ silly-rp.test.iwj.relativity.greenend.org.uk flags 0 type RP(822): OK; nrrs=6; c
  "\x22i\\.\\.j\x22@ucam.org" ""
  "\x22\\.i\x22@ucam.org" ""
  "\x22i\\.\x22@ucam.org" ""
+rc=0

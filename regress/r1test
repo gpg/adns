@@ -20,16 +20,11 @@ ADNS_TEST_REPORT_FD=3 3>>"$ocase.report" >"$ocase.out" 2>"$ocase.err" \
 rc=$?
 set -e
 
-if test $rc != 0
-then
-	egrep . -- "$ocase.report" "$ocase.out" "$ocase.err"
-	echo >&2 "FAILED $case - EXIT STATUS $rc"
-	exit 2
-fi
+echo "rc=$rc" >>$ocase.out
 
 for part in out err
 do
-	if diff -- "$case.$part" "$ocase.$part"
+	if diff -u -- "$case.$part" "$ocase.$part"
 	then
 		:
 	else

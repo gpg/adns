@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <limits.h>
 #include <unistd.h>
 #include <fcntl.h>
 
@@ -153,7 +154,7 @@ static void ccf_sortlist(adns_state ads, const char *fn, int lno, const char *bu
       continue;
     }
     
-    memcpy(tbuf,word,l);
+    memcpy(tbuf,word,l); tbuf[l]= 0;
     slash= strchr(tbuf,'/');
     if (slash) *slash++= 0;
     
@@ -204,8 +205,29 @@ static void ccf_sortlist(adns_state ads, const char *fn, int lno, const char *bu
 }
 
 static void ccf_options(adns_state ads, const char *fn, int lno, const char *buf) {
+  const char *word;
+  char *ep;
+  unsigned long v;
+  int l;
+
   if (!buf) return;
-  adns__diag(ads,-1,0,"warning - `options' ignored fixme");
+
+  while (nextword(&buf,&word,&l)) {
+    if (l==5 && !memcmp(word,"debug",5)) {
+      ads->iflags |= adns_if_debug;
+      continue;
+    }
+    if (l>=6 && !memcmp(word,"ndots:",6)) {
+      v= strtoul(word+6,&ep,10);
+      if (l==6 || ep != word+l || v > INT_MAX) {
+	configparseerr(ads,fn,lno,"option `%.*s' malformed or has bad value",l,word);
+	continue;
+      }
+      ads->searchndots= v;
+      continue;
+    }
+    adns__diag(ads,-1,0,"%s:%d: unknown option `%.*s'", fn,lno, l,word);
+  }
 }
 
 static void ccf_clearnss(adns_state ads, const char *fn, int lno, const char *buf) {
