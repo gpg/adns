@@ -1,3 +1,6 @@
+INVESTIGATE:
+* coredump in adnstest_s
+
 BUGS:
 * adns_qf_quoteok_cname should be the default.
 
