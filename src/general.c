@@ -34,33 +34,36 @@ void adns__vdiag(adns_state ads, const char *pfx, adns_initflags prevent,
 		 int serv, adns_query qu, const char *fmt, va_list al) {
   const char *bef, *aft;
   vbuf vb;
-  if (!(ads->iflags & adns_if_debug) && (!prevent || (ads->iflags & prevent))) return;
+  
+  if (!ads->diagfile ||
+      (!(ads->iflags & adns_if_debug) && (!prevent || (ads->iflags & prevent))))
+    return;
 
-  fprintf(stderr,"adns%s: ",pfx);
+  fprintf(ads->diagfile,"adns%s: ",pfx);
 
-  vfprintf(stderr,fmt,al);
+  vfprintf(ads->diagfile,fmt,al);
 
   bef= " (";
   aft= "\n";
 
   if (qu && qu->query_dgram) {
     adns__vbuf_init(&vb);
-    fprintf(stderr,"%sQNAME=%s, QTYPE=%s",
+    fprintf(ads->diagfile,"%sQNAME=%s, QTYPE=%s",
 	    bef,
 	    adns__diag_domain(qu->ads,-1,0, &vb,
 			      qu->query_dgram,qu->query_dglen,DNS_HDRSIZE),
 	    qu->typei ? qu->typei->rrtname : "<unknown>");
     if (qu->typei && qu->typei->fmtname)
-      fprintf(stderr,"(%s)",qu->typei->fmtname);
+      fprintf(ads->diagfile,"(%s)",qu->typei->fmtname);
     bef=", "; aft=")\n";
   }
   
   if (serv>=0) {
-    fprintf(stderr,"%sNS=%s",bef,inet_ntoa(ads->servers[serv].addr));
+    fprintf(ads->diagfile,"%sNS=%s",bef,inet_ntoa(ads->servers[serv].addr));
     bef=", "; aft=")\n";
   }
 
-  fputs(aft,stderr);
+  fputs(aft,ads->diagfile);
 }
 
 void adns__debug(adns_state ads, int serv, adns_query qu, const char *fmt, ...) {

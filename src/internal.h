@@ -239,6 +239,7 @@ struct adns__query {
 struct adns__state {
   adns_initflags iflags;
   FILE *diagfile;
+  int configerrno;
   struct { adns_query head, tail; } timew, childw, output;
   int nextid, udpsocket, tcpsocket;
   vbuf tcpsend, tcprecv;

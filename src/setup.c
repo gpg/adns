@@ -32,6 +32,8 @@
 
 #include "internal.h"
 
+static void readconfig(adns_state ads, const char *filename);
+
 static void addserver(adns_state ads, struct in_addr addr) {
   int i;
   struct server *ss;
@@ -53,17 +55,23 @@ static void addserver(adns_state ads, struct in_addr addr) {
   ads->nservers++;
 }
 
+static void saveerr(adns_state ads, int en) {
+  if (!ads->configerrno) ads->configerrno= en;
+}
+
 static void configparseerr(adns_state ads, const char *fn, int lno,
 			   const char *fmt, ...) {
   va_list al;
-  
-  if (ads->iflags & adns_if_noerrprint) return;
-  if (lno==-1) fprintf(stderr,"adns: %s: ",fn);
-  else fprintf(stderr,"adns: %s:%d: ",fn,lno);
+
+  saveerr(ads,EINVAL);
+  if (!ads->diagfile || (ads->iflags & adns_if_noerrprint)) return;
+
+  if (lno==-1) fprintf(ads->diagfile,"adns: %s: ",fn);
+  else fprintf(ads->diagfile,"adns: %s:%d: ",fn,lno);
   va_start(al,fmt);
-  vfprintf(stderr,fmt,al);
+  vfprintf(ads->diagfile,fmt,al);
   va_end(al);
-  fputc('\n',stderr);
+  fputc('\n',ads->diagfile);
 }
 
 static void ccf_nameserver(adns_state ads, const char *fn, int lno, const char *buf) {
@@ -95,6 +103,14 @@ static void ccf_clearnss(adns_state ads, const char *fn, int lno, const char *bu
   ads->nservers= 0;
 }
 
+static void ccf_include(adns_state ads, const char *fn, int lno, const char *buf) {
+  if (!*buf) {
+    configparseerr(ads,fn,lno,"`include' directive with no filename");
+    return;
+  }
+  readconfig(ads,buf);
+}
+
 static const struct configcommandinfo {
   const char *name;
   void (*fn)(adns_state ads, const char *fn, int lno, const char *buf);
@@ -105,44 +121,109 @@ static const struct configcommandinfo {
   { "sortlist",          ccf_sortlist    },
   { "options",           ccf_options     },
   { "clearnameservers",  ccf_clearnss    },
+  { "include",           ccf_include     },
   {  0                                   }
 };
 
-static void readconfig(adns_state ads, const char *filename) {
-  char linebuf[2000], *p, *q;
+typedef union {
   FILE *file;
-  int lno, l, c;
-  const struct configcommandinfo *ccip;
+  const char *text;
+} getline_ctx;
 
-  file= fopen(filename,"r");
-  if (!file) {
-    if (errno == ENOENT) {
-      adns__debug(ads,-1,0,"configuration file `%s' does not exist",filename);
-      return;
+static int gl_file(adns_state ads, getline_ctx *src_io, const char *filename,
+		   int lno, char *buf, int buflen) {
+  FILE *file= src_io->file;
+  int c, i;
+  char *p;
+
+  p= buf;
+  buflen--;
+  i= 0;
+    
+  for (;;) { /* loop over chars */
+    if (i == buflen) {
+      adns__diag(ads,-1,0,"%s:%d: line too long, ignored",filename,lno);
+      goto x_badline;
     }
-    adns__diag(ads,-1,0,"cannot open configuration file `%s': %s",
-	       filename,strerror(errno));
-    return;
+    c= getc(file);
+    if (!c) {
+      adns__diag(ads,-1,0,"%s:%d: line contains nul, ignored",filename,lno);
+      goto x_badline;
+    } else if (c == '\n') {
+      break;
+    } else if (c == EOF) {
+      if (ferror(file)) {
+	saveerr(ads,errno);
+	adns__diag(ads,-1,0,"%s:%d: read error: %s",filename,lno,strerror(errno));
+	return -1;
+      }
+      if (!i) return -1;
+      break;
+    } else {
+      *p++= c;
+      i++;
+    }
   }
 
-  for (lno=1; fgets(linebuf,sizeof(linebuf),file); lno++) {
-    l= strlen(linebuf);
-    if (!l) continue;
-    if (linebuf[l-1] != '\n' && !feof(file)) {
-      adns__diag(ads,-1,0,"%s:%d: line too long",filename,lno);
-      while ((c= getc(file)) != EOF && c != '\n') { }
-      if (c == EOF) break;
-      continue;
-    }
+  *p++= 0;
+  return i;
+
+ x_badline:
+  saveerr(ads,EINVAL);
+  while ((c= getc(file)) != EOF && c != '\n');
+  return -2;
+}
+
+static int gl_text(adns_state ads, getline_ctx *src_io, const char *filename,
+		   int lno, char *buf, int buflen) {
+  const char *cp= src_io->text, *nn;
+  int l;
+
+  if (!cp) return -1;
+  
+  nn= strchr(cp,'\n');
+
+  l= nn ? nn-cp : strlen(cp);
+  src_io->text= nn ? nn+1 : 0;
+
+  if (l >= buflen) {
+    adns__diag(ads,-1,0,"%s:%d: line too long, ignored",filename,lno);
+    saveerr(ads,EINVAL);
+    return -2;
+  }
+    
+  memcpy(buf,cp,l);
+  buf[l]= 0;
+  return l;
+}
+
+static void readconfiggeneric(adns_state ads, const char *filename,
+			      int (*getline)(adns_state ads, getline_ctx*,
+					     const char *filename, int lno,
+					     char *buf, int buflen),
+			      /* Returns >=0 for success, -1 for EOF or error
+			       * (error will have been reported), or -2 for
+			       * bad line was encountered, try again.
+			       */
+			      getline_ctx gl_ctx) {
+  char linebuf[2000], *p, *q;
+  int lno, l, dirl;
+  const struct configcommandinfo *ccip;
+
+  for (lno=1;
+       (l= getline(ads,&gl_ctx, filename,lno, linebuf,sizeof(linebuf))) != -1;
+       lno++) {
+    if (l == -2) continue;
     while (l>0 && ctype_whitespace(linebuf[l-1])) l--;
     linebuf[l]= 0;
     p= linebuf;
     while (ctype_whitespace(*p)) p++;
-    if (*p == '#' || *p == '\n') continue;
+    if (*p == '#' || !*p) continue;
     q= p;
     while (*q && !ctype_whitespace(*q)) q++;
+    dirl= q-p;
     for (ccip=configcommandinfos;
-	 ccip->name && strncmp(ccip->name,p,q-p);
+	 ccip->name && !(strlen(ccip->name)==dirl && !memcmp(ccip->name,p,q-p));
 	 ccip++);
     if (!ccip->name) {
       adns__diag(ads,-1,0,"%s:%d: unknown configuration directive `%.*s'",
@@ -152,10 +233,6 @@ static void readconfig(adns_state ads, const char *filename) {
     while (ctype_whitespace(*q)) q++;
     ccip->fn(ads,filename,lno,q);
   }
-  if (ferror(file)) {
-    adns__diag(ads,-1,0,"%s:%d: read error: %s",filename,lno,strerror(errno));
-  }
-  fclose(file);
 }
 
 static const char *instrum_getenv(adns_state ads, const char *envvar) {
@@ -167,6 +244,33 @@ static const char *instrum_getenv(adns_state ads, const char *envvar) {
   return value;
 }
 
+static void readconfig(adns_state ads, const char *filename) {
+  getline_ctx gl_ctx;
+  
+  gl_ctx.file= fopen(filename,"r");
+  if (!gl_ctx.file) {
+    if (errno == ENOENT) {
+      adns__debug(ads,-1,0,"configuration file `%s' does not exist",filename);
+      return;
+    }
+    saveerr(ads,errno);
+    adns__diag(ads,-1,0,"cannot open configuration file `%s': %s",
+	       filename,strerror(errno));
+    return;
+  }
+
+  readconfiggeneric(ads,filename,gl_file,gl_ctx);
+  
+  fclose(gl_ctx.file);
+}
+
+static void readconfigtext(adns_state ads, const char *text, const char *showname) {
+  getline_ctx gl_ctx;
+  
+  gl_ctx.text= text;
+  readconfiggeneric(ads,showname,gl_text,gl_ctx);
+}
+  
 static void readconfigenv(adns_state ads, const char *envvar) {
   const char *filename;
 
@@ -188,15 +292,13 @@ int adns__setnonblock(adns_state ads, int fd) {
   return 0;
 }
 
-int adns_init(adns_state *ads_r, adns_initflags flags, FILE *diagfile) {
+static int init_begin(adns_state *ads_r, adns_initflags flags, FILE *diagfile) {
   adns_state ads;
-  const char *res_options, *adns_res_options;
-  struct protoent *proto;
-  int r;
   
   ads= malloc(sizeof(*ads)); if (!ads) return errno;
+
   ads->iflags= flags;
-  ads->diagfile= diagfile ? diagfile : stderr;
+  ads->diagfile= diagfile;
   LIST_INIT(ads->timew);
   LIST_INIT(ads->childw);
   LIST_INIT(ads->output);
@@ -208,6 +310,46 @@ int adns_init(adns_state *ads_r, adns_initflags flags, FILE *diagfile) {
   ads->tcpstate= server_disconnected;
   timerclear(&ads->tcptimeout);
 
+  *ads_r= ads;
+  return 0;
+}
+
+static int init_finish(adns_state ads) {
+  struct in_addr ia;
+  struct protoent *proto;
+  int r;
+  
+  if (!ads->nservers) {
+    if (ads->diagfile && ads->iflags & adns_if_debug)
+      fprintf(ads->diagfile,"adns: no nameservers, using localhost\n");
+    ia.s_addr= INADDR_LOOPBACK;
+    addserver(ads,ia);
+  }
+
+  proto= getprotobyname("udp"); if (!proto) { r= ENOPROTOOPT; goto x_free; }
+  ads->udpsocket= socket(AF_INET,SOCK_DGRAM,proto->p_proto);
+  if (ads->udpsocket<0) { r= errno; goto x_free; }
+
+  r= adns__setnonblock(ads,ads->udpsocket);
+  if (r) { r= errno; goto x_closeudp; }
+  
+  return 0;
+
+ x_closeudp:
+  close(ads->udpsocket);
+ x_free:
+  free(ads);
+  return r;
+}
+
+int adns_init(adns_state *ads_r, adns_initflags flags, FILE *diagfile) {
+  adns_state ads;
+  const char *res_options, *adns_res_options;
+  int r;
+  
+  r= init_begin(&ads, flags, diagfile ? diagfile : stderr);
+  if (r) return r;
+  
   res_options= instrum_getenv(ads,"RES_OPTIONS");
   adns_res_options= instrum_getenv(ads,"ADNS_RES_OPTIONS");
   ccf_options(ads,"RES_OPTIONS",-1,res_options);
@@ -223,29 +365,30 @@ int adns_init(adns_state *ads_r, adns_initflags flags, FILE *diagfile) {
   ccf_search(ads,"LOCALDOMAIN",-1,instrum_getenv(ads,"LOCALDOMAIN"));
   ccf_search(ads,"ADNS_LOCALDOMAIN",-1,instrum_getenv(ads,"ADNS_LOCALDOMAIN"));
 
-  if (!ads->nservers) {
-    struct in_addr ia;
-    if (ads->iflags & adns_if_debug)
-      fprintf(stderr,"adns: no nameservers, using localhost\n");
-    ia.s_addr= INADDR_LOOPBACK;
-    addserver(ads,ia);
-  }
+  r= init_finish(ads);
+  if (r) return r;
 
-  proto= getprotobyname("udp"); if (!proto) { r= ENOPROTOOPT; goto x_free; }
-  ads->udpsocket= socket(AF_INET,SOCK_DGRAM,proto->p_proto);
-  if (ads->udpsocket<0) { r= errno; goto x_free; }
-
-  r= adns__setnonblock(ads,ads->udpsocket);
-  if (r) { r= errno; goto x_closeudp; }
-  
   *ads_r= ads;
   return 0;
+}
 
- x_closeudp:
-  close(ads->udpsocket);
- x_free:
-  free(ads);
-  return r;
+int adns_init_strcfg(adns_state *ads_r, adns_initflags flags,
+		     FILE *diagfile, const char *configtext) {
+  adns_state ads;
+  int r;
+
+  r= init_begin(&ads, flags, diagfile);  if (r) return r;
+
+  readconfigtext(ads,configtext,"<supplied configuration text>");
+  if (ads->configerrno) {
+    r= ads->configerrno;
+    free(ads);
+    return r;
+  }
+
+  r= init_finish(ads);  if (r) return r;
+  *ads_r= ads;
+  return 0;
 }
 
 void adns_finish(adns_state ads) {
