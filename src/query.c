@@ -33,76 +33,146 @@
 
 #include "internal.h"
 
-int adns__internal_submit(adns_state ads, adns_query *query_r,
-			  const typeinfo *typei, vbuf *qumsg_vb, int id,
-			  adns_queryflags flags, struct timeval now,
-			  adns_status failstat, const qcontext *ctx) {
+static adns_query query_alloc(adns_state ads, const typeinfo *typei,
+			      adns_queryflags flags, struct timeval now) {
+  /* Allocate a virgin query and return it. */
   adns_query qu;
-
-  qu= malloc(sizeof(*qu)); if (!qu) goto x_nomemory;
-  qu->answer= malloc(sizeof(*qu->answer)); if (!qu->answer) goto x_freequ_nomemory;
-
+  
+  qu= malloc(sizeof(*qu));  if (!qu) return 0;
+  qu->answer= malloc(sizeof(*qu->answer));  if (!qu->answer) { free(qu); return 0; }
+  
   qu->ads= ads;
   qu->state= query_udp;
   qu->back= qu->next= qu->parent= 0;
   LIST_INIT(qu->children);
-  qu->siblings.next= qu->siblings.back= 0;
+  LINK_INIT(qu->siblings);
   LIST_INIT(qu->allocations);
   qu->interim_allocd= 0;
   qu->final_allocspace= 0;
 
   qu->typei= typei;
+  qu->query_dgram= 0;
+  qu->query_dglen= 0;
   adns__vbuf_init(&qu->vb);
 
   qu->cname_dgram= 0;
   qu->cname_dglen= qu->cname_begin= 0;
-  
-  qu->id= id;
+
+  adns__vbuf_init(&qu->search_vb);
+  qu->search_origlen= qu->search_pos= qu->search_doneabs= 0;
+
+  qu->id= 0;
   qu->flags= flags;
   qu->udpretries= 0;
   qu->udpnextserver= 0;
   qu->udpsent= qu->tcpfailed= 0;
   timerclear(&qu->timeout);
-  memcpy(&qu->ctx,ctx,sizeof(qu->ctx));
   qu->expires= now.tv_sec + MAXTTLBELIEVE;
+
+  memset(&qu->ctx,0,sizeof(qu->ctx));
 
   qu->answer->status= adns_s_ok;
   qu->answer->cname= 0;
   qu->answer->type= typei->type;
+  qu->answer->expires= -1;
   qu->answer->nrrs= 0;
   qu->answer->rrs= 0;
   qu->answer->rrsz= typei->rrsz;
-  
-  *query_r= qu;
 
-  qu->query_dglen= qumsg_vb->used;
-  if (qumsg_vb->used) {
-    qu->query_dgram= malloc(qumsg_vb->used);
-    if (!qu->query_dgram) {
-      adns__query_fail(qu,adns_s_nomemory);
-      return adns_s_ok;
-    }
-    memcpy(qu->query_dgram,qumsg_vb->buf,qumsg_vb->used);
-  } else {
-    qu->query_dgram= 0;
-  }
+  return qu;
+}
+
+static void query_submit(adns_state ads, adns_query qu,
+			 const typeinfo *typei, vbuf *qumsg_vb, int id,
+			 adns_queryflags flags, struct timeval now) {
+  /* Fills in the query message in for a previously-allocated query,
+   * and submits it.  Cannot fail.
+   */
+
   qu->vb= *qumsg_vb;
   adns__vbuf_init(qumsg_vb);
+
+  qu->query_dgram= malloc(qu->vb.used);
+  if (!qu->query_dgram) { adns__query_fail(qu,adns_s_nomemory); return; }
   
-  if (failstat) {
-    adns__query_fail(qu,failstat);
-    return adns_s_ok;
-  }
+  qu->id= id;
+  qu->query_dglen= qu->vb.used;
+  memcpy(qu->query_dgram,qu->vb.buf,qu->vb.used);
+  
   adns__query_udp(qu,now);
   adns__autosys(ads,now);
+}
 
+adns_status adns__internal_submit(adns_state ads, adns_query *query_r,
+				  const typeinfo *typei, vbuf *qumsg_vb, int id,
+				  adns_queryflags flags, struct timeval now,
+				  const qcontext *ctx) {
+  adns_query qu;
+
+  qu= query_alloc(ads,typei,flags,now);
+  if (!qu) { adns__vbuf_free(qumsg_vb); return adns_s_nomemory; }
+  *query_r= qu;
+
+  memcpy(&qu->ctx,ctx,sizeof(qu->ctx));
+  query_submit(ads,qu, typei,qumsg_vb,id,flags,now);
+  
   return adns_s_ok;
+}
 
- x_freequ_nomemory:
-  free(qu);
- x_nomemory:
-  adns__vbuf_free(qumsg_vb);
-  return adns_s_nomemory;
+static void query_simple(adns_state ads, adns_query qu,
+			 const char *owner, int ol,
+			 const typeinfo *typei, adns_queryflags flags,
+			 struct timeval now) {
+  vbuf vb;
+  int id;
+  adns_status stat;
+
+  adns__vbuf_init(&vb);
+  
+  stat= adns__mkquery(ads,&vb,&id, owner,ol, typei,flags);
+  if (stat) { adns__query_fail(qu,stat); return; }
+
+  query_submit(ads,qu, typei,&vb,id, flags,now);
+}
+
+void adns__search_next(adns_state ads, adns_query qu, struct timeval now) {
+  const char *nextentry;
+  adns_status stat;
+  
+  if (qu->search_doneabs<0) {
+    nextentry= 0;
+    qu->search_doneabs= 1;
+  } else {
+    if (qu->search_pos >= ads->nsearchlist) {
+      if (qu->search_doneabs) {
+	stat= adns_s_nxdomain; goto x_fail;
+	return;
+      } else {
+	nextentry= 0;
+	qu->search_doneabs= 1;
+      }
+    } else {
+      nextentry= ads->searchlist[qu->search_pos++];
+    }
+  }
+
+  if (nextentry) {
+    if (!adns__vbuf_append(&qu->search_vb,".",1) ||
+	!adns__vbuf_appendstr(&qu->search_vb,nextentry)) {
+      stat= adns_s_nomemory; goto x_fail;
+    } else {
+      qu->search_vb.used= qu->search_origlen;
+    }
+  }
+
+  free(qu->query_dgram);
+  qu->query_dgram= 0; qu->query_dglen= 0;
+
+  query_simple(ads,qu, qu->search_vb.buf, qu->search_vb.used, qu->typei, qu->flags, now);
+  return;
+  
+x_fail:
+  adns__query_fail(qu,stat);
 }
 
 int adns_submit(adns_state ads,
@@ -111,34 +181,53 @@ int adns_submit(adns_state ads,
 		adns_queryflags flags,
 		void *context,
 		adns_query *query_r) {
-  qcontext ctx;
-  int id, r, ol;
-  vbuf vb, search_vb;
+  int r, ol, ndots;
   adns_status stat;
   const typeinfo *typei;
   struct timeval now;
+  adns_query qu;
+  const char *p;
 
   typei= adns__findtype(type);
   if (!typei) return adns_s_unknownrrtype;
-  
-  ctx.ext= context;
-  ctx.callback= 0;
-  memset(&ctx.info,0,sizeof(ctx.info));
-  
-  r= gettimeofday(&now,0); if (r) return errno;
-  id= 0;
 
-  adns__vbuf_init(&vb);
+  r= gettimeofday(&now,0); if (r) goto x_errno;
+  qu= query_alloc(ads,typei,flags,now); if (!qu) goto x_errno;
+  
+  qu->ctx.ext= context;
+  qu->ctx.callback= 0;
+  memset(&qu->ctx.info,0,sizeof(qu->ctx.info));
 
   ol= strlen(owner);
-  if (ol>DNS_MAXDOMAIN+1) { stat= adns_s_querydomaintoolong; goto xit; }
+  if (!ol) { stat= adns_s_querydomaininvalid; goto x_adnsfail; }
+  if (ol>DNS_MAXDOMAIN+1) { stat= adns_s_querydomaintoolong; goto x_adnsfail; }
 				 
   if (ol>=2 && owner[ol-1]=='.' && owner[ol-2]!='\\') { flags &= ~adns_qf_search; ol--; }
 
-  stat= adns__mkquery(ads,&vb,&id, owner,ol, typei,flags);
-			
- xit:
-  return adns__internal_submit(ads,query_r, typei,&vb,id, flags,now, stat,&ctx);	
+  if (flags & adns_qf_search) {
+    r= adns__vbuf_append(&qu->search_vb,owner,ol);
+    if (!r) { stat= adns_s_nomemory; goto x_adnsfail; }
+
+    for (ndots=0, p=owner; (p= strchr(p,'.')); p++, ndots++);
+    qu->search_doneabs= (ndots >= ads->searchndots) ? -1 : 0;
+
+    qu->search_origlen= ol;
+
+    adns__search_next(ads,qu,now);
+    return 0;
+  }
+
+  query_simple(ads,qu, owner,ol, typei,flags, now);
+  return 0;
+
+ x_adnsfail:
+  adns__query_fail(qu,stat);
+  return 0;
+
+ x_errno:
+  r= errno;
+  assert(r);
+  return r;
 }
 
 int adns_synchronous(adns_state ads,

@@ -469,7 +469,7 @@ static adns_status pap_hostaddr(const parseinfo *pai, int *cbyte_io,
   if (!(pai->qu->flags & adns_qf_cname_loose)) nflags |= adns_qf_cname_forbid;
   
   st= adns__internal_submit(pai->ads, &nqu, adns__findtype(adns_r_addr),
-			    &pai->qu->vb, id, nflags, pai->now, 0, &ctx);
+			    &pai->qu->vb, id, nflags, pai->now, &ctx);
   if (st) return st;
 
   nqu->parent= pai->qu;
@@ -712,7 +712,7 @@ static adns_status pa_ptr(const parseinfo *pai, int dmstart, int max, void *data
   memset(&ctx.info,0,sizeof(ctx.info));
   st= adns__internal_submit(pai->ads, &nqu, adns__findtype(adns_r_addr),
 			    &pai->qu->vb, id,
-			    adns_qf_quoteok_query, pai->now, 0, &ctx);
+			    adns_qf_quoteok_query, pai->now, &ctx);
   if (st) return st;
 
   nqu->parent= pai->qu;

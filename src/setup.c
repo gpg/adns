@@ -428,6 +428,7 @@ static int init_begin(adns_state *ads_r, adns_initflags flags, FILE *diagfile) {
   ads->nservers= ads->nsortlist= ads->nsearchlist= ads->tcpserver= 0;
   ads->tcpstate= server_disconnected;
   ads->searchlist= 0;
+  ads->searchndots= 1;
   timerclear(&ads->tcptimeout);
 
   *ads_r= ads;

@@ -39,11 +39,10 @@ static adns_status mkquery_header(adns_state ads, vbuf *vb, int *id_r, int qdlen
   
   if (!adns__vbuf_ensure(vb,DNS_HDRSIZE+qdlen+4)) return adns_s_nomemory;
 
-  *id_r= id= (ads->nextid++) & 0x0ffff;
-  
   vb->used= 0;
   MKQUERY_START(vb);
   
+  *id_r= id= (ads->nextid++) & 0x0ffff;
   MKQUERY_ADDW(id);
   MKQUERY_ADDB(0x01); /* QR=Q(0), OPCODE=QUERY(0000), !AA, !TC, RD */
   MKQUERY_ADDB(0x00); /* !RA, Z=000, RCODE=NOERROR(0000) */

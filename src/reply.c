@@ -227,7 +227,12 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
     if (rcode == rcode_nxdomain) {
       /* We still wanted to look for the SOA so we could find the TTL. */
       adns__update_expires(qu,soattl,now);
-      adns__query_fail(qu,adns_s_nxdomain);
+
+      if (qu->flags & adns_qf_search) {
+	adns__search_next(ads,qu,now);
+      } else {
+	adns__query_fail(qu,adns_s_nxdomain);
+      }
       return;
     }
 

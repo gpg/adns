@@ -51,6 +51,7 @@ typedef unsigned char byte;
 #define DNS_MAXUDP 512
 #define DNS_MAXDOMAIN 255
 #define DNS_HDRSIZE 12
+#define DNS_IDOFFSET 0
 #define DNS_CLASS_IN 1
 
 #define DNS_INADDR_ARPA "in-addr", "arpa"
@@ -185,7 +186,8 @@ struct adns__query {
    * is copied into the vbuf, and _origlen set to its length.  Then
    * we walk the searchlist, if we want to.  _pos says where we are
    * (next entry to try), and _doneabs says whether we've done the
-   * absolute query yet.  If flags doesn't have adns_qf_search then
+   * absolute query yet (0=not yet, 1=done, -1=must do straight away,
+   * but not done yet).  If flags doesn't have adns_qf_search then
    * the vbuf is initialised but empty and everything else is zero.
    *
    * fixme: actually implement this!
@@ -259,7 +261,7 @@ struct adns__state {
   struct { adns_query head, tail; } timew, childw, output;
   int nextid, udpsocket, tcpsocket;
   vbuf tcpsend, tcprecv;
-  int nservers, nsortlist, nsearchlist, tcpserver;
+  int nservers, nsortlist, nsearchlist, searchndots, tcpserver;
   enum adns__tcpstate { server_disconnected, server_connecting, server_ok } tcpstate;
   struct timeval tcptimeout;
   struct sigaction stdsigpipe;
@@ -332,7 +334,8 @@ void adns__sigpipe_unprotect(adns_state);
 adns_status adns__mkquery(adns_state ads, vbuf *vb, int *id_r,
 			  const char *owner, int ol,
 			  const typeinfo *typei, adns_queryflags flags);
-/* Assembles a query packet in vb, and returns id at *id_r. */
+/* Assembles a query packet in vb.  A new id is allocated and returned.
+ */
 
 adns_status adns__mkquery_frdgram(adns_state ads, vbuf *vb, int *id_r,
 				  const byte *qd_dgram, int qd_dglen, int qd_begin,
@@ -362,10 +365,10 @@ void adns__query_udp(adns_query qu, struct timeval now);
 
 /* From query.c: */
 
-int adns__internal_submit(adns_state ads, adns_query *query_r,
-			  const typeinfo *typei, vbuf *qumsg_vb, int id,
-			  adns_queryflags flags, struct timeval now,
-			  adns_status failstat, const qcontext *ctx);
+adns_status adns__internal_submit(adns_state ads, adns_query *query_r,
+				  const typeinfo *typei, vbuf *qumsg_vb, int id,
+				  adns_queryflags flags, struct timeval now,
+				  const qcontext *ctx);
 /* Submits a query (for internal use, called during external submits).
  *
  * The new query is returned in *query_r, or we return adns_s_nomemory.
@@ -374,10 +377,17 @@ int adns__internal_submit(adns_state ads, adns_query *query_r,
  * the memory for it is _taken over_ by this routine whether it
  * succeeds or fails (if it succeeds, the vbuf is reused for qu->vb).
  *
- * If failstat is nonzero then if we are successful in creating the query
- * it is immediately failed with code failstat (but _submit still succeds).
- *
  * *ctx is copied byte-for-byte into the query.
+ */
+
+void adns__search_next(adns_state ads, adns_query qu, struct timeval now);
+/* Walks down the searchlist for a query with adns_qf_search.
+ * The query should have just had a negative response, or not had
+ * any queries sent yet, and should not be on any queue.
+ * The query_dgram if any will be freed and forgotten and a new
+ * one constructed from the search_* members of the query.
+ *
+ * Cannot fail (in case of error, calls adns__query_fail).
  */
 
 void *adns__alloc_interim(adns_query qu, size_t sz);
@@ -604,6 +614,7 @@ static inline int ctype_alpha(int c) {
    * sizeof(union maxalign) )
 
 #define LIST_INIT(list) ((list).head= (list).tail= 0)
+#define LINK_INIT(link) ((link).next= (link).back= 0)
 
 #define LIST_UNLINK_PART(list,node,part) \
   do { \
