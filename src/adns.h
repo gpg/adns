@@ -306,7 +306,7 @@ void adns_finish(adns_state ads);
 
 
 void adns_forallqueries_begin(adns_state ads);
-struct adns_query adns_forallqueries_next(adns_state ads, void **context_r);
+adns_query adns_forallqueries_next(adns_state ads, void **context_r);
 /* Iterator functions, which you can use to loop over the outstanding
  * (submitted but not yet successfuly checked/waited) queries.
  *
@@ -319,7 +319,7 @@ struct adns_query adns_forallqueries_next(adns_state ads, void **context_r);
  * query in the same adns_state).  There is no need to explicitly
  * finish an iteration.
  *
- * context_r may be 0.
+ * context_r may be 0.  *context_r may not be set when _next returns 0.
  */
 
 /*

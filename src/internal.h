@@ -158,7 +158,7 @@ struct adns__query {
   struct { allocnode *head, *tail; } allocations;
   int interim_allocd;
   void *final_allocspace;
-  
+
   const typeinfo *typei;
   byte *query_dgram;
   int query_dglen;
@@ -264,6 +264,7 @@ struct adns__state {
   FILE *diagfile;
   int configerrno;
   struct { adns_query head, tail; } timew, childw, output;
+  adns_query forallnext;
   int nextid, udpsocket, tcpsocket;
   vbuf tcpsend, tcprecv;
   int nservers, nsortlist, nsearchlist, searchndots, tcpserver;

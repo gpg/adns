@@ -526,6 +526,7 @@ static int internal_check(adns_state ads,
   LIST_UNLINK(ads->output,qu);
   *answer= qu->answer;
   if (context_r) *context_r= qu->ctx.ext;
+  *query_io= qu;
   free(qu);
   return 0;
 }

@@ -138,7 +138,7 @@ int main(int argc, char *const *argv) {
   initflagsnum= strtoul(initflags,&ep,0);
   if (*ep == ',') {
     owninitflags= ep+1;
-    if (!consistsof(owninitflags,"p")) {
+    if (!consistsof(owninitflags,"ps")) {
       fputs("unknown owninitflag\n",stderr);
       exit(4);
     }
@@ -162,6 +162,7 @@ int main(int argc, char *const *argv) {
 		"              [ :<typenum>,... ]\n"
 		"              [ [<queryflagsnum>[,<ownqueryflags>]/]<domain> ... ]\n"
 		"initflags:   p  use poll(2) instead of select(2)\n"
+		"             s  use adns_wait with specified query, instead of 0\n"
 		"queryflags:  a  print status abbrevs instead of strings\n",
 		stderr);
 	  exit(4);
@@ -252,8 +253,13 @@ int main(int argc, char *const *argv) {
     }
     if (!mcw) break;
 
-    mc= mcw;
-    qu= mcw->qu;
+    if (strchr(owninitflags,'s')) {
+      qu= mcw->qu;
+      mc= mcw;
+    } else {
+      qu= 0;
+      mc= 0;
+    }
 
     if (strchr(owninitflags,'p')) {
       for (;;) {
@@ -278,7 +284,11 @@ int main(int argc, char *const *argv) {
     }
     if (r) failure_errno("wait/check",r);
     
-    assert(mcr==mc);
+    if (mc) assert(mcr==mc);
+    else mc= mcr;
+    assert(qu==mc->qu);
+    assert(!mc->doneyet);
+    
     fdom_split(mc->fdom,&domain,&qflags,ownflags,sizeof(ownflags));
 
     if (gettimeofday(&now,0)) { perror("gettimeofday"); exit(3); }
