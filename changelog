@@ -19,6 +19,7 @@ adns (0.5) unstable; urgency=medium
   * Don't complain so much about poll(2) tests if not available.
   * Do not give -u 0 -g 0 options to install.
   * Do not scramble innards when a query on the output queue is cancelled.
+  * Promise not to change fds in adns_beforepoll (if now is specified).
 
  --
 
