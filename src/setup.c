@@ -38,13 +38,13 @@ static void addserver(adns_state ads, struct in_addr addr) {
   
   for (i=0; i<ads->nservers; i++) {
     if (ads->servers[i].addr.s_addr == addr.s_addr) {
-      adns__debug(ads,-1,"duplicate nameserver %s ignored",inet_ntoa(addr));
+      adns__debug(ads,-1,0,"duplicate nameserver %s ignored",inet_ntoa(addr));
       return;
     }
   }
   
   if (ads->nservers>=MAXSERVERS) {
-    adns__diag(ads,-1,"too many nameservers, ignoring %s",inet_ntoa(addr));
+    adns__diag(ads,-1,0,"too many nameservers, ignoring %s",inet_ntoa(addr));
     return;
   }
 
@@ -73,22 +73,22 @@ static void ccf_nameserver(adns_state ads, const char *fn, int lno, const char *
     configparseerr(ads,fn,lno,"invalid nameserver address `%s'",buf);
     return;
   }
-  adns__debug(ads,-1,"using nameserver %s",inet_ntoa(ia));
+  adns__debug(ads,-1,0,"using nameserver %s",inet_ntoa(ia));
   addserver(ads,ia);
 }
 
 static void ccf_search(adns_state ads, const char *fn, int lno, const char *buf) {
   if (!buf) return;
-  adns__diag(ads,-1,"warning - `search' ignored fixme");
+  adns__diag(ads,-1,0,"warning - `search' ignored fixme");
 }
 
 static void ccf_sortlist(adns_state ads, const char *fn, int lno, const char *buf) {
-  adns__diag(ads,-1,"warning - `sortlist' ignored fixme");
+  adns__diag(ads,-1,0,"warning - `sortlist' ignored fixme");
 }
 
 static void ccf_options(adns_state ads, const char *fn, int lno, const char *buf) {
   if (!buf) return;
-  adns__diag(ads,-1,"warning - `options' ignored fixme");
+  adns__diag(ads,-1,0,"warning - `options' ignored fixme");
 }
 
 static void ccf_clearnss(adns_state ads, const char *fn, int lno, const char *buf) {
@@ -117,10 +117,10 @@ static void readconfig(adns_state ads, const char *filename) {
   file= fopen(filename,"r");
   if (!file) {
     if (errno == ENOENT) {
-      adns__debug(ads,-1,"configuration file `%s' does not exist",filename);
+      adns__debug(ads,-1,0,"configuration file `%s' does not exist",filename);
       return;
     }
-    adns__diag(ads,-1,"cannot open configuration file `%s': %s",
+    adns__diag(ads,-1,0,"cannot open configuration file `%s': %s",
 	       filename,strerror(errno));
     return;
   }
@@ -129,7 +129,7 @@ static void readconfig(adns_state ads, const char *filename) {
     l= strlen(linebuf);
     if (!l) continue;
     if (linebuf[l-1] != '\n' && !feof(file)) {
-      adns__diag(ads,-1,"%s:%d: line too long",filename,lno);
+      adns__diag(ads,-1,0,"%s:%d: line too long",filename,lno);
       while ((c= getc(file)) != EOF && c != '\n') { }
       if (c == EOF) break;
       continue;
@@ -145,7 +145,7 @@ static void readconfig(adns_state ads, const char *filename) {
 	 ccip->name && strncmp(ccip->name,p,q-p);
 	 ccip++);
     if (!ccip->name) {
-      adns__diag(ads,-1,"%s:%d: unknown configuration directive `%.*s'",
+      adns__diag(ads,-1,0,"%s:%d: unknown configuration directive `%.*s'",
 		 filename,lno,q-p,p);
       continue;
     }
@@ -153,7 +153,7 @@ static void readconfig(adns_state ads, const char *filename) {
     ccip->fn(ads,filename,lno,q);
   }
   if (ferror(file)) {
-    adns__diag(ads,-1,"%s:%d: read error: %s",filename,lno,strerror(errno));
+    adns__diag(ads,-1,0,"%s:%d: read error: %s",filename,lno,strerror(errno));
   }
   fclose(file);
 }
@@ -162,8 +162,8 @@ static const char *instrum_getenv(adns_state ads, const char *envvar) {
   const char *value;
 
   value= getenv(envvar);
-  if (!value) adns__debug(ads,-1,"environment variable %s not set",envvar);
-  else adns__debug(ads,-1,"environment variable %s set to `%s'",envvar,value);
+  if (!value) adns__debug(ads,-1,0,"environment variable %s not set",envvar);
+  else adns__debug(ads,-1,0,"environment variable %s set to `%s'",envvar,value);
   return value;
 }
 
@@ -171,7 +171,7 @@ static void readconfigenv(adns_state ads, const char *envvar) {
   const char *filename;
 
   if (ads->iflags & adns_if_noenv) {
-    adns__debug(ads,-1,"not checking environment variable `%s'",envvar);
+    adns__debug(ads,-1,0,"not checking environment variable `%s'",envvar);
     return;
   }
   filename= instrum_getenv(ads,envvar);
@@ -202,7 +202,6 @@ int adns_init(adns_state *ads_r, adns_initflags flags, FILE *diagfile) {
   LIST_INIT(ads->output);
   ads->nextid= 0x311f;
   ads->udpsocket= ads->tcpsocket= -1;
-  adns__vbuf_init(&ads->rqbuf);
   adns__vbuf_init(&ads->tcpsend);
   adns__vbuf_init(&ads->tcprecv);
   ads->nservers= ads->tcpserver= 0;

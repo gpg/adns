@@ -21,12 +21,16 @@
  *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
  */
 
+#include <stdlib.h>
+
+#include <arpa/inet.h>
+
 #include "internal.h"
 
 /* Core diagnostic functions */
 
 void adns__vdiag(adns_state ads, const char *pfx, adns_initflags prevent,
-		 int serv, const char *fmt, adns_query qu, va_list al) {
+		 int serv, adns_query qu, const char *fmt, va_list al) {
   const char *bef, *aft;
   vbuf vb;
   if (!(ads->iflags & adns_if_debug) && (!prevent || (ads->iflags & prevent))) return;
@@ -42,7 +46,8 @@ void adns__vdiag(adns_state ads, const char *pfx, adns_initflags prevent,
     adns__vbuf_init(&vb);
     fprintf(stderr,"%sQNAME=%s, QTYPE=%s",
 	    bef,
-	    adns__diag_domain(ads,-1,0,&vb,qu->query_dgram,qu->query_dglen,DNS_HDRSIZE),
+	    adns__diag_domain(qu->ads,-1,0, &vb,qu->flags,
+			      qu->query_dgram,qu->query_dglen,DNS_HDRSIZE),
 	    qu->typei ? qu->typei->name : "<unknown>");
     bef=", "; aft=")\n";
   }
@@ -123,8 +128,8 @@ const char *adns__diag_domain(adns_state ads, int serv, adns_query qu, vbuf *vb,
 			      int flags, const byte *dgram, int dglen, int cbyte) {
   adns_status st;
 
-  st= adns__parse_domain(ads,serv,vb,qu->flags, dgram,dglen, &cbyte,dglen);
-  if (st == adns_s_nomemory) {
+  st= adns__parse_domain(ads,serv,qu,vb, flags,dgram,dglen,&cbyte,dglen);
+  if (st == adns_s_nolocalmem) {
     return "<cannot report domain... out of memory>";
   }
   if (st) {
@@ -136,7 +141,7 @@ const char *adns__diag_domain(adns_state ads, int serv, adns_query qu, vbuf *vb,
       return "<cannot report bad format... out of memory>";
     }
   }
-  if (!vb.used) {
+  if (!vb->used) {
     adns__vbuf_appendstr(vb,"<truncated ...>");
     adns__vbuf_append(vb,"",1);
   }

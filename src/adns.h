@@ -234,7 +234,7 @@ int adns_wait(adns_state ads,
 	      void **context_r);
 /* Might return EINTR - if so, try again */
 
-void adns_cancel(adns_state ads, adns_query query);
+void adns_cancel(adns_query query);
 
 int adns_finish(adns_state);
 /* You may call this even if you have queries outstanding;

@@ -51,7 +51,7 @@ void adns__tcp_broken(adns_state ads, const char *what, const char *why) {
     qu->tcpfailed |= (1<<serv);
     if (qu->tcpfailed == (1<<ads->nservers)-1) {
       LIST_UNLINK(ads->timew,qu);
-      adns__query_fail(ads,qu,adns_s_allservfail);
+      adns__query_fail(qu,adns_s_allservfail);
     }
   }
 
@@ -68,7 +68,7 @@ static void tcp_connected(adns_state ads, struct timeval now) {
     nqu= qu->next;
     if (qu->state == query_udp) continue;
     assert (qu->state == query_tcpwait);
-    adns__query_tcp(ads,qu,now);
+    adns__query_tcp(qu,now);
   }
 }
 
@@ -160,9 +160,9 @@ static void checktimeouts(adns_state ads, struct timeval now,
     if (timercmp(&now,&qu->timeout,>)) {
       LIST_UNLINK(ads->timew,qu);
       if (qu->state != query_udp) {
-	adns__query_fail(ads,qu,adns_s_timeout);
+	adns__query_fail(qu,adns_s_timeout);
       } else {
-	adns__query_udp(ads,qu,now);
+	adns__query_udp(qu,now);
       }
     } else {
       inter_maxtoabs(tv_io,tvbuf,now,qu->timeout);

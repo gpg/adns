@@ -85,7 +85,7 @@ typedef struct {
   const char *name;
   int rrsz;
 
-  adns_status (*parse)(adns_state ads, adns_query qu, int serv,
+  adns_status (*parse)(adns_query qu, int serv,
 		       const byte *dgram, int dglen, int cbyte, int max,
 		       void *store_r);
   /* Parse one RR, in dgram of length dglen, starting at cbyte and
@@ -97,7 +97,7 @@ typedef struct {
    * *rdstart to -1; otherwise it may set it to anything else positive.
    */
 
-  void (*makefinal)(adns_state ads, adns_query qu, void *data);
+  void (*makefinal)(adns_query qu, void *data);
   /* Change memory management of *data.
    * Previously, used alloc_interim, now use alloc_final.
    */
@@ -117,6 +117,7 @@ union maxalign {
 } data;
 
 struct adns__query {
+  adns_state ads;
   enum { query_udp, query_tcpwait, query_tcpsent, query_child, query_done } state;
   adns_query back, next, parent;
   struct { adns_query head, tail; } children;
@@ -146,6 +147,7 @@ struct adns__query {
   
   byte *cname_dgram;
   int cname_dglen, cname_begin;
+  /* If non-0, has been allocated using . */
   
   int id, flags, udpretries;
   int udpnextserver;
@@ -250,7 +252,7 @@ const char *adns__diag_domain(adns_state ads, int serv, adns_query qu, vbuf *vb,
  * printing it as.  Never fails - if an error occurs, it will
  * return some kind of string describing the error.
  *
- * serv may be -1, qu may be 0.  vb must have been initialised,
+ * serv may be -1 and qu may be 0.  vb must have been initialised,
  * and will be left in an arbitrary consistent state.
  *
  * Returns either vb->buf, or a pointer to a string literal.  Do not modify
@@ -259,12 +261,12 @@ const char *adns__diag_domain(adns_state ads, int serv, adns_query qu, vbuf *vb,
   
 /* From transmit.c: */
 
-adns_status adns__mkquery(adns_state ads, vbuf *vb,
-			  const char *owner, int ol, int *id_r,
+adns_status adns__mkquery(adns_state ads, vbuf *vb, int *id_r,
+			  const char *owner, int ol,
 			  const typeinfo *typei, adns_queryflags flags);
 /* Assembles a query packet in vb, and returns id at *id_r. */
 
-void adns__query_tcp(adns_state ads, adns_query qu, struct timeval now);
+void adns__query_tcp(adns_query qu, struct timeval now);
 /* Query must be in state tcpwait/timew; it will be moved to a new state
  * if possible and no further processing can be done on it for now.
  * (Resulting state is one of tcpwait/timew (if server not connected),
@@ -276,7 +278,7 @@ void adns__query_tcp(adns_state ads, adns_query qu, struct timeval now);
  * reestablishment and retry.
  */
 
-void adns__query_udp(adns_state ads, adns_query qu, struct timeval now);
+void adns__query_udp(adns_query qu, struct timeval now);
 /* Query must be in state udp/NONE; it will be moved to a new state,
  * and no further processing can be done on it for now.
  * (Resulting state is one of udp/timew, tcpwait/timew (if server not connected),
@@ -286,7 +288,7 @@ void adns__query_udp(adns_state ads, adns_query qu, struct timeval now);
 /* From query.c: */
 
 int adns__internal_submit(adns_state ads, adns_query *query_r,
-			  adns_rrtype type, vbuf *qumsg_vb, int id,
+			  const typeinfo *typei, vbuf *qumsg_vb, int id,
 			  adns_queryflags flags, struct timeval now,
 			  adns_status failstat, const qcontext *ctx);
 /* Submits a query (for internal use, called during external submits).
@@ -317,6 +319,12 @@ void *adns__alloc_interim(adns_query qu, size_t sz);
  * so nothing more need be done with it.
  */
 
+void *adns__alloc_mine(adns_query qu, size_t sz);
+/* Like _interim, but does not record the length for later
+ * copying into the answer.  This just ensures that the memory
+ * will be freed when we're done with the query.
+ */
+
 void *adns__alloc_final(adns_query qu, size_t sz);
 /* Cannot fail.
  */
@@ -324,7 +332,7 @@ void *adns__alloc_final(adns_query qu, size_t sz);
 void adns__makefinal_block(adns_query qu, void **blpp, size_t sz);
 void adns__makefinal_str(adns_query qu, char **strp);
 
-void adns__reset_cnameonly(adns_state ads, adns_query qu);
+void adns__reset_cnameonly(adns_query qu);
 /* Resets all of the memory management stuff etc. to
  * take account of only the CNAME.  Used when we find an error somewhere
  * and want to just report the error (with perhaps CNAME info), and also
@@ -332,8 +340,8 @@ void adns__reset_cnameonly(adns_state ads, adns_query qu);
  * need to retry the query.
  */
 
-void adns__query_done(adns_state ads, adns_query qu);
-void adns__query_fail(adns_state ads, adns_query qu, adns_status stat);
+void adns__query_done(adns_query qu);
+void adns__query_fail(adns_query qu, adns_status stat);
    
 /* From reply.c: */
 
@@ -348,24 +356,25 @@ const typeinfo *adns__findtype(adns_rrtype type);
 
 typedef struct {
   adns_state ads;
+  adns_query qu;
   int serv;
   const byte *dgram;
   int dglen, max, cbyte, namelen;
-  int *dmend_rlater, *namelen_rlater;
+  int *dmend_r;
 } findlabel_state;
 
-void adns__findlabel_start(findlabel_state *fls,
-			   adns_state ads, int serv,
+void adns__findlabel_start(findlabel_state *fls, adns_state ads,
+			   int serv, adns_query qu,
 			   const byte *dgram, int dglen, int max,
 			   int dmbegin, int *dmend_rlater);
 /* Finds labels in a domain in a datagram.
  *
  * Call this routine first.
- * endpoint_rlater may be null.
+ * dmend_rlater may be null.  ads (and of course fls) may not be.
+ * serv may be -1, qu may be null - they are for error reporting.
  */
 
-adns_status adns__findlabel_next(findlabel_state *fls,
-				 int *lablen_r, int *labstart_r);
+adns_status adns__findlabel_next(findlabel_state *fls, int *lablen_r, int *labstart_r);
 /* Then, call this one repeatedly.
  *
  * It will return adns_s_ok if all is well, and tell you the length
@@ -390,20 +399,21 @@ adns_status adns__findlabel_next(findlabel_state *fls,
  * Do not then call findlabel_next again.
  */
 
-adns_status adns__parse_domain(adns_state ads, int serv, vbuf *vb,
-			       const byte *dgram, int dglen,
-			       int *cbyte_io, int max);
+adns_status adns__parse_domain(adns_state ads, int serv, adns_query qu,
+			       vbuf *vb, int flags,
+			       const byte *dgram, int dglen, int *cbyte_io, int max);
 /* vb must already have been initialised; it will be reset if necessary.
  * If there is truncation, vb->used will be set to 0; otherwise
  * (if there is no error) vb will be null-terminated.
  * If there is an error vb and *cbyte_io may be left indeterminate.
+ *
+ * serv may be -1 and qu may be 0 - they are used for error reporting only.
  */
 
-adns_status adns__findrr(adns_state ads, int serv,
+adns_status adns__findrr(adns_query qu, int serv,
 			 const byte *dgram, int dglen, int *cbyte_io,
 			 int *type_r, int *class_r, int *rdlen_r, int *rdstart_r,
-			 const byte *eo_dgram, int eo_dglen, int eo_cbyte,
-			 int *eo_matched_r);
+			 int *ownermatchedquery_r);
   /* Finds the extent and some of the contents of an RR in a datagram
    * and does some checks.  The datagram is *dgram, length dglen, and
    * the RR starts at *cbyte_io (which is updated afterwards to point
@@ -413,19 +423,17 @@ adns_status adns__findrr(adns_state ads, int serv,
    * the corresponding pointer variables are not null.  type_r and
    * class_r may not be null.
    *
-   * If the caller thinks they know what the owner of the RR ought to
-   * be they can pass in details in eo_*: this is another (or perhaps
-   * the same datagram), and a pointer to where the putative owner
-   * starts in that datagram.  In this case *eo_matched_r will be set
-   * to 1 if the datagram matched or 0 if it did not.  Either
-   * both eo_dgram and eo_matched_r must both be non-null, or they
-   * must both be null (in which case eo_dglen and eo_cbyte will be ignored).
-   * The eo datagram and contained owner domain MUST be valid and
-   * untruncated.
+   * If ownermatchedquery_r != 0 then the owner domain of this
+   * RR will be compared with that in the query (or, if the query
+   * has gone to a CNAME lookup, with the canonical name).
+   * In this case, *ownermatchedquery_r will be set to 0 or 1.
+   * The query datagram (or CNAME datagram) MUST be valid and not truncated.
    *
    * If there is truncation then *type_r will be set to -1 and
    * *cbyte_io, *class_r, *rdlen_r, *rdstart_r and *eo_matched_r will be
    * undefined.
+   *
+   * qu must obviously be non-null.
    *
    * If an error is returned then *type_r will be undefined too.
    */

@@ -21,10 +21,15 @@
  *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
  */
 
+#include <errno.h>
+#include <string.h>
+
+#include <sys/uio.h>
+
 #include "internal.h"
 
-adns_status adns__mkquery(adns_state ads, vbuf *vb,
-			  const char *owner, int ol, int *id_r,
+adns_status adns__mkquery(adns_state ads, vbuf *vb, int *id_r,
+			  const char *owner, int ol,
 			  const typeinfo *typei, adns_queryflags flags) {
   int ll, c, nlabs, id;
   byte label[255], *rqp;
@@ -92,16 +97,18 @@ adns_status adns__mkquery(adns_state ads, vbuf *vb,
   return adns_s_ok;
 }
 
-void adns__query_tcp(adns_state ads, adns_query qu, struct timeval now) {
+void adns__query_tcp(adns_query qu, struct timeval now) {
   byte length[2];
   struct iovec iov[2];
   int wr, r;
+  adns_state ads;
 
-  if (ads->tcpstate != server_ok) return;
+  if (qu->ads->tcpstate != server_ok) return;
 
   length[0]= (qu->query_dglen&0x0ff00U) >>8;
   length[1]= (qu->query_dglen&0x0ff);
-  
+
+  ads= qu->ads;
   if (!adns__vbuf_ensure(&ads->tcpsend,ads->tcpsend.used+qu->query_dglen+2)) return;
 
   timevaladd(&now,TCPMS);
@@ -116,7 +123,7 @@ void adns__query_tcp(adns_state ads, adns_query qu, struct timeval now) {
     iov[0].iov_len= 2;
     iov[1].iov_base= qu->query_dgram;
     iov[1].iov_len= qu->query_dglen;
-    wr= writev(ads->tcpsocket,iov,2);
+    wr= writev(qu->ads->tcpsocket,iov,2);
     if (wr < 0) {
       if (!(errno == EAGAIN || errno == EINTR || errno == ENOSPC ||
 	    errno == ENOBUFS || errno == ENOMEM)) {
@@ -138,38 +145,41 @@ void adns__query_tcp(adns_state ads, adns_query qu, struct timeval now) {
   }
 }
 
-static void query_usetcp(adns_state ads, adns_query qu, struct timeval now) {
+static void query_usetcp(adns_query qu, struct timeval now) {
   timevaladd(&now,TCPMS);
   qu->timeout= now;
   qu->state= query_tcpwait;
-  LIST_LINK_TAIL(ads->timew,qu);
-  adns__query_tcp(ads,qu,now);
-  adns__tcp_tryconnect(ads,now);
+  LIST_LINK_TAIL(qu->ads->timew,qu);
+  adns__query_tcp(qu,now);
+  adns__tcp_tryconnect(qu->ads,now);
 }
 
-void adns__query_udp(adns_state ads, adns_query qu, struct timeval now) {
+void adns__query_udp(adns_query qu, struct timeval now) {
   struct sockaddr_in servaddr;
   int serv, r;
+  adns_state ads;
 
   assert(qu->state == query_udp);
   if ((qu->flags & adns_qf_usevc) || (qu->query_dglen > DNS_MAXUDP)) {
-    query_usetcp(ads,qu,now);
+    query_usetcp(qu,now);
     return;
   }
 
   if (qu->udpretries >= UDPMAXRETRIES) {
-    adns__query_fail(ads,qu,adns_s_timeout);
+    adns__query_fail(qu,adns_s_timeout);
     return;
   }
 
   serv= qu->udpnextserver;
   memset(&servaddr,0,sizeof(servaddr));
+
+  ads= qu->ads;
   servaddr.sin_family= AF_INET;
   servaddr.sin_addr= ads->servers[serv].addr;
   servaddr.sin_port= htons(DNS_PORT);
   
   r= sendto(ads->udpsocket,qu->query_dgram,qu->query_dglen,0,&servaddr,sizeof(servaddr));
-  if (r<0 && errno == EMSGSIZE) { query_usetcp(ads,qu,now); return; }
+  if (r<0 && errno == EMSGSIZE) { query_usetcp(qu,now); return; }
   if (r<0) adns__warn(ads,serv,0,"sendto failed: %s",strerror(errno));
   
   timevaladd(&now,UDPRETRYMS);
