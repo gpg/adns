@@ -49,7 +49,7 @@ struct outqueuenode {
   struct treething *addr;
 };
 
-static int bracket, forever;
+static int bracket, forever, address;
 static unsigned long timeout=100;
 static adns_rrtype rrt= adns_r_ptr;
 
@@ -112,6 +112,7 @@ static void usage(void) {
 	     "options: -b|--brackets\n"
 	     "         -w|--wait\n"
 	     "         -t<timeout>|--timeout <milliseconds>\n"
+	     "         -a|--address  (always include address in output)\n"
 	     "         -u|--unchecked\n")
       == EOF) outputerr();
 }
@@ -148,6 +149,8 @@ static void parseargs(const char *const *argv) {
 	rrt= adns_r_ptr_raw;
       } else if (!strcmp(arg,"--wait")) {
 	forever= 1;
+      } else if (!strcmp(arg,"--address")) {
+	address= 1;
       } else if (!strcmp(arg,"--help")) {
 	usage(); quit(0);
       } else if (!strcmp(arg,"--timeout")) {
@@ -168,6 +171,9 @@ static void parseargs(const char *const *argv) {
 	  break;
 	case 'w':
 	  forever= 1;
+	  break;
+	case 'a':
+	  address= 1;
 	  break;
 	case 'h':
 	  usage();
@@ -232,10 +238,24 @@ static void writestdout(struct outqueuenode *entry) {
 }
 
 static void replacetextwithname(struct outqueuenode *entry) {
-  free(entry->buffer);
-  entry->buffer= 0;
-  entry->textp= entry->addr->ans->rrs.str[0];
-  entry->textlen= strlen(entry->textp);
+  char *name, *newbuf;
+  int namelen, newlen;
+
+  name= entry->addr->ans->rrs.str[0];
+  namelen= strlen(name);
+  if (!address) {
+    free(entry->buffer);
+    entry->buffer= 0;
+    entry->textp= name;
+    entry->textlen= namelen;
+  } else {
+    newlen= entry->textlen + namelen + (bracket ? 0 : 2);
+    newbuf= xmalloc(newlen + 1);
+    sprintf(newbuf, bracket ? "%s%.*s" : "%s[%.*s]", name, entry->textlen, entry->textp);
+    free(entry->buffer);
+    entry->buffer= entry->textp= newbuf;
+    entry->textlen= newlen;
+  }
 }
 
 static void checkadnsqueries(void) {
