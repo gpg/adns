@@ -13,14 +13,14 @@ adns (0.4) unstable; urgency=low
 
   Other bugfixes and improvements:
   * adns_s_systemfail is in table of errors (for eg adns_strerror).
-  * Do not ship config.cache.
+  * Do not ship config.cache, Makefile, etc.
   * Improvements to install instructions, TODO, etc.
   * Regression tests compile on systems without poll(2).
   * Do not install adnstest_s.
   * _submit returns ENOSYS, not adns_s_unknownquery; documented, tested.
   * <adns.h> includes <sys/types.h>, <sys/time.h>, <unistd.h>.
 
- --
+ -- Ian Jackson <ian@davenant.greenend.org.uk>  Thu, 5 Aug 1999 01:17:38 +0100
 
 adns (0.3) unstable; urgency=low
 
