@@ -30,7 +30,8 @@ all install uninstall clean distclean mostlyclean maintainer-clean distprep:
 all-here install-here uninstall-here distprep-here:
 
 clean-here mostlyclean-here:
-		rm -f *~ ./#*# core *.orig *.rej Makefile
+		rm -f *~ ./#*# core *.orig *.rej Makefile adns-*.tar.gz
+		rm -rf dist_tmp
 
 distclean-here maintainer-clean-here:	clean-here
 		rm -f settings.make config.h config.cache config.log config.status

@@ -30,8 +30,6 @@ m4_include(hmacros.i4)
 
 static FILE *Toutputfile;
 
-/* fixme: record syscall durations, rather than gettimeofday results */
-
 static void R_recordtime(void) {
   int r;
   struct timeval tv, tvrel;
