@@ -209,6 +209,7 @@ typedef struct {
  *  If no (appropriate) requests are outstanding adns_query and adns_wait return ESRCH;
  */
 
+/* fixme: separate parsing from instantiation */
 int adns_init(adns_state *newstate_r, adns_initflags flags, FILE *diagfile/*0=>stderr*/);
 
 int adns_synchronous(adns_state ads,
