@@ -63,25 +63,30 @@ void adns__findlabel_start(findlabel_state *fls, adns_state ads,
 
 adns_status adns__findlabel_next(findlabel_state *fls,
 				 int *lablen_r, int *labstart_r) {
-  int lablen, jumped;
+  int lablen, jumped, jumpto;
   const char *dgram;
 
   jumped= 0;
   dgram= fls->dgram;
   for (;;) {
-    if (fls->cbyte+2 > fls->dglen) goto x_truncated;
-    if (fls->cbyte+2 > fls->max) goto x_serverfaulty;
-    GET_W(fls->cbyte,lablen);
-    if (!(lablen & 0x0c000)) break;
-    if ((lablen & 0x0c000) != 0x0c000) return adns_s_unknownreply;
+    if (fls->cbyte >= fls->dglen) goto x_truncated;
+    if (fls->cbyte >= fls->max) goto x_serverfaulty;
+    GET_B(fls->cbyte,lablen);
+    if (!(lablen & 0x0c0)) break;
+    if ((lablen & 0x0c0) != 0x0c0) return adns_s_unknownreply;
     if (jumped++) {
       adns__diag(fls->ads,fls->serv,fls->qu,"compressed datagram contains loop");
       return adns_s_serverfaulty;
     }
+    if (fls->cbyte >= fls->dglen) goto x_truncated;
+    if (fls->cbyte >= fls->max) goto x_serverfaulty;
+    GET_B(fls->cbyte,jumpto);
+    jumpto |= (lablen&0x3f)<<8;
     if (fls->dmend_r) *(fls->dmend_r)= fls->cbyte;
-    fls->cbyte= DNS_HDRSIZE+(lablen&0x3fff);
+    fls->cbyte= jumpto;
     fls->dmend_r= 0; fls->max= fls->dglen+1;
   }
+  if (labstart_r) *labstart_r= fls->cbyte;
   if (lablen) {
     if (fls->namelen) fls->namelen++;
     fls->namelen+= lablen;
@@ -92,8 +97,8 @@ adns_status adns__findlabel_next(findlabel_state *fls,
   } else {
     if (fls->dmend_r) *(fls->dmend_r)= fls->cbyte;
   }
-  if (labstart_r) *labstart_r= fls->cbyte;
   *lablen_r= lablen;
+/*if (labstart_r) fprintf(stderr,"label %d >%.*s<\n",lablen,lablen,fls->dgram+*labstart_r);*/
   return adns_s_ok;
 
  x_truncated:
@@ -185,12 +190,13 @@ static adns_status findrr_intern(adns_query qu, int serv,
       st= adns__findlabel_next(&eo_fls,&eo_lablen,&eo_labstart);
       assert(!st); assert(eo_lablen>=0);
       if (lablen != eo_lablen) mismatch= 1;
-      while (!mismatch && lablen-- > 0) {
+      while (!mismatch && eo_lablen-- > 0) {
 	ch= dgram[labstart++]; if (ctype_alpha(ch)) ch &= ~32;
 	eo_ch= eo_dgram[eo_labstart++]; if (ctype_alpha(eo_ch)) eo_ch &= ~32;
 	if (ch != eo_ch) mismatch= 1;
       }
     }
+    if (!lablen) break;
   }
   if (eo_matched_r) *eo_matched_r= !mismatch;
    
@@ -198,7 +204,7 @@ static adns_status findrr_intern(adns_query qu, int serv,
   GET_W(cbyte,tmp); *type_r= tmp;
   GET_W(cbyte,tmp); *class_r= tmp;
   cbyte+= 4; /* we skip the TTL */
-  GET_W(cbyte,rdlen); if (rdlen_r) *rdlen_r= tmp;
+  GET_W(cbyte,rdlen); if (rdlen_r) *rdlen_r= rdlen;
   if (rdstart_r) *rdstart_r= cbyte;
   cbyte+= rdlen;
   if (cbyte>dglen) goto x_truncated;
@@ -207,7 +213,7 @@ static adns_status findrr_intern(adns_query qu, int serv,
 
  x_truncated:
   *type_r= -1;
-  return 0;;
+  return 0;
 }
 
 adns_status adns__findrr(adns_query qu, int serv,

@@ -22,27 +22,66 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <assert.h>
+#include <stdlib.h>
 
 #include "adns.h"
 
-int main(void) {
+static void failure(const char *what, adns_status st) {
+  fprintf(stderr,"adns failure: %s: %s\n",what,adns_strerror(st));
+  exit(2);
+}
+
+static const char *defaultargv[]= { "ns.chiark.greenend.org.uk", 0 };
+
+int main(int argc, const char *const *argv) {
   adns_state ads;
-  adns_query qu;
+  adns_query *qus, qu;
   adns_answer *ans;
-  int r;
+  const char *rrtn, *fmtn;
+  char *show;
+  int len, i, qc, qi;
+  adns_status r, ri;
+
+  if (argv[0] && argv[1]) argv++;
+  else argv= defaultargv;
+
+  for (qc=0; qc[argv]; qc++);
+  qus= malloc(sizeof(qus)*qc);
+  if (!qus) { perror("malloc qus"); exit(3); }
 
   r= adns_init(&ads,adns_if_debug|adns_if_noautosys,0);
-  if (r) { perror("init"); exit(2); }
+  if (r) failure("init",r);
 
-  r= adns_submit(ads,"anarres.relativity.greenend.org.uk",adns_r_a,0,0,&qu);
-  if (r) { perror("submit"); exit(2); }
+  for (qi=0; qi<qc; qi++) {
+    r= adns_submit(ads,argv[qi],adns_r_a,0,0,&qus[qi]);
+    if (r) failure("submit",r);
+  }
 
-  r= adns_wait(ads,&qu,&ans,0);
-  if (r) { perror("wait"); exit(2); }
+  for (qi=0; qi<qc; qi++) {
+    qu= qus[qi];
+    r= adns_wait(ads,&qu,&ans,0);
+    if (r) failure("wait",r);
 
-  fprintf(stderr,"answer status %d type %d rrs %d cname %s\n",
-	  ans->status,ans->type,ans->nrrs,
-	  ans->cname ? ans->cname : "-");
-  
+    ri= adns_rr_info(ans->type, &rrtn,&fmtn,&len, 0,0);
+    fprintf(stdout, "%s: %s; nrrs=%d; cname=%s; ",
+	    argv[qi], adns_strerror(ans->status),
+	    ans->nrrs, ans->cname ? ans->cname : "$");
+    fprintf(stdout, "type %s(%s) %s\n",
+	    ri ? "?" : rrtn, ri ? "?" : fmtn ? fmtn : "-",
+	    adns_strerror(ri));
+    if (ans->nrrs) {
+      assert(!ri);
+      for (i=0; i<ans->nrrs; i++) {
+	r= adns_rr_info(ans->type, 0,0,0, ans->rrs.bytes+i*len,&show);
+	if (r) failure("info",r);
+	printf(" %s\n",show);
+	free(show);
+      }
+    }
+    free(ans);
+  }
+
+  free(qus);
   exit(0);
 }

@@ -48,7 +48,9 @@ void adns__vdiag(adns_state ads, const char *pfx, adns_initflags prevent,
 	    bef,
 	    adns__diag_domain(qu->ads,-1,0, &vb,qu->flags,
 			      qu->query_dgram,qu->query_dglen,DNS_HDRSIZE),
-	    qu->typei ? qu->typei->name : "<unknown>");
+	    qu->typei ? qu->typei->rrtname : "<unknown>");
+    if (qu->typei && qu->typei->fmtname)
+      fprintf(stderr,"(%s)",qu->typei->fmtname);
     bef=", "; aft=")\n";
   }
   
@@ -159,9 +161,79 @@ const char *adns__diag_domain(adns_state ads, int serv, adns_query qu, vbuf *vb,
   }
   return vb->buf;
 }
-    
+
+adns_status adns_rr_info(adns_rrtype type,
+			 const char **rrtname_r, const char **fmtname_r,
+			 int *len_r,
+			 const void *datap, char **data_r) {
+  const typeinfo *typei;
+  vbuf vb;
+  adns_status st;
+
+  typei= adns__findtype(type);
+  if (!typei) return adns_s_notimplemented;
+
+  if (rrtname_r) *rrtname_r= typei->rrtname;
+  if (fmtname_r) *fmtname_r= typei->fmtname;
+  if (len_r) *len_r= typei->rrsz;
+
+  if (!datap) return adns_s_ok;
+  
+  adns__vbuf_init(&vb);
+  st= typei->convstring(&vb,datap);
+  if (st) goto x_freevb;
+  if (!adns__vbuf_append(&vb,"",1)) { st= adns_s_nolocalmem; goto x_freevb; }
+  assert(strlen(vb.buf) == vb.used-1);
+  *data_r= realloc(vb.buf,vb.used);
+  if (!*data_r) *data_r= vb.buf;
+  return adns_s_ok;
+
+ x_freevb:
+  adns__vbuf_free(&vb);
+  return st;
+}
+
+#define SINFO(n,s) { adns_s_##n, s }
+
+static const struct sinfo {
+  adns_status st;
+  const char *string;
+} sinfos[]= {
+  SINFO(  ok,                "OK"                                    ),
+  SINFO(  timeout,           "Timed out"                             ),
+  SINFO(  nolocalmem,        "Out of memory"                         ),
+  SINFO(  allservfail,       "No working nameservers"                ),
+  SINFO(  servfail,          "Nameserver failure"                    ),
+  SINFO(  notimplemented,    "Query not implemented"                 ),
+  SINFO(  refused,           "Refused by nameserver"                 ),
+  SINFO(  reasonunknown,     "Reason unknown"                        ),
+  SINFO(  norecurse,         "Recursion denied by nameserver"        ),
+  SINFO(  serverfaulty,      "Nameserver sent bad data"              ),
+  SINFO(  unknownreply,      "Reply from nameserver not understood"  ),
+  SINFO(  invaliddata,       "Invalid data"                          ),
+  SINFO(  inconsistent,      "Inconsistent data"                     ),
+  SINFO(  cname,             "RR refers to an alias"                 ),
+  SINFO(  nxdomain,          "No such domain"                        ),
+  SINFO(  nodata,            "No such data"                          ),
+  SINFO(  invaliddomain,     "Domain syntactically invalid"          ),
+  SINFO(  domaintoolong,     "Domain name too long"                  )
+};
+
+static int si_compar(const void *key, const void *elem) {
+  const adns_status *st= key;
+  const struct sinfo *si= elem;
+
+  return *st < si->st ? -1 : *st > si->st ? 1 : 0;
+}
+
 const char *adns_strerror(adns_status st) {
   static char buf[100];
+
+  const struct sinfo *si;
+
+  si= bsearch(&st,sinfos,sizeof(sinfos)/sizeof(*si),sizeof(*si),si_compar);
+  if (si) return si->string;
+  
   snprintf(buf,sizeof(buf),"code %d",st);
   return buf;
 }

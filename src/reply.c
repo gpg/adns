@@ -23,12 +23,12 @@
 #include "internal.h"
 
 static void cname_recurse(adns_query qu, adns_queryflags xflags) {
-  abort(); /* FIXME */
+  assert(!"cname not implemented"); /* FIXME */
 }
     
 void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
 		     int serv, struct timeval now) {
-  int cbyte, rrstart, wantedrrs, rri, foundsoa, foundns;
+  int cbyte, rrstart, wantedrrs, rri, foundsoa, foundns, cname_here;
   int id, f1, f2, qdcount, ancount, nscount, arcount;
   int flg_ra, flg_rd, flg_tc, flg_qr, opcode;
   int rrtype, rrclass, rdlength, rdstart, ownermatched, l;
@@ -36,6 +36,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
   adns_query qu, nqu;
   dns_rcode rcode;
   adns_status st;
+  vbuf tempvb;
   
   if (dglen<DNS_HDRSIZE) {
     adns__diag(ads,serv,0,"received datagram too short for message header (%d)",dglen);
@@ -56,11 +57,10 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
   flg_tc= f1&0x20;
   flg_rd= f1&0x01;
   flg_ra= f2&0x80;
-  rcode= (f1&0x0f);
-  /* fixme: change this to f2 (which is where rcode really is), BUT
-   * not until we've figured out why the error code is wrong (bad format code 203)
-   */
+  rcode= (f2&0x0f);
 
+  cname_here= 0;
+  
   if (!flg_qr) {
     adns__diag(ads,serv,0,"server sent us a query, not a response");
     return;
@@ -87,11 +87,17 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
       continue;
     break;
   }
-  anstart= qu->query_dglen;
   if (!qu) {
-    adns__debug(ads,serv,0,"reply not found (id=%02x)",id);
+    if (ads->iflags & adns_if_debug) {
+      adns__vbuf_init(&tempvb);
+      adns__debug(ads,serv,0,"reply not found, id %02x, query owner %s",
+		  id, adns__diag_domain(ads,serv,0,&tempvb,adns_qf_anyquote,
+					dgram,dglen,DNS_HDRSIZE));
+      adns__vbuf_free(&tempvb);
+    }
     return;
   }
+  anstart= qu->query_dglen;
 
   LIST_UNLINK(ads->timew,qu);
   /* We're definitely going to do something with this query now */
@@ -125,12 +131,13 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
    * If it has any CNAMEs we stuff them in the answer.
    */
   wantedrrs= 0;
+  cbyte= anstart;
   for (rri= 0; rri<ancount; rri++) {
     rrstart= cbyte;
     st= adns__findrr(qu,serv, dgram,dglen,&cbyte,
 		     &rrtype,&rrclass,&rdlength,&rdstart,
 		     &ownermatched);
-    if (st) adns__query_fail(qu,st);
+    if (st) { adns__query_fail(qu,st); return; }
     if (rrtype == -1) goto x_truncated;
 
     if (rrclass != DNS_CLASS_IN) {
@@ -161,6 +168,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
 	qu->answer->cname= adns__alloc_interim(qu,l);
 	if (!qu->answer->cname) return;
 	memcpy(qu->answer->cname,qu->vb.buf,l);
+	cname_here= 1;
 	/* If we find the answer section truncated after this point we restart
 	 * the query at the CNAME; if beforehand then we obviously have to use
 	 * TCP.  If there is no truncation we can use the whole answer if
@@ -219,7 +227,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
      * a CNAME in this datagram then we should probably do our own CNAME
      * lookup now in the hope that we won't get a referral again.
      */
-    if (qu->cname_dgram == dgram) { cname_recurse(qu,0); return; }
+    if (cname_here) { cname_recurse(qu,0); return; }
 
     /* Bloody hell, I thought we asked for recursion ? */
     if (flg_rd) {
@@ -257,6 +265,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
 			 qu->answer->rrs.bytes+qu->answer->nrrs*qu->typei->rrsz);
     if (st) { adns__query_fail(qu,st); return; }
     if (rdstart==-1) goto x_truncated;
+    qu->answer->nrrs++;
   }
 
   /* This may have generated some child queries ... */

@@ -163,7 +163,7 @@ typedef struct {
 typedef struct {
   adns_status status;
   char *cname; /* always NULL if query was for CNAME records */
-  adns_rrtype type;
+  adns_rrtype type; /* guaranteed to be same as in query */
   int nrrs, rrsz;
   union {
     void *untyped;
@@ -286,6 +286,34 @@ void adns_interest(adns_state, int *maxfd_io, fd_set *readfds_io,
  *   adns_submit / adns_check
  *   ...
  *  }
+ */
+
+adns_status adns_rr_info(adns_rrtype type,
+			 const char **rrtname_r, const char **fmtname_r,
+			 int *len_r,
+			 const void *datap, char **data_r);
+/* Gets information in human-readable (but non-i18n) form
+ * for eg debugging purposes.  type must be specified,
+ * and the official name of the corresponding RR type will
+ * be returned in *rrtname_r, and information about the processing
+ * style in *fmtname_r.  The length of the table entry in an answer
+ * for that type will be returned in in *len_r.
+ * Any or all of rrtname_r, fmtname_r and len_r may be 0.
+ * If fmtname_r is non-null then *fmtname_r may be
+ * null on return, indicating that no special processing is
+ * involved.
+ *
+ * data_r be must be non-null iff datap is.  In this case
+ * *data_r will be set to point to a human-readable text
+ * string representing the RR data.  The text will have
+ * been obtained from malloc() and must be freed by the caller.
+ *
+ * Usually this routine will succeed.  Possible errors include:
+ *  adns_s_nomemory
+ *  adns_s_notimplemented (RR type not known)
+ *  adns_s_invaliddata (*datap contained garbage)
+ * If an error occurs then no memory has been allocated,
+ * and *rrtname_r, *fmtname_r, *len_r and *data_r are undefined.
  */
 
 const char *adns_strerror(adns_status st);

@@ -82,8 +82,20 @@ typedef union {
 
 typedef struct {
   adns_rrtype type;
-  const char *name;
+  const char *rrtname;
+  const char *fmtname;
   int rrsz;
+
+  void (*makefinal)(adns_query qu, void *data);
+  /* Change memory management of *data.
+   * Previously, used alloc_interim, now use alloc_final.
+   */
+
+  adns_status (*convstring)(vbuf *vb, const void *data);
+  /* Converts the RR data to a string representation in vbuf.
+   * vbuf will be appended to (it must have been initialised),
+   * and will not be null-terminated by convstring.
+   */
 
   adns_status (*parse)(adns_query qu, int serv,
 		       const byte *dgram, int dglen, int cbyte, int max,
@@ -95,11 +107,6 @@ typedef struct {
    *
    * If there is an overrun which might indicate truncation, it should set
    * *rdstart to -1; otherwise it may set it to anything else positive.
-   */
-
-  void (*makefinal)(adns_query qu, void *data);
-  /* Change memory management of *data.
-   * Previously, used alloc_interim, now use alloc_final.
    */
 } typeinfo;
 
@@ -487,16 +494,16 @@ static inline int ctype_alpha(int c) {
 
 #define LIST_LINK_TAIL_PART(list,node,part) \
   do { \
-    (node)->part back= 0; \
-    (node)->part next= (list).tail; \
-    if ((list).tail) (list).tail->part back= (node); else (list).part head= (node); \
+    (node)->part next= 0; \
+    (node)->part back= (list).tail; \
+    if ((list).tail) (list).tail->part next= (node); else (list).part head= (node); \
     (list).tail= (node); \
   } while(0)
 
 #define LIST_UNLINK(list,node) LIST_UNLINK_PART(list,node,)
 #define LIST_LINK_TAIL(list,node) LIST_LINK_TAIL_PART(list,node,)
 
-#define GETIL_B(cb) (dgram[(cb)++])
+#define GETIL_B(cb) (((dgram)[(cb)++]) & 0x0ff)
 #define GET_B(cb,tv) ((tv)= GETIL_B((cb)))
 #define GET_W(cb,tv) ((tv)=0, (tv)|=(GETIL_B((cb))<<8), (tv)|=GETIL_B(cb), (tv))
 
