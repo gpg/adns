@@ -56,9 +56,6 @@
 
 #ifndef ADNS_H_INCLUDED
 #define ADNS_H_INCLUDED
-#ifdef __cplusplus
-extern "C" { /* I really dislike this - iwj. */
-#endif
 
 #include <stdio.h>
 
@@ -67,6 +64,10 @@ extern "C" { /* I really dislike this - iwj. */
 #include <sys/types.h>
 #include <sys/time.h>
 #include <unistd.h>
+
+#ifdef __cplusplus
+extern "C" { /* I really dislike this - iwj. */
+#endif
 
 /* All struct in_addr anywhere in adns are in NETWORK byte order. */
 
