@@ -20,7 +20,7 @@ adns (1.1); urgency=medium
   * README.html: mentioned Jarle Aase's Windows port, and other fixes.
   * Some better source code formatting/wrapping.
 
- --
+ -- Ian Jackson <ian@davenant.greenend.org.uk>  Tue,  1 Jul 2003 22:55:29 +0100
 
 adns (1.0); urgency=medium
 
