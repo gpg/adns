@@ -44,7 +44,7 @@ bin_dir=	$(exec_prefix)/bin
 lib_dir=	$(exec_prefix)/lib
 include_dir=	$(prefix)/include
 
-INSTALL=		install -o 0 -g 0
+INSTALL=		install -c -o 0 -g 0
 INSTALL_PROGRAM=	$(INSTALL) -m 755 $(INSTALL_PROGRAM_FLAGS)
 INSTALL_DATA=		$(INSTALL) -m 644
 

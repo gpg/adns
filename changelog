@@ -1,3 +1,10 @@
+adns (0.5) unstable; urgency=low
+
+  Portability fixes:
+  * Give install the '-c' flag (otherwise some delete the original !).
+
+ --
+
 adns (0.4) unstable; urgency=high
 
   General important bugfixes:
