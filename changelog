@@ -5,12 +5,15 @@ adns (0.9) unstable; urgency=low
     `TCP connection failed: poll/select: exceptional condition detected'.
   * Call MEM_ROUND in __transfer_interim (avoids assert fail
     `qu->interim_allocd>=0' on some platforms eg 64 bit).
+  * adnsresfilter doesn't resolve textual prefixes of addresses (eg,
+    10.0.0.1 out of 10.0.0.123) if input happens to block at that point.
 
   Portability/compilation fixes:
   * Move `extern "C" {' to after #include <...>'s.
 
   Minor improvements:
   * Do not print warning if sendto() gives EAGAIN.
+  * adnsresfilter default timeout changed to 1000ms.
 
  --
 
