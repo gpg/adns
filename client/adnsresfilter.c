@@ -109,11 +109,13 @@ static void outputerr(void) { sysfail("write to stdout"); }
 static void usage(void) {
   if (printf("usage: adnsresfilter [<options ...>]\n"
 	     "       adnsresfilter  -h|--help\n"
-	     "options: -b|--brackets\n"
-	     "         -w|--wait\n"
-	     "         -t<timeout>|--timeout <milliseconds>\n"
-	     "         -a|--address  (always include address in output)\n"
-	     "         -u|--unchecked\n")
+	     "options: -t<milliseconds>|--timeout <milliseconds>\n"
+	     "         -w|--wait        (always wait for queries to time out or fail)\n"
+	     "         -b|--brackets    (require [...] around IP addresses)\n"
+	     "         -a|--address     (always include [address] in output)\n"
+	     "         -u|--unchecked   (do not forward map for checking)\n"
+	     "Timeout is the maximum amount to delay any particular bit of output for.\n"
+	     "Lookups will go on in the background.  Default timeout = 100 (ms).\n")
       == EOF) outputerr();
 }
 
