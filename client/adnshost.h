@@ -90,7 +90,7 @@ void opt_do(const struct optioninfo *oip, const char *arg, int invert);
 struct query_node {
   struct query_node *next, *back;
   struct perqueryflags_remember pqfr;
-  char *id;
+  char *id, *owner;
   adns_query qu;
 };
 

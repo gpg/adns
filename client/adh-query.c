@@ -89,6 +89,7 @@ void of_ptr(const struct optioninfo *oi, const char *arg) {
   if (!inet_aton(arg,&sa.sin_addr)) usageerr("invalid IP address %s",arg);
 
   prep_query(&qun,&quflags);
+  qun->owner= xstrsave(arg);
   r= adns_submit_reverse(ads,
 			 (struct sockaddr*)&sa,
 			 ov_type == adns_r_none ? adns_r_ptr : ov_type,
@@ -105,6 +106,7 @@ void query_do(const char *domain) {
   int quflags, r;
 
   prep_query(&qun,&quflags);
+  qun->owner= xstrsave(domain);
   r= adns_submit(ads, domain,
 		 ov_type == adns_r_none ? adns_r_addr : ov_type,
 		 quflags,
@@ -145,8 +147,12 @@ static void print_ttl(struct query_node *qun, adns_answer *answer) {
   if (printf("%lu ",ttl) == EOF) outerr();
 }
 
+static const char *owner_show(struct query_node *qun, adns_answer *answer) {
+  return answer->owner ? answer->owner : qun->owner;
+}
+
 static void print_owner_ttl(struct query_node *qun, adns_answer *answer) {
-  if (qun->pqfr.show_owner) print_withspace(answer->owner);
+  if (qun->pqfr.show_owner) print_withspace(owner_show(qun,answer));
   print_ttl(qun,answer);
 }
 
@@ -195,15 +201,15 @@ static void print_dnsfail(adns_status st, struct query_node *qun, adns_answer *a
   }
   assert(ov_format == fmt_simple);
   if (st == adns_s_nxdomain) {
-    r= fprintf(stderr,"%s does not exist\n", answer->owner);
+    r= fprintf(stderr,"%s does not exist\n", owner_show(qun,answer));
   } else {
     ist= adns_rr_info(answer->type, &typename, 0,0,0,0);
     if (st == adns_s_nodata) {
-      r= fprintf(stderr,"%s has no %s record\n", answer->owner, typename);
+      r= fprintf(stderr,"%s has no %s record\n", owner_show(qun,answer), typename);
     } else {
       statusstring= adns_strerror(st);
       r= fprintf(stderr,"Error during DNS %s lookup for %s: %s\n",
-		 typename, answer->owner, statusstring);
+		 typename, owner_show(qun,answer), statusstring);
     }
   }
   if (r == EOF) sysfail("write error message to stderr",errno);
@@ -233,7 +239,7 @@ void query_done(struct query_node *qun, adns_answer *answer) {
     }
   }
   if (qun->pqfr.show_owner) {
-    realowner= answer->cname ? answer->cname : answer->owner;
+    realowner= answer->cname ? answer->cname : owner_show(qun,answer);
     assert(realowner);
   } else {
     realowner= 0;

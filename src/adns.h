@@ -284,7 +284,7 @@ typedef struct {
 typedef struct {
   adns_status status;
   char *cname; /* always NULL if query was for CNAME records */
-  char *owner; /* only set if requested in query flags */
+  char *owner; /* only set if requested in query flags, and may be 0 on error anyway */
   adns_rrtype type; /* guaranteed to be same as in query */
   time_t expires; /* expiry time, defined only if _s_ok, nxdomain or nodata. NOT TTL! */
   int nrrs, rrsz; /* nrrs is 0 if an error occurs */
