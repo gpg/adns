@@ -81,6 +81,12 @@ typedef union {
 } qcontext;
 
 typedef struct {
+  adns_query qu;
+  const byte *dgram;
+  int serv, dglen, max, nsstart;
+} parseinfo;
+
+typedef struct {
   adns_rrtype type;
   const char *rrtname;
   const char *fmtname;
@@ -97,9 +103,7 @@ typedef struct {
    * and will not be null-terminated by convstring.
    */
 
-  adns_status (*parse)(adns_query qu, int serv,
-		       const byte *dgram, int dglen, int cbyte, int max,
-		       int nsstart, int *arstart_io, void *store_r);
+  adns_status (*parse)(const struct parseinfo *pai, int cbyte, void *store_r);
   /* Parse one RR, in dgram of length dglen, starting at cbyte and
    * extending until at most max.
    *
@@ -108,9 +112,7 @@ typedef struct {
    * If there is an overrun which might indicate truncation, it should set
    * *rdstart to -1; otherwise it may set it to anything else positive.
    *
-   * nsstart is the offset of the authority section; *arstart_io is
-   * -1 or the offset of the additional section; if it is -1 then
-   * parse may set it to the correct offset.
+   * nsstart is the offset of the authority section.
    */
 
   int (*diff_needswap)(const void *datap_a, const void *datap_b);
@@ -452,29 +454,48 @@ adns_status adns__findrr(adns_query qu, int serv,
 			 const byte *dgram, int dglen, int *cbyte_io,
 			 int *type_r, int *class_r, int *rdlen_r, int *rdstart_r,
 			 int *ownermatchedquery_r);
-  /* Finds the extent and some of the contents of an RR in a datagram
-   * and does some checks.  The datagram is *dgram, length dglen, and
-   * the RR starts at *cbyte_io (which is updated afterwards to point
-   * to the end of the RR).
-   *
-   * The type, class and RRdata length and start are returned iff
-   * the corresponding pointer variables are not null.  type_r and
-   * class_r may not be null.
-   *
-   * If ownermatchedquery_r != 0 then the owner domain of this
-   * RR will be compared with that in the query (or, if the query
-   * has gone to a CNAME lookup, with the canonical name).
-   * In this case, *ownermatchedquery_r will be set to 0 or 1.
-   * The query datagram (or CNAME datagram) MUST be valid and not truncated.
-   *
-   * If there is truncation then *type_r will be set to -1 and
-   * *cbyte_io, *class_r, *rdlen_r, *rdstart_r and *eo_matched_r will be
-   * undefined.
-   *
-   * qu must obviously be non-null.
-   *
-   * If an error is returned then *type_r will be undefined too.
-   */
+/* Finds the extent and some of the contents of an RR in a datagram
+ * and does some checks.  The datagram is *dgram, length dglen, and
+ * the RR starts at *cbyte_io (which is updated afterwards to point
+ * to the end of the RR).
+ *
+ * The type, class and RRdata length and start are returned iff
+ * the corresponding pointer variables are not null.  type_r and
+ * class_r may not be null.
+ *
+ * If ownermatchedquery_r != 0 then the owner domain of this
+ * RR will be compared with that in the query (or, if the query
+ * has gone to a CNAME lookup, with the canonical name).
+ * In this case, *ownermatchedquery_r will be set to 0 or 1.
+ * The query datagram (or CNAME datagram) MUST be valid and not truncated.
+ *
+ * If there is truncation then *type_r will be set to -1 and
+ * *cbyte_io, *class_r, *rdlen_r, *rdstart_r and *eo_matched_r will be
+ * undefined.
+ *
+ * qu must obviously be non-null.
+ *
+ * If an error is returned then *type_r will be undefined too.
+ */
+
+static adns_status findrr_anychk(adns_query qu, int serv,
+				 const byte *dgram, int dglen, int *cbyte_io,
+				 int *type_r, int *class_r, int *rdlen_r, int *rdstart_r,
+				 const byte *eo_dgram, int eo_dglen, int eo_cbyte,
+				 int *eo_matched_r);
+/* Like adns__findrr_checked, except that the datagram and
+ * owner to compare with can be specified explicitly.
+ *
+ * If the caller thinks they know what the owner of the RR ought to
+ * be they can pass in details in eo_*: this is another (or perhaps
+ * the same datagram), and a pointer to where the putative owner
+ * starts in that datagram.  In this case *eo_matched_r will be set
+ * to 1 if the datagram matched or 0 if it did not.  Either
+ * both eo_dgram and eo_matched_r must both be non-null, or they
+ * must both be null (in which case eo_dglen and eo_cbyte will be ignored).
+ * The eo datagram and contained owner domain MUST be valid and
+ * untruncated.
+ */
 
 int vbuf__append_quoted1035(vbuf *vb, const byte *buf, int len);
 

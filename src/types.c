@@ -58,9 +58,9 @@ static adns_status cs_inaddr(vbuf *vb, const void *datap) {
 
 static adns_status pa_addr(adns_query qu, int serv,
 			   const byte *dgram, int dglen, int cbyte, int max,
-			   int nsstart, int *arstart_io, void *datap) {
+			   void *datap) {
   adns_addr *storeto= datap;
-  
+
   if (max-cbyte != 4) return adns_s_invaliddata;
   storeto->len= sizeof(storeto->addr.inet);
   memset(&storeto->addr,0,sizeof(storeto->addr.inet));
@@ -147,6 +147,102 @@ static adns_status pa_mx_raw(adns_query qu, int serv,
   
   if (cbyte != max) return adns_s_invaliddata;
   return adns_s_ok;
+}
+
+
+static adns_status pap_findaddrs(adns_query qu, int serv, adns_rr_hostaddr *ha,
+				 const byte *dgram, int dglen, int *cbyte_io,
+				 int dmstart, int count) {
+  int rri, nrrs;
+  int type, class, rdlen, rdstart, ownermatched;
+  
+  for (rri=0, nrrs=-1; rri<count; rri++) {
+    st= adns__findrr_anychk(qu,serv,dgram,dglen,cbyte_io,
+			    &type,&class,&rdlen,&rdstart,
+			    dgram,dglen,dmstart,
+			    &ownermatched);
+    if (st) return st;
+    if (class != DNS_CLASS_IN) continue;
+    if (type != adns_r_a) continue;
+    if (nrrs == -1) {
+      qu->vb.used= 0;
+      nrrs= 0;
+    }
+    if (!adns__vbuf_ensure(&qu->vb,qu->vb.used+sizeof(adns_addr)))
+      return adns_s_nolocalmem;
+    st= pa_addr(qu,serv, dgram,dglen, rdstart,rdstart+rdlen,
+		qu->vb.buf + qu->vb.used);
+    if (st) return st;
+    qu->vb.used += sizeof(adns_addr);
+    nrrs++;
+  }
+  if (nrrs >= 0) {
+    ha->rrs= adns__alloc_interim(qu,qu->vb.used);
+    if (!ha->rrs) return adns_s_nolocalmem;
+    ha->nrrs= nrrs;
+    ha->astatus= adns_s_ok;
+  }
+  return adns_s_ok;
+}
+
+static adns_status pap_hostaddr(adns_query qu, int serv,
+				const byte *dgram, int dglen, int *cbyte_io, int max,
+				int nsstart, int nscount, int arcount, void *datap) {
+  adns_rr_hostaddr **rrp= datap;
+  adns_status st;
+  int dmstart, cbyte;
+
+  dmstart= cbyte= *cbyte_io;
+  st= pap_domain(qu,serv,
+		 qu->flags & adns_qf_quoteok_anshost ? pdf_quoteok : 0,
+		 dgram,dglen,&cbyte,max,&rrp->dm);
+  if (st) return st;
+  *cbyte_io= cbyte;
+
+  rrp->astatus= adns_s_ok;
+  rrp->naddrs= -1;
+  rrp->addrs= 0;
+
+  cbyte= nsstart;
+
+  st= pap_findaddrs(qu, rrp, dgram,dglen,&cbyte, dmstart);
+  if (st) return st;
+  if (rrp->naddrs != -1) return adns_s_ok;
+
+  st= pap_findaddrs(qu, rrp, dgram,dglen,&cbyte, dmstart);
+  if (st) return st;
+  if (rrp->naddrs != -1) return adns_s_ok;
+}
+
+static adns_status pa_hostaddr(adns_query qu, int serv,
+			       const byte *dgram, int dglen, int cbyte, int max,
+			       int nsstart, void *datap) {
+  adns_rr_hostaddr **rrp= datap;
+  adns_status st;
+  int dmstart;
+
+  dmstart= cbyte;
+  st= pap_domain(qu,serv,
+		 qu->flags & adns_qf_quoteok_anshost ? pdf_quoteok : 0,
+		 dgram,dglen,&cbyte,max,&rrp->dm);
+  if (st) return st;
+  if (cbyte != max) return adns_s_invaliddata;
+
+  rrp->astatus= adns_s_ok;
+  rrp->naddrs= -1;
+  rrp->addrs= 0;
+
+  cbyte= nsstart;
+
+  st= pap_findaddrs(qu, rrp, dgram,dglen, dmstart,&cbyte);
+  if (st) return st;
+  if (rrp->naddrs != -1) return adns_s_ok;
+
+  st= pap_findaddrs(qu, rrp, dgram,dglen, dmstart,&cbyte);
+  if (st) return st;
+  if (rrp->naddrs != -1) return adns_s_ok;
+
+  assert(!"additional section didn't have required data");
 }
 
 static int di_mx_raw(const void *datap_a, const void *datap_b) {
@@ -296,27 +392,27 @@ static const typeinfo typeinfos[] = {
   /* Must be in ascending order of rrtype ! */
   /* rr type code   rrt     fmt      mem.mgmt  member      parser         comparer */
   
-  { adns_r_a,       "A",     0,      FLAT_MEMB(inaddr),    pa_inaddr,     di_inaddr  },
-  { adns_r_ns_raw,  "NS",   "raw",   DEEP_MEMB(str),       pa_host_raw,   0          },
-  { adns_r_cname,   "CNAME", 0,      DEEP_MEMB(str),       pa_host_raw,   0          },
-#if 0 /*fixme*/	    	                    	       	  		   
-  { adns_r_soa_raw, "SOA",  "raw",   DEEP_MEMB(soa),       pa_soa,        0          },
-#endif
-  { adns_r_ptr_raw, "PTR",  "raw",   DEEP_MEMB(str),       pa_host_raw,   0          },
-#if 0 /*fixme*/	    	                    	       	  		   
-  { adns_r_hinfo,   "HINFO", 0,      DEEP_MEMB(strpair),   pa_hinfo,      0          },
-#endif
-  { adns_r_mx_raw,  "MX",   "raw",   DEEP_MEMB(intstr),    pa_mx_raw,     di_mx_raw  },
-  { adns_r_txt,     "TXT",   0,      DEEP_MEMB(manyistr),  pa_txt,        0          },
-#if 0 /*fixme*/	    	                    	       	  		   
-  { adns_r_rp_raw,  "RP",   "raw",   DEEP_MEMB(strpair),   pa_rp,         0          },
-#endif
-   		      	                                  		   
-  { adns_r_addr,    "A",  "addr",    FLAT_MEMB(addr),      pa_addr,       di_addr    },
-#if 0 /*fixme*/	    	                    	       	  		   
-  { adns_r_ns,      "NS", "+addr",   DEEP_MEMB(dmaddr),    pa_dmaddr,     di_dmaddr  },
-  { adns_r_ptr,     "PTR","checked", DEEP_MEMB(str),       pa_ptr,        0          },
-  { adns_r_mx,      "MX", "+addr",   DEEP_MEMB(intdmaddr), pa_mx,         di_mx      },
+  { adns_r_a,       "A",     0,      FLAT_MEMB(inaddr),    pa_inaddr,    di_inaddr   },
+  { adns_r_ns_raw,  "NS",   "raw",   DEEP_MEMB(str),       pa_host_raw,  0           },
+  { adns_r_cname,   "CNAME", 0,      DEEP_MEMB(str),       pa_host_raw,  0           },
+#if 0 /*fixme*/	    	                    	       	  		  	     
+  { adns_r_soa_raw, "SOA",  "raw",   DEEP_MEMB(soa),       pa_soa,       0           },
+#endif									 	     
+  { adns_r_ptr_raw, "PTR",  "raw",   DEEP_MEMB(str),       pa_host_raw,  0           },
+#if 0 /*fixme*/	    	                    	       	  		  	     
+  { adns_r_hinfo,   "HINFO", 0,      DEEP_MEMB(strpair),   pa_hinfo,     0           },
+#endif									 	     
+  { adns_r_mx_raw,  "MX",   "raw",   DEEP_MEMB(intstr),    pa_mx_raw,    di_mx_raw   },
+  { adns_r_txt,     "TXT",   0,      DEEP_MEMB(manyistr),  pa_txt,       0           },
+#if 0 /*fixme*/	    	                    	       	  		  	     
+  { adns_r_rp_raw,  "RP",   "raw",   DEEP_MEMB(strpair),   pa_rp,        0           },
+#endif									 	     
+   		      	                                  		  	     
+  { adns_r_addr,    "A",  "addr",    FLAT_MEMB(addr),      pa_addr,      di_addr     },
+  { adns_r_ns,      "NS", "+addr",   DEEP_MEMB(dmaddr),    pa_hostaddr,  di_hostaddr },
+#if 0 /*fixme*/	    	                    	       	  		  	     
+  { adns_r_ptr,     "PTR","checked", DEEP_MEMB(str),       pa_ptr,       0           },
+  { adns_r_mx,      "MX", "+addr",   DEEP_MEMB(intdmaddr), pa_mx,        di_mx       },
    		      	                                  		   
 #endif
 #if 0 /*fixme*/
