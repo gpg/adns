@@ -526,7 +526,7 @@ void adns_globalsystemfailure(adns_state ads) {
 }
 
 int adns_processany(adns_state ads) {
-  int r;
+  int r, i;
   struct timeval now;
   struct pollfd pollfds[MAX_POLLFDS];
   int npollfds;
@@ -541,6 +541,7 @@ int adns_processany(adns_state ads) {
    * likely just to want to do a read on one or two fds anyway.
    */
   npollfds= adns__pollfds(ads,pollfds);
+  for (i=0; i<npollfds; i++) pollfds[i].revents= pollfds[i].events;
   adns__fdevents(ads,
 		 pollfds,npollfds,
 		 0,0,0,0,
