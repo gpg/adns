@@ -184,9 +184,9 @@ void adns__timeouts(adns_state ads, int act,
       inter_maxtoabs(tv_io,tvbuf,now,qu->timeout);
     } else {
       if (!act) {
-	tvbuf.tv_sec= 0;
-	tvbuf.tv_usec= 0;
-	*tv_io= &tvbuf;
+	tvbuf->tv_sec= 0;
+	tvbuf->tv_usec= 0;
+	*tv_io= tvbuf;
 	return;
       }
       LIST_UNLINK(ads->timew,qu);
