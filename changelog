@@ -16,6 +16,7 @@ adns (0.10) unstable; urgency=low
   * adnstest: setvbuf(stdout,...) before we do first output.
   * Cope with compilers that don't do `inline'.
   * Add and fix various missing system #includes.
+  * Find install-sh properly when we need to use it, and chmod it +x.
   * Do not use variadic macro, use stdarg instead (adnslogres.c).
   * Regression tests work even if some syscalls are already macros.
   * #include "config.h" before "adns.h".
