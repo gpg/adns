@@ -3,7 +3,9 @@
  * - a replacement for the Apache logresolve program using adns
  */
 /*
- *  This file is Copyright (C) 1999 Tony Finch <fanf@demon.net> <dot@dotat.at>
+ *  This file is
+ *   Copyright (C) 1999 Tony Finch <fanf@demon.net> <dot@dotat.at>
+ *   Copyright (C) 1999 Ian Jackson <ian@davenant.greenend.org.uk>
  *  
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,7 +19,10 @@
  *  
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software Foundation,
- *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
+ *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ *
+ * This version was originally supplied by Tony Finch, but has been
+ * modified by Ian Jackson as it was incorporated into adns.
  */
 
 static const char * const cvsid =
@@ -87,7 +92,7 @@ static void printline(char *start, char *addr, char *rest, char *domain) {
     printf("%.*s%s%s", addr - start, start, domain, rest);
   else
     fputs(start, stdout);
-  /* XXX: error checking */
+  if (ferror(stdout)) aargh("write output");
 }
 
 typedef struct logline {
@@ -159,9 +164,9 @@ static void proclog(void) {
   adns_finish(adns);
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
   progname= *argv;
   proclog();
+  if (fclose(stdout)) aargh("finish writing output");
   return 0;
 }
