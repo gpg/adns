@@ -1,6 +1,6 @@
 adns (0.2) experimental; urgency=low
 
-  Portability fixes:
+  Portability fixes for compilation on various platforms:
   * Include <sys/socket.h> and <netinet/in.h> in files with <arpa/inet.h>.
   * Don't use GCC union assignment feature (.rrs=0 => .rrs.untyped=0).
   * Explictly cast things to [const] struct sockaddr* in syscall args.
@@ -8,7 +8,11 @@ adns (0.2) experimental; urgency=low
   * Include <sys/times.h> in a few more files.
   * Include <unistd.h> and <sys/time.h> for select.
   * Look for inet_aton and inet_ntoa (in -lnsl and -lsocket).
-  
+
+  Portability fixes to regression test:
+  * Regression test doesn't rely on value of O_NONBLOCK.
+
+  Other changes:
   * Added COPYING (copy of the GPL).
 
  --
