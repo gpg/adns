@@ -61,7 +61,8 @@ typedef union {
 typedef struct {
   adns_rrtype type;
   int rrsz;
-  adns_status (*parse)(adns_state ads, adns_query qu, int serv, vbuf *vb,
+
+  adns_status (*parse)(adns_state ads, adns_query qu, int serv,
 		       const byte *dgram, int dglen, int cbyte, int max,
 		       void *store_r);
   /* Parse one RR, in dgram of length dglen, starting at cbyte and
@@ -71,27 +72,54 @@ typedef struct {
    *
    * If there is an overrun which might indicate truncation, it should set
    * *rdstart to -1; otherwise it may set it to anything else positive.
-   *
-   * This function may use vb (which has been initialised) however it likes.
+   */
+
+  void (*makefinal)(adns_state ads, adns_query qu, void *data);
+  /* Change memory management of *data.
+   * Previously, used alloc_interim, now use alloc_final.
    */
 } typeinfo;
 
+typedef struct allocnode {
+  struct allocnode *next;
+} allocnode;
+
+union maxalign {
+  byte d[1];
+  struct in_addr ia;
+  long l;
+  void *p;
+  void (*fp)(void);
+  union maxalign *up;
+} data;
+
 struct adns__query {
-  /* FIXME: make sure this is all init'd properly */
   enum { query_udp, query_tcpwait, query_tcpsent, query_child, query_done } state;
   adns_query back, next, parent;
   struct { adns_query head, tail; } children;
   struct { adns_query back, next; } siblings;
+  struct allocnode *allocations;
+  int interim_alloced, final_used;
   
   const typeinfo *typei;
+  char *query_dgram;
+  int query_dglen;
   
-#error make sure all this is init'd properly
-#error make sure all this is freed properly
-  byte *querymsg;
-  int querylen;
+  vbuf vb;
+  /* General-purpose messing-about buffer.
+   * Wherever a `big' interface is crossed, this may be corrupted/changed
+   * unless otherwise specified.
+   */
+
+  adns_answer *answer;
+  /* This is allocated when a query is submitted, to avoid being unable
+   * to relate errors to queries if we run out of memory.  During
+   * query processing status, rrs is 0.  cname is set if
+   * we found a cname (this corresponds to cname_dgram in the query
+   * structure).  type is set from the word go.  nrrs and rrs
+   * are set together, when we find how many rrs there are.
+   */
   
-  vbuf ansbuf; /* Used for answer RRs */
-  char *cname_str; 
   byte *cname_dgram;
   int cname_dglen, cname_begin;
   
@@ -100,22 +128,20 @@ struct adns__query {
   unsigned long udpsent, tcpfailed; /* bitmap indexed by server */
   struct timeval timeout;
   qcontext context;
-  char owner[1];
-  /* After the owner name and nul comes the query message, pointed to by querymsg */
 
   /* Possible states:
    *
-   *  state   Queue   child  id   ansbuf    nextudpserver  sentudp     failedtcp
-   *
-   *  udp     NONE    null   >=0  null      0              zero        zero
-   *  udp     timew   null   >=0  null      any            nonzero     zero
-   *  udp     NONE    null   >=0  null      any            nonzero     zero
-   *
-   *  tcpwait timew   null   >=0  null      irrelevant     zero        any
-   *  tcpsent timew   null   >=0  null      irrelevant     zero        any
-   *
-   *  child   childw  set    >=0  partial   irrelevant     irrelevant  irrelevant
-   *  done    output  null   -1   set/null  irrelevant     irrelevant  irrelevant
+   *  state   Queue   child  id   nextudpserver  sentudp     failedtcp
+   *				  
+   *  udp     NONE    null   >=0  0              zero        zero
+   *  udp     timew   null   >=0  any            nonzero     zero
+   *  udp     NONE    null   >=0  any            nonzero     zero
+   *				  
+   *  tcpwait timew   null   >=0  irrelevant     zero        any
+   *  tcpsent timew   null   >=0  irrelevant     zero        any
+   *				  
+   *  child   childw  set    >=0  irrelevant     irrelevant  irrelevant
+   *  done    output  null   -1   irrelevant     irrelevant  irrelevant
    *
    *			      +------------------------+
    *             START -----> |      udp/NONE          |
@@ -161,7 +187,7 @@ struct adns__state {
   FILE *diagfile;
   struct { adns_query head, tail; } timew, childw, output;
   int nextid, udpsocket, tcpsocket;
-  vbuf rqbuf, tcpsend, tcprecv;
+  vbuf tcpsend, tcprecv;
   int nservers, tcpserver;
   enum adns__tcpstate { server_disconnected, server_connecting, server_ok } tcpstate;
   struct timeval tcptimeout;
@@ -188,14 +214,46 @@ int adns__vbuf_append(vbuf *vb, const byte *data, int len);
 /* 1=>success, 0=>realloc failed */
 void adns__vbuf_appendq(vbuf *vb, const byte *data, int len);
 void adns__vbuf_init(vbuf *vb);
+void adns__vbuf_free(vbuf *vb);
 
 int adns__setnonblock(adns_state ads, int fd); /* => errno value */
 
 /* From submit.c: */
 
-void adns__query_nomem(adns_state ads, adns_query qu);
-void adns__query_finish(adns_state ads, adns_query qu, adns_status stat);
-void adns__query_fail(adns_state ads, adns_query qu, adns_status stat);
+int adns__internal_submit(adns_state ads, adns_query *query_r,
+			  adns_rrtype type, char *query_dgram, int query_len,
+			  adns_queryflags flags, struct timeval now,
+			  adns_status failstat, const qcontext *ctx);
+/* Submits a query (for internal use, called during external submits).
+ *
+ * The new query is returned in *query_r, or we return adns_s_nomemory.
+ *
+ * The query datagram should already have been assembled; memory for it
+ * is taken over by this routine whether it succeeds or fails.
+ *
+ * If failstat is nonzero then if we are successful in creating the query
+ * it is immediately failed with code failstat (but _submit still succeds).
+ *
+ * ctx is copied byte-for-byte into the query.
+ */
+
+void *adns__alloc_interim(adns_query qu, size_t sz);
+/* Allocates some memory, and records which query it came from
+ * and how much there was.
+ *
+ * If an error occurs in the query, all its memory is simply freed.
+ *
+ * If the query succeeds, one large buffer will be made which is
+ * big enough for all these allocations, and then adns__alloc_final
+ * will get memory from this buffer.
+ *
+ * _alloc_interim can fail, in which case it will fail the query too,
+ * so nothing more need be done with it.
+ */
+
+void *adns__alloc_final(adns_query qu, size_t sz);
+/* Cannot fail.
+ */
 
 /* From query.c: */
 
@@ -203,6 +261,9 @@ void adns__query_udp(adns_state ads, adns_query qu, struct timeval now);
 void adns__query_tcp(adns_state ads, adns_query qu, struct timeval now);
 adns_status adns__mkquery(adns_state ads, const char *owner, int ol, int id,
 			  const typeinfo *typei, adns_queryflags flags);
+
+void adns__query_ok(adns_state ads, adns_query qu);
+void adns__query_fail(adns_state ads, adns_query qu, adns_status stat);
 
 /* From reply.c: */
 
@@ -325,6 +386,10 @@ static inline int ctype_alpha(int c) {
 }
 
 /* Useful macros */
+
+#define MEM_ROUND(sz) \
+  (( ((sz)+sizeof(union maxalign)-1) / sizeof(union maxalign) ) \
+   * sizeof(union maxalign) )
 
 #define LIST_INIT(list) ((list).head= (list).tail= 0)
 

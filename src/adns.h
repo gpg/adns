@@ -146,8 +146,10 @@ typedef struct {
   adns_status status;
   char *cname; /* always NULL if query was for CNAME records */
   adns_rrtype type;
-  int nrrs;
+  int nrrs, rrsz;
   union {
+    void *untyped;
+    unsigned char *bytes;
     char *(*str);                  /* ns_raw, cname, ptr, ptr_raw, txt, <any>_mf */
     struct in_addr *inaddr;        /* a */
     adns_rr_dmaddr *dmaddr;        /* ns */

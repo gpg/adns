@@ -346,7 +346,7 @@ static int internal_check(adns_state ads,
     if (qu->id>=0) return EWOULDBLOCK;
   }
   LIST_UNLINK(ads->output,qu);
-#error copy answer    *answer= (adns_answer*)qu->ans.buf;
+  *answer= qu->answer;
   if (context_r) *context_r= qu->context.ext;
   free(qu);
   return 0;

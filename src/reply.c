@@ -16,8 +16,6 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
   adns_query qu, nqu;
   dns_rcode rcode;
   adns_status st;
-  vbuf vb;
-#error init and free vb properly
   
   if (dglen<DNS_HDRSIZE) {
     adns__diag(ads,serv,"received datagram too short for message header (%d)",dglen);
@@ -124,7 +122,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
     if (!ownermatched) {
       if (ads->iflags & adns_if_debug) {
 	adns__debug(ads,serv,qu,"ignoring RR with an unexpected owner %s",
-		    adns__diag_domain(ads,serv,&vb,qu->flags,
+		    adns__diag_domain(ads,serv,&qu->vb,qu->flags,
 				      dgram,dglen,rrstart,dglen));
       }
       continue;
@@ -135,11 +133,12 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
 	qu->cname_begin= rdstart;
 	qu->cname_dgram= dgram;
 	qu->cname_dglen= dglen;
-	st= adns__parse_domain(ads,serv,&vb,qu->flags,
+	st= adns__parse_domain(ads,serv,&qu->vb,qu->flags,
 			       dgram,dglen, &rdstart,rdstart+rdlength);
 	if (!vb.used) goto x_truncated;
 	if (st) { adns__query_fail(ads,qu,st); return; }
-	qu->cname_str= adns__vbuf_extractstring(&vb);
+	qu->answer->cname= adns__savestring(qu);
+	if (!qu->answer->cname) return;
 	/* If we find the answer section truncated after this point we restart
 	 * the query at the CNAME; if beforehand then we obviously have to use
 	 * TCP.  If there is no truncation we can use the whole answer if
@@ -147,7 +146,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
 	 */
       } else {
 	adns__debug(ads,serv,qu,"ignoring duplicate CNAME (%s, as well as %s)",
-		    adns__diag_domain(ads,serv,&vb,qu->flags,
+		    adns__diag_domain(ads,serv,&qu->vb,qu->flags,
 				      dgram,dglen, rdstart,rdstart+rdlength),
 		    qu->cname_str);
       }
@@ -217,15 +216,11 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
 
   /* Now, we have some RRs which we wanted. */
 
-  if (!adns__vbuf_ensure(&qu->ansbuf,qu->typei->rrsz*wantedrrs)) {
-    adns__query_fail(ads,qu,adns_s_nolocalmem);
-    return;
-  }
+  qu->ans->rrs= adns__alloc_interim(qu,qu->typei->rrsz*wantedrrs);
+  if (!qu->ans->rrs) return;
 
   cbyte= anstart;
-  currentrrs= 0;
   arstart= -1;
-  qu->ansbuf.used= 0;
   for (rri=0; rri<ancount; rri++) {
     if (qu->cname_dgram >= 0) {
       st= adns__findrr(ads,serv, dgram,dglen,&cbyte,
@@ -241,11 +236,10 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
 	rrtype != (qu->typei->type & adns__rrt_typemask) ||
 	!ownermatched)
       continue;
-    assert(currentrrs<wantedrrs);
-    qu->ansbuf.used += quj->typei->rrsz;
-    st= qu->typei->parse(ads,qu,serv,&vb,
+    assert(qu->ans->nrrs<wantedrrs);
+    st= qu->typei->parse(ads,qu,serv,
 			 dgram,dglen, &rdstart,rdstart+rdlength,
-			 (void*)(qu->ansbuf.buf+qu->ansbuf.used));
+			 qu->ans->rrs.bytes+qu->ans->nrrs*quj->typei->rrsz);
     if (st) { adns__query_fail(ads,qu,st); return; }
     if (rdstart==-1) goto x_truncated;
   }
@@ -267,9 +261,7 @@ x_truncated:
     return;
   }
   if (qu->cname_dgram) { cname_recurse(ads,qu,adns_qf_usevc); return; }
-  ans= (adns_answer*)qu->ans.buf;
-  ans->nrrs= 0;
-  qu->ans.used= sizeof(adns_answer);
+  adns__reset_cnameonly(ads,qu);
   qu->flags |= adns_qf_usevc;
   adns__query_udp(ads,qu,now);
 }

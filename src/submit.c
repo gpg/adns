@@ -8,21 +8,50 @@
 
 #include "internal.h"
 
-static adns_query allocquery(adns_state ads, const char *owner, int ol,
-			     int id, const typeinfo *typei,
-			     adns_queryflags flags, const qcontext *ctx) {
-  /* Query message used is the one assembled in ads->rqbuf */
+int adns__internal_submit(adns_state ads, adns_query *query_r,
+			  adns_rrtype type, char *query_dgram, int query_len,
+			  adns_queryflags flags, struct timeval now,
+			  adns_status failstat, const qcontext *ctx) {
+  /* Submits a query (for internal use, called during external submits).
+   *
+   * The new query is returned in *query_r, or we return adns_s_nomemory.
+   *
+   * The query datagram should already have been assembled; memory for it
+   * is taken over by this routine whether it succeeds or fails.
+   *
+   * If failstat is nonzero then if we are successful in creating the query
+   * it is immediately failed with code failstat (but _submit still succeds).
+   *
+   * ctx is copied byte-for-byte into the query.
+   */
   adns_query qu;
-  adns_answer *ans;
+  adns_status stat;
+  int ol, id, r;
+  struct timeval now;
+  const typeinfo *typei;
+  adns_query qu;
 
-  qu= malloc(sizeof(*qu)+ol+1+ads->rqbuf.used); if (!qu) return 0;
-  adns__vbuf_init(&qu->ansbuf);
-  qu->cname= 0;
+  id= ads->nextid++;
+
+  qu= malloc(sizeof(*qu)); if (!qu) goto x_nomemory;
+  qu->answer= malloc(sizeof(*qu->answer)); if (!qu->answer) goto x_freequ_nomemory;
+
   qu->state= query_udp;
-  qu->next= qu->back= qu->parent= 0;
+  qu->back= qu->next= qu->parent= 0;
   LIST_INIT(qu->children);
   qu->siblings.next= qu->siblings.back= 0;
-  qu->typei= typei;
+  qu->allocations= 0;
+  qu->interim_allocd= 0;
+  qu->perm_used= 0;
+
+  qu->typei= adns__findtype(type);
+  qu->query_dgram= query_dgram;
+  qu->query_dglen= query_dglen;
+  adns__vbuf_init(&qu->vb);
+
+  qu->cname_dgram= 0;
+  qu->cname_dglen= qu->cname_begin= 0;
+  
   qu->id= id;
   qu->flags= flags;
   qu->udpretries= 0;
@@ -31,22 +60,36 @@ static adns_query allocquery(adns_state ads, const char *owner, int ol,
   timerclear(&qu->timeout);
   memcpy(&qu->context,ctx,sizeof(qu->context));
   memcpy(qu->owner,owner,ol); qu->owner[ol]= 0;
-  qu->querymsg= qu->owner+ol+1;
-  memcpy(qu->owner+ol+1,ads->rqbuf.buf,ads->rqbuf.used);
-  qu->querylen= ads->rqbuf.used;
-  
-  return qu;
-}
 
-static int failsubmit(adns_state ads, const qcontext *ctx, adns_query *query_r,
-		      adns_queryflags flags, int id, adns_status stat) {
-  adns_query qu;
+  qu->answer->status= adns_s_ok;
+  qu->answer->cname= 0;
+  qu->answer->type= type;
+  qu->answer->nrrs= 0;
+  qu->answer->rrs= 0;
 
-  ads->rqbuf.used= 0;
-  qu= allocquery(ads,0,0,id,0,flags,ctx); if (!qu) return errno;
-  adns__query_fail(ads,qu,stat);
   *query_r= qu;
+
+  if (qu->typei) {
+    qu->answer->rrsz= qu->rrsz;
+  } else {
+    qu->answer->rrsz= -1;
+    failstat= adns_s_notimplemented;
+  }
+  if (failstat) {
+    adns__query_fail(ads,qu,failstat);
+    return;
+  }
+
+  adns__query_udp(ads,qu,now);
+  adns__autosys(ads,now);
+
   return 0;
+
+ x_freequ_nomemory:
+  free(qu);
+ x_nomemory:
+  free(query_dgram);
+  return adns_s_nomemory;
 }
 
 int adns_submit(adns_state ads,
@@ -55,20 +98,10 @@ int adns_submit(adns_state ads,
 		adns_queryflags flags,
 		void *context,
 		adns_query *query_r) {
-  adns_query qu;
-  adns_status stat;
-  int ol, id, r;
   qcontext ctx;
-  struct timeval now;
-  const typeinfo *typei;
 
   ctx.ext= context;
-  id= ads->nextid++;
-
   r= gettimeofday(&now,0); if (r) return errno;
-
-  typei= adns__findtype(type);
-  if (!typei) return failsubmit(ads,context,query_r,flags,id,adns_s_notimplemented);
 
   ol= strlen(owner);
   if (ol<=1 || ol>DNS_MAXDOMAIN+1)
@@ -78,12 +111,7 @@ int adns_submit(adns_state ads,
   stat= adns__mkquery(ads,owner,ol,id,typei,flags);
   if (stat) return failsubmit(ads,context,query_r,flags,id,stat);
   
-  qu= allocquery(ads,owner,ol,id,typei,flags,&ctx); if (!qu) return errno;
-  adns__query_udp(ads,qu,now);
-  adns__autosys(ads,now);
-
-  *query_r= qu;
-  return 0;
+  adns__internal_submit(ads,type,flags,now,query_r
 }
 
 int adns_synchronous(adns_state ads,
@@ -106,4 +134,19 @@ int adns_synchronous(adns_state ads,
 
 void adns_cancel(adns_state ads, adns_query query) {
   abort(); /* fixme */
+}
+
+void *adns__alloc_interim(adns_state ads, adns_query qu, size_t sz) {
+  allocnode *an;
+
+  sz= MEM_ROUND(sz);
+  an= malloc(MEM_ROUND(MEM_ROUND(sizeof(*an)) + sz));
+  if (!an) {
+    adns__query_fail(ads,qu,adns_s_nolocalmem);
+    return 0;
+  }
+  qu->permalloclen += sz;
+  an->next= qu->allocations;
+  qu->allocations= an;
+  return (byte*)an + MEM_ROUND(sizeof(*an));
 }

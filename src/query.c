@@ -177,28 +177,39 @@ void adns__query_udp(adns_state ads, adns_query qu, struct timeval now) {
   LIST_LINK_TAIL(ads->timew,qu);
 }
 
-void adns__query_finish(adns_state ads, adns_query qu, adns_status stat) {
+static void adns__query_done(adns_state ads, adns_query qu) {
   adns_answer *ans;
-  byte *newbuf;
+  allocnode *an, *ann;
 
-  newbuf= realloc(qu->ans.buf,qu->ans.used);
-  if (newbuf) qu->ans.buf= newbuf;
-  ans= (adns_answer*)qu->ans.buf;
-  ans->status= stat;
-  ans->cname= qu->cnameoff<0 ? 0 : qu->ans.buf + qu->cnameoff;
-  ans->rrs.str= qu->rrsoff<0 ? 0 : (char **)(qu->ans.buf + qu->rrsoff);
+  qu->answer= ans= realloc(qu->answer,
+			   MEM_ROUND(MEM_ROUND(sizeof(*ans)) +
+				     qu->interim_allocd));
+  qu->final_used= MEM_ROUND(sizeof(*ans));
+
+  adns__makefinal_str(qu,&ans->cname);
+  if (ans->nrrs) {
+    adns__makefinal_block(qu,&ans->rrs.untyped,ans->rrsz*ans->nrrs);
+    for (i=0; i<ans->nrrs; i++)
+      qu->typei->makefinal(ads,qu,ans->rrs.bytes+ans->rrsz*i);
+  }
+
+  for (an= qu->allocations; an; an= ann) { ann= an->next; free(an); }
+
+  adns__vbuf_free(&qu->vb);
+  
   qu->id= -1;
   LIST_LINK_TAIL(ads->output,qu);
 }
 
+void adns__reset_cnameonly(adns_state ads, adns_query qu) {
+  qu->answer->nrrs= 0;
+  qu->answer->rrs= 0;
+  qu->permalloclen= qu->answer->cname ? MEM_ROUND(strlen(qu->answer->cname)+1) : 0;
+}
+
 void adns__query_fail(adns_state ads, adns_query qu, adns_status stat) {
-  adns_answer *ans;
-
-  qu->ans.used= sizeof(adns_answer);
-  qu->cnameoff= -1;
-  qu->rrsoff= -1;
-  ans= (adns_answer*)qu->ans.buf;
-  ans->nrrs= 0;
-
-  adns__query_finish(ads,qu,stat);
+  adns__reset_cnameonly(ads,qu);
+  qu->answer->status= stat;
+  qu->answer->type= qu->type;
+  adns__query_done(ads,qu,stat);
 }
