@@ -9,6 +9,11 @@ adns (0.4) unstable; urgency=low
   * Changed memory semantics of internal queries to fix bugs.
   * Restarting a TCP-using query doesn't abort.
   * Only accept a reply from the subset of servers we sent the query.
+  * Regression tests compile on systems without poll(2).
+  * Do not install adnstest_s.
+  * Ignore CNAME(s) in answer after RR(s) (and test).
+  * <adns.h> includes <sys/types.h>, <sys/time.h>, <unistd.h>.
+  * _submit returns ENOSYS, not adns_s_unknownquery; documented, tested.
 
  --
 

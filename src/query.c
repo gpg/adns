@@ -203,7 +203,7 @@ int adns_submit(adns_state ads,
   const char *p;
 
   typei= adns__findtype(type);
-  if (!typei) return adns_s_unknownrrtype;
+  if (!typei) return ENOSYS;
 
   r= gettimeofday(&now,0); if (r) goto x_errno;
   qu= query_alloc(ads,typei,flags,now); if (!qu) goto x_errno;

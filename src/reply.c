@@ -167,7 +167,14 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
       if (qu->flags & adns_qf_cname_forbid) {
 	adns__query_fail(qu,adns_s_prohibitedcname);
 	return;
-      } else if (!qu->cname_dgram) { /* Ignore second and subsequent CNAMEs */
+      } else if (qu->cname_dgram) { /* Ignore second and subsequent CNAME(s) */
+	adns__debug(ads,serv,qu,"ignoring duplicate CNAME (%s, as well as %s)",
+		    adns__diag_domain(ads,serv,qu, &qu->vb, dgram,dglen,rdstart),
+		    qu->answer->cname);
+      } else if (wantedrrs) { /* Ignore CNAME(s) after RR(s). */
+	adns__debug(ads,serv,qu,"ignoring CNAME (to %s) coexisting with RR",
+		    adns__diag_domain(ads,serv,qu, &qu->vb, dgram,dglen,rdstart));
+      } else {
 	qu->cname_begin= rdstart;
 	qu->cname_dglen= dglen;
 	st= adns__parse_domain(ads,serv,qu, &qu->vb,
@@ -190,10 +197,6 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
 	 * TCP.  If there is no truncation we can use the whole answer if
 	 * it contains the relevant info.
 	 */
-      } else {
-	adns__debug(ads,serv,qu,"ignoring duplicate CNAME (%s, as well as %s)",
-		    adns__diag_domain(ads,serv,qu, &qu->vb, dgram,dglen,rdstart),
-		    qu->answer->cname);
       }
     } else if (rrtype == (qu->typei->type & adns__rrt_typemask)) {
       wantedrrs++;
