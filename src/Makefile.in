@@ -21,22 +21,23 @@ WARNS=	-Wall -Wmissing-prototypes -Wwrite-strings -Wstrict-prototypes \
 	-Wcast-qual -Wpointer-arith
 WERROR=-Werror
 
-HCPPFLAGS:= $(foreach F,		\
-	gettimeofday select		\
-	socket fcntl connect close	\
-	sendto recvfrom read write	\
+HCPPFLAGS:= $(foreach F,			\
+	gettimeofday select			\
+	socket fcntl connect close		\
+	sendto recvfrom read write writev	\
 , -D$F=H$F)
 
 LIBOBJS=	types.o event.o query.o reply.o general.o setup.o transmit.o parse.o
 HARNLOBJS=	$(addsuffix _d.o, $(basename $(LIBOBJS)))
 ALLOBJS=	$(LIBOBJS) $(HARNLOBJS) dtest.o hrecord.o hplayback.o hcommon.o
+AUTOCSRCS=	harness.h hrecord.c hcommon.c
 
-TARGETS=	dtest hrecord
-# hplayback
+TARGETS=	dtest hplayback hrecord
 
 all:		$(TARGETS)
 
 hrecord:	dtest.o hrecord.o hcommon.o $(HARNLOBJS)
+hplayback:	dtest.o hplayback.o hcommon.o $(HARNLOBJS)
 
 dtest:		dtest.o $(LIBOBJS)
 
@@ -48,8 +49,10 @@ dtest:		dtest.o $(LIBOBJS)
 	sed -e 's/hm_comma/,/g; s/hm_squote/'\''/g; /^[	 ]*$$/d' <$@-a.new >$@-b.new
 	@mv -f $@-b.new $@; rm -f $@-a.new
 
+.PRECIOUS:	$(AUTOCSRCS)
+
 clean:
-		rm -f *.o harness.h hrecord.c hcommon.c
+		rm -f *.o 
 
 realclean:	clean
 		rm -f $(TARGETS) *~ ./#*# core *.orig *.rej

@@ -99,6 +99,7 @@ m4_define(`hm_create_hqcall_init',`
   } else {
     $'`2= 0;
   }')
+ m4_define(`hm_arg_addr_out',`Tmust("$1","*$'`2",*$'`2>=sizeof(struct sockaddr_in));')
 ')
 
 m4_define(`hm_create_realcall_args',`

@@ -1,5 +1,7 @@
 dtest
-hrecord
 harness.h
 hcommon.c
+hrecord
 hrecord.c
+hplayback
+hplayback.c

@@ -25,6 +25,7 @@ m4_include(hmacros.i4)
 
 #include <sys/time.h>
 #include <sys/socket.h>
+#include <sys/uio.h>
 #include <unistd.h>
 
 #include "internal.h"
@@ -34,6 +35,8 @@ m4_include(hmacros.i4)
 hm_create_proto_h
 m4_define(`hm_syscall', `int H$1(hm_args_massage($3,void));')
 m4_include(`hsyscalls.i4')
+
+int Hwritev(int fd, const struct iovec *vector, size_t count);
 
 /* There is a Q function (Q for Question) for each such syscall;
  * it constructs a string representing the call, and calls Q_str
@@ -66,8 +69,6 @@ void Tvba(const char *str);
 /* Shared globals */
 
 extern vbuf vb;
-extern FILE *Toutputfile;
-
 extern const struct Terrno { const char *n; int v; } Terrnos[];
   
 #endif

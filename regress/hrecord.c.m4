@@ -24,11 +24,23 @@ m4_include(hmacros.i4)
 #include <string.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <stdlib.h>
 
 #include "harness.h"
 
 static int begin_set;
 static struct timeval begin;
+static FILE *Toutputfile;
+
+void Tensureoutputfile(void) {
+  const char *fdstr;
+  int fd;
+
+  Toutputfile= stdout;
+  fdstr= getenv("ADNS_TEST_OUT_FD"); if (!fdstr) return;
+  fd= atoi(fdstr);
+  Toutputfile= fdopen(fd,"a"); if (!Toutputfile) Tfailed("fdopen ADNS_TEST_OUT_FD");
+}
 
 void Q_vb(void) {
   if (!adns__vbuf_append(&vb,"",1)) Tnomem();
@@ -68,11 +80,11 @@ int H$1(hm_args_massage($3,void)) {
  m4_define(`hm_rv_succfail',`
   if (r) { Tvberrno(e); goto x_error; }
   Tvba("OK");')
- m4_define(`hm_rv_must',`Tmust("$1","return",!r);')
+ m4_define(`hm_rv_must',`Tmust("$1","return",!r); Tvba("OK");')
  m4_define(`hm_rv_len',`
   if (r==-1) { Tvberrno(e); goto x_error; }
   Tmust("$1","return",r<=$'`1);
-  Tvbf("%d",r);')
+  Tvba("OK");')
  $2
 
  hm_create_nothing

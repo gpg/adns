@@ -48,8 +48,17 @@ const struct Terrno Terrnos[]= {
   {  0,                          0                            }
 };
 
+static vbuf vbw;
 
-
+int Hwritev(int fd, const struct iovec *vector, size_t count) {
+  size_t i;
+  
+  vbw.used= 0;
+  for (i=0; i<count; i++, vector++) {
+    if (!adns__vbuf_append(&vbw,vector->iov_base,vector->iov_len)) Tnomem();
+  }
+  return Hwrite(fd,vbw.buf,vbw.used);
+}
 
 m4_define(`hm_syscall', `
  hm_create_proto_q
@@ -75,10 +84,14 @@ void Q$1(hm_args_massage($3,void)) {
   } else {
    Tvba(" $'`1=F_GETFL");
   }')
- m4_define(`hm_arg_addr_in', `Tvbaddr($'`1,$'`2);')
- m4_define(`hm_arg_bytes_in', `Tvbbytes($'`2,$'`4);')
+ m4_define(`hm_arg_addr_in', `Tvba(" $'`1="); Tvbaddr($'`1,$'`2);')
+ m4_define(`hm_arg_bytes_in', `')
  m4_define(`hm_arg_bytes_out', `Tvbf(" $'`4=%lu",(unsigned long)$'`4);')
  m4_define(`hm_arg_addr_out', `Tvbf(" *$'`2=%d",$'`2);')
+  $3
+
+ hm_create_nothing
+ m4_define(`hm_arg_bytes_in', `Tvbbytes($'`2,$'`4);')
   $3
 
   Q_vb();
@@ -106,6 +119,7 @@ void Tvbbytes(const void *buf, int len) {
     else if (!(i&3)) Tvba(" ");
     Tvbf("%02x",*bp);
   }
+  Tvba(".");
 }
 
 void Tvbfdset(int max, const fd_set *fds) {
@@ -168,9 +182,4 @@ void Tnomem(void) {
 
 void Toutputerr(void) {
   Tfailed("write error on test harness output");
-}
-
-void Tensureoutputfile(void) {
-  /* fixme: allow sending it elsewhere */
-  Toutputfile= stdout;
 }
