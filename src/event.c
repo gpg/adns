@@ -183,7 +183,12 @@ void adns__timeouts(adns_state ads, int act,
       if (!tv_io) continue;
       inter_maxtoabs(tv_io,tvbuf,now,qu->timeout);
     } else {
-      if (!act) continue;
+      if (!act) {
+	tvbuf.tv_sec= 0;
+	tvbuf.tv_usec= 0;
+	*tv_io= &tvbuf;
+	return;
+      }
       LIST_UNLINK(ads->timew,qu);
       if (qu->state != query_tosend) {
 	adns__query_fail(qu,adns_s_timeout);
