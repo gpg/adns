@@ -3,6 +3,8 @@
 #ifndef ADNS_INTERNAL_H_INCLUDED
 #define ADNS_INTERNAL_H_INCLUDED
 
+#include <sys/time.h>
+
 #include "adns.h"
 
 #define MAXSERVERS 5
@@ -14,7 +16,7 @@ struct adns__query {
   adns_query next, back;
   adns_query parent, child;
   adns_rrtype type;
-  stuct adns_answer *answer;
+  struct adns_answer *answer;
   int flags, udpretries, server;
   struct timeval timeout;
   void *context;
@@ -22,7 +24,8 @@ struct adns__query {
 };
 
 struct adns__state {
-  struct { adns_query head, tail } input, timew, childw, output;
+  adns_initflags iflags;
+  struct { adns_query head, tail; } input, timew, childw, output;
   int udpsocket;
   int qbufavail, tcpbufavail, tcpbufused, tcpbufdone;
   char *qbuf, *tcpbuf;
@@ -31,7 +34,7 @@ struct adns__state {
     struct in_addr addr;
     int tcpsocket;
     struct timeval timeout;
-    struct { adns_query head, tail } connw;
+    struct { adns_query head, tail; } connw;
   } servers[MAXSERVERS];
 };
 
