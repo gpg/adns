@@ -25,17 +25,17 @@ struct adns__query {
   int querylen;
   char owner[1];
   /* Possible states:
-   *  Queue   child  answer   nextserver  sentudp             senttcp
-   *  input   null   null     0           all bits zero       all bits zero
-   *  timew   null   null     any         at least 1 bit set  any
-   *  childw  set    partial  any         any                 any
-   *  output  null   set      any         any                 any
+   *  Queue   child  id   answer    nextserver  sentudp             senttcp
+   *  tosend  null   >=0  null      any         any                 any
+   *  timew   null   >=0  null      any         at least 1 bit set  any
+   *  childw  set    >=0  partial   any         any                 any
+   *  output  null   -1   set/null  any         any                 any
    */
 };
 
 struct adns__state {
   adns_initflags iflags;
-  struct { adns_query head, tail; } input, timew, childw, output;
+  struct { adns_query head, tail; } tosend, timew, childw, output;
   int nextid, udpsocket;
   int qbufavail, tcpbufavail, tcpbufused, tcpbufdone;
   unsigned char *qbuf, *tcpbuf;

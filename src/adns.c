@@ -218,7 +218,7 @@ int adns_init(adns_state *ads_r, adns_initflags flags) {
   int r;
   
   ads= malloc(sizeof(*ads)); if (!ads) return errno;
-  ads->input.head= ads->input.tail= 0;
+  ads->tosend.head= ads->tosend.tail= 0;
   ads->timew.head= ads->timew.tail= 0;
   ads->childw.head= ads->childw.tail= 0;
   ads->output.head= ads->output.tail= 0;
@@ -281,7 +281,8 @@ static void query_fail(adns_state ads, adns_query qu, adns_status stat) {
     ans->nrrs= 0;
   }
   qu->answer= ans;
-  LIST_LINK_TAIL(ads->input,qu);
+  qu->id= -1;
+  LIST_LINK_TAIL(ads->output,qu);
 }
 
 int adns_finish(adns_state ads) {
@@ -311,21 +312,34 @@ int adns_callback(adns_state ads, int maxfd,
 
 static int internal_check(adns_state ads,
 			  adns_query *query_io,
-			  adns_answer *answer,
-			  void *context_r) {
-  abort(); /* FIXME */
+			  adns_answer **answer,
+			  void **context_r) {
+  adns_query qu;
+
+  qu= *query_io;
+  if (!qu) {
+    if (!ads->output.head) return EWOULDBLOCK;
+    qu= ads->output.head;
+  } else {
+    if (qu->id>=0) return EWOULDBLOCK;
+  }
+  LIST_UNLINK(ads->output,qu);
+  *answer= qu->answer;
+  if (context_r) *context_r= qu->context;
+  free(qu);
+  return 0;
 }
 
 int adns_wait(adns_state ads,
 	      adns_query *query_io,
-	      adns_answer *answer,
-	      void *context_r) {
+	      adns_answer **answer_r,
+	      void **context_r) {
   int r, maxfd, rsel, rcb;
   fd_set readfds, writefds, exceptfds;
   struct timeval tvbuf, *tvp;
   
   for (;;) {
-    r= internal_check(ads,query_io,answer,context_r);
+    r= internal_check(ads,query_io,answer_r,context_r);
     if (r && r != EWOULDBLOCK) return r;
     FD_ZERO(&readfds); FD_ZERO(&writefds); FD_ZERO(&exceptfds);
     maxfd= 0; tvp= 0;
@@ -339,17 +353,17 @@ int adns_wait(adns_state ads,
 
 int adns_check(adns_state ads,
 	       adns_query *query_io,
-	       adns_answer *answer,
-	       void *context_r) {
+	       adns_answer **answer_r,
+	       void **context_r) {
   autosys(ads);
-  return internal_check(ads,query_io,answer,context_r);
+  return internal_check(ads,query_io,answer_r,context_r);
 }
 
 int adns_synchronous(adns_state ads,
 		     const char *owner,
 		     adns_rrtype type,
 		     adns_queryflags flags,
-		     adns_answer *answer) {
+		     adns_answer **answer_r) {
   adns_query qu;
   int r;
   
@@ -357,7 +371,7 @@ int adns_synchronous(adns_state ads,
   if (r) return r;
 
   do {
-    r= adns_wait(ads,&qu,answer,0);
+    r= adns_wait(ads,&qu,answer_r,0);
   } while (r==EINTR);
   if (r) adns_cancel(ads,qu);
   return r;
@@ -465,6 +479,16 @@ static int failsubmit(adns_state ads, void *context, adns_query *query_r,
   return 0;
 }
 
+static void trysendudp(adns_state ads, adns_query qu) {
+  struct sockaddr_in servaddr;
+  /* FIXME: _f_usevc not implemented */
+  memset(&servaddr,0,sizeof(servaddr));
+  servaddr.sin_family= AF_INET;
+  servaddr.sin_addr= ads->servers[qu->nextserver].addr;
+  servaddr.sin_port= htons(53);
+  sendto(ads->udpsocket,qu->querymsg,qu->querylen,0,&servaddr,sizeof(servaddr));
+}
+
 int adns_submit(adns_state ads,
 		const char *owner,
 		adns_rrtype type,
@@ -487,7 +511,8 @@ int adns_submit(adns_state ads,
 
   qu= allocquery(ads,owner,ol,qml,id,type,flags,context); if (!qu) return errno;
 
-  LIST_LINK_TAIL(ads->input,qu);
+  LIST_LINK_TAIL(ads->tosend,qu);
+  trysendudp(ads,qu);
   autosys(ads);
 
   *query_r= qu;

@@ -68,13 +68,14 @@ typedef enum {
   adns_s_max_tempfail= 99,
   adns_s_nxdomain,
   adns_s_norecord,
+  adns_s_inconsistent, /* for bad PTR */
   adns_s_invaliddomain
 } adns_status;
 
 /* In dereferenced answers, multiple addresses show up as multiple
- * answers with all the dm pointers being the same.  If no
- * address is available (permanent failure) then INADDR_NONE is
- * used.
+ * answers with all the dm pointers being the same, with ref= adns_s_ok.
+ * If no address is available then INADDR_NONE is used, and ref indicates
+ * the error.
  */
 
 typedef struct {
@@ -83,16 +84,19 @@ typedef struct {
   adns_rrtype type;
   int nrrs;
   union {
-    struct in_addr inaddr[1];                                          /* a */
-    char (*str)[1];                     /* ns_raw, cname, ptr, ptr_raw, txt */
-    struct { char *dm; struct in_addr addr; } dmaddr;                 /* ns */
-    struct { char *a, *b; } strpair[1];                /* hinfo, rp, rp_raw */
-    struct { int pref; char *dm; struct in_addr addr; } intdmaddr[1]; /* mx */
-    struct { int pref; char *str; } intstr[1]; /* mx_raw */
+    struct in_addr inaddr[1];                                                    /* a */
+    char (*str)[1];                               /* ns_raw, cname, ptr, ptr_raw, txt */
+    struct { char *dm; adns_status ref; struct in_addr addr; } dmaddr;          /* ns */
+    struct { char *a, *b; } strpair[1];                          /* hinfo, rp, rp_raw */
+    struct {
+      int pref; char *dm;
+      adns_status ref; struct in_addr addr;
+    } intdmaddr[1];                                                             /* mx */
+    struct { int pref; char *str; } intstr[1];                              /* mx_raw */
     struct {
       char *ns0, *rp;
       unsigned long serial, refresh, retry, expire, minimum;
-    } soa[1]; /* soa, soa_raw */
+    } soa[1];                                                         /* soa, soa_raw */
     /* NULL is empty */
   } rrs;
 } adns_answer;
@@ -125,7 +129,7 @@ int adns_synchronous(adns_state ads,
 		     const char *owner,
 		     adns_rrtype type,
 		     adns_queryflags flags,
-		     adns_answer *answer);
+		     adns_answer **answer_r);
 /* Will not return EINTR. */
 
 /* NB: if you set adns_if_noautosys then _submit and _check do not
@@ -142,13 +146,13 @@ int adns_submit(adns_state ads,
 
 int adns_check(adns_state ads,
 	       adns_query *query_io,
-	       adns_answer *answer,
-	       void *context_r);
+	       adns_answer **answer_r,
+	       void **context_r);
 
 int adns_wait(adns_state ads,
 	      adns_query *query_io,
-	      adns_answer *answer,
-	      void *context_r);
+	      adns_answer **answer_r,
+	      void **context_r);
 /* Might return EINTR - if so, try again */
 
 void adns_cancel(adns_state ads, adns_query query);
