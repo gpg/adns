@@ -1398,14 +1398,14 @@ fi
 
 
 
-SHLIBCC='$(CC) $(CFLAGS) -fpic'
-MKSHLIB_1='$(CC) $(LDFLAGS) -shared -Wxl,soname=$(SONAME) -o'
-MKSHLIB_2=''
-MKSHLIB_3='-lc'
-
 SHLIBFORLINK='libadns.so'
 SHLIBSONAME='$(SHLIBFORLINK).$(MAJOR)'
 SHLIBFILE='$(SHLIBSONAME).$(MINOR)'
+
+SHLIBCC='$(CC) $(CFLAGS) -fpic'
+MKSHLIB_1='$(CC) $(LDFLAGS) -shared -Wl,-soname=$(SHLIBSONAME) -o'
+MKSHLIB_2=''
+MKSHLIB_3='-lc'
 
 trap '' 1 2 15
 cat > confcache <<\EOF
