@@ -25,6 +25,7 @@ The following work, but only with --disable-dynamic:
    1.0		IRIX 6.5 *not* with GCC [1], [2]
    1.0		AIX 4.1.5
    1.0		HP-UX 10.20, 11.00
+   1.1          Darwin (kernel 7.5.1)
 Later versions of the same OS should work too.  Usually entries in
 this table mean adns passes its own regression test, when compiled
 with GCC, and appears to install and run correctly.  If you have more
