@@ -8,6 +8,7 @@ adns (0.6) unstable; urgency=high
   * adnshost prints somewhat better messages about some wrong usages.
   * Include stdlib.h in adnshost.h.
   * adnslogres: parsing and error checking improved (Tony Finch).
+  * Regresion tests can cope with zero-length reads.
 
   General improvements
   * New adns_if_logpid option (functionality suggested by Tony Finch).

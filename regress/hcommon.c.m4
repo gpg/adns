@@ -131,7 +131,7 @@ void Tvbbytes(const void *buf, int len) {
   const byte *bp;
   int i;
 
-  if (!len) { Tvba(" empty"); return; }
+  if (!len) { Tvba("\n     ."); return; }
   for (i=0, bp=buf; i<len; i++, bp++) {
     if (!(i&31)) Tvba("\n     ");
     else if (!(i&3)) Tvba(" ");
