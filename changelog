@@ -5,6 +5,7 @@ adns (1.2); urgency=medium
   * Clarified GPL-vs-LGPL: a bit less hostile and a bit more mercenary.
   * Allow `;'-comments in resolv.conf (report from Colin Charles).    
   * Added a TODO list item.
+  * Add .PHONY: install to Makefile, to help people with demented fs's.
 
  --
 

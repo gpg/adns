@@ -75,3 +75,5 @@ README:			README.html
 
 TAGS info dvi:
 	# do nothing
+
+.PHONY: install #people with case-insensitive filesystems lose otherwise!
