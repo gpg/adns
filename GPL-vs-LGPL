@@ -1,10 +1,10 @@
-NB that NO VERSIONS of this file have been released, and I do not
-intend yet to publish this version.  If you get an old version of this
-file from my CVS repository definitely do not intend the licence
-exceptions in it to apply - these too were drafts, as you should know
-if you know what retreiving old CVS versions means !
+NB that NO VERSIONS of this file from this branch have been released,
+and I do not intend yet to publish this version.  If you get an old
+version of this file from my CVS repository definitely do not intend
+the licence exceptions in it to apply - these too were drafts, as you
+should know if you know what retreiving old CVS versions means !
 
-  - Ian Jackson, 2nd March 2000.
+  - Ian Jackson, 9th March 2004.
 
 DRAFT - DRAFT - DRAFT - DRAFT - DRAFT - DRAFT - DRAFT - DRAFT - DRAFT
 
@@ -21,34 +21,35 @@ Typically there are two or three kinds of situation where people make
 this request: the first is where someone is developing a proprietary
 program and wishes to make use of adns but doesn't wish to make their
 program free software.  The second case is where a free software
-project is currently using an MIT-like licence or the LGPL and fear
-`GPL infection'.  The third case, which often overlaps with the
-second, is where another free software project currently using a
-GPL-incompatible licence, wishes to use adns.
+project is currently using an MIT-like licence and fear `GPL
+infection'.  The third case, which often overlaps with the second, is
+where another free software project currently using a GPL-incompatible
+licence, wishes to use adns.
 
 
 1. Proprietary applications of adns
 -----------------------------------
 
-So, let me get this straight.  You're writing a proprietary
-program, by which I mean that you will not be distributing source code
-and not allowing users to modify and share your software; most likely
-you are doing this for your own (personal or corporate) financial
-gain.
+This section applies if you are developing a proprietary program, by
+which I mean that you will not be distributing source code and not
+allowing users to modify and share your software; in most cases you
+will be doing this for (personal or corporate) financial gain.
 
-However, you want to take advantage of adns, software which I have
-spent my time and effort on, and which I release as free software so
-that everyone can improve, share and use it.
+In these cases I may be prepared to issue you a special `LGPL' for
+adns (ie, allow you to use adns in your application according to the
+terms of the LGPL).  I will of course expect a significant licensing
+fee.
 
-Don't you think that is a little hypocritical ?  I'm sorry, but I
-don't want you to just take my nice convenient software, without
-giving something back to the free software community or giving the
-same rights to your users as I do to you.
+If you are interested I would be happy to negotiate with you.  Please
+contact me with your serious initial offer, or if alternatively we can
+first discuss your detailed requirements.
 
-If you really aren't the nasty kind of person I've described here, for
-example if you have a good reason other than your own selfishness for
-wanting to restrict distribution of your program, then perhaps you
-should contact me to discuss it.
+The fee for proprietary applications of adns without prior approval is
+US$1,000,000 per annum (or part thereof), per proprietary product, per
+100,000 installed systems (or part thereof), plus any administration,
+collection and legal fees required to recover the licence fee.  Of
+course, this does not apply to commercial Free software applications
+whose use of adns is compatible with the GNU GPL v2.
 
 
 2. GPL-avoiding projects (MIT licence, et al)
@@ -57,53 +58,39 @@ should contact me to discuss it.
 Some free software projects prefer to avoid the GPL and other licences
 which force the software always to be free.  Instead they use
 something like the MIT X licence, which allows proprietary versions of
-their software, or the in the case of some free libraries, the LGPL,
-which allows proprietary applications.  I have to say that I think
-these people are misguided, but that doesn't mean that they don't have
-a perfect right to.
+their software.  I have to say that I don't understand why they do
+this, and think they are misguided, but that doesn't mean that they
+don't have a perfect right to.
 
 Some of these people think that merely writing to an interface
 provided by GPL'd software will cause their program to become GPL'd
 too, even if they don't distribute the GPL'd software.  I don't think
 this is the case.  I'm perfectly happy for non-GPL'd software to refer
-to adns in its source code.  However, I think that exectuables (or
-compiled libraries) which contain or are dynamically linked against
-adns must be GPL'd; likewise executable programs (whether compiled or
-in an interpreted language) which require utilities from adns to
-function properly must be GPL'd.
+to adns in its source code or executables (eg, dynamic linking).
+However, if you distribute adns yourself then whether a program which
+uses it needs also to be GPL'd depends on the interpretation of the
+`work as a whole' and `mere aggregation' parts of the GPL.
 
-So, you can distribute your non-GPL'd program source which needs adns
-to compile, but people who wish to distribute binaries must do so
-under the terms of the GNU GPL.  This may make sense for some
-GPL-avoiding free software projects; people can still make proprietary
-programs from your code, provided that they make some provision to
-replace adns with something whose copyright allows proprietary
-versions.
+Whether you are distributing a `work as a whole' might depend on many
+things, but they key one to me is what the appearance is to a user.
+If the user knows that they are getting a collection of software
+rather than a single product, then it's probably an aggregation which
+works together.  So, you can distribute both your (i) non-GPLd program
+source and/or binaries and (ii) adns source code or even binaries
+(provided the adns source is available as per the GPL), eg from your
+website, provided the user can tell that these are separate works and
+can tell which parts are which.
 
-However, this doesn't make much sense for the authors of LGPL'd
-libraries.  All I can say to them is to ask which is more important:
-that their library be well-constructed and use all the best technology
-available as free software, or whether it is worth degrading quality
-of their library in order to allow proprietary programs to use it !
-
-To help the case of LGPL'd libraries for which adns is not a vital
-component - for example, a library which provides access to other
-libraries so that programs which use it need only use certain parts,
-I have release adns.h (just the public header file) under the LGPL as
-well as the GPL.  See the copyright notice in adns.h for details.
-Note that this will not help you if it adns is essential to the
-functioning of your library, because all programs using your library
-must link against both your library and adns and so must be GPL'd.
-
-
-For some information and views from the Free Software Foundation on
-free software licensing, visit:
-
- Various licenses and comments about them
-  at http://www.fsf.org/philosophy/license-list.html
-
- Why you shouldn't use the Library GPL for your next library
-  at http://www.fsf.org/philosophy/why-not-lgpl.html
+But, if you package your program and adns together so that the user is
+no longer aware of adns as a separate work, then I think you are
+distributing a `work as a whole', and the whole work including adns
+and your software which depends on it must be GPL'd.  This is of
+course not a problem if your non-GPL licence is GPL-compatible (see
+the next section): it just means that _when the whole lot is shipped
+together as one work_ it is covered by the GPL.  People who wish to
+make proprietary works based on just your code can do so, provided
+they (or you) arrange for something to fill the hole left by the lack
+of adns.
 
 
 3. GPL-incompatible free software licences
@@ -123,9 +110,319 @@ contact me at <adns-maint@chiark.greenend.org.uk> with the full text
 of the GPL-incompatible licence.  However, I would prefer it if you
 could use a GPL-compatible licence for your project instead.
 
---- Ian Jackson ...
+There are a couple of common extra restrictions, and I make some
+specific extensions to my licence for adns below.
 
-DRAFT - DRAFT - DRAFT - DRAFT - DRAFT - DRAFT - DRAFT - DRAFT - DRAFT
+
+3.1. BSD advertising clause, endorsement restriction, etc.
+
+The most notable and common extra restriction found in free software
+licences is the `obnoxious BSD advertising clause' (see Richard
+Stallman's article on the subject, available from www.gnu.org) and the
+endorsement restriction.
+
+The problem with the advertising clause isn't that the sentence
+required, referring the the Regents of the UC Berkeley, is awkward.
+The problem is that if everyone contributing to a large project gets
+such a mention the number of sentences required becomes very large;
+however, it is unfair for some people to get credit and others not to.
+
+I disapprove of these clause, but I recognise that it may be difficult
+for some people to get them removed from particular programs.  The
+other clauses are also arguable.
+
+
+3.2. `Hosting service' restriction (eg, Affero GPL)
+
+The additional restriction in the AGPL v1 (section 2d) seems
+reasonable to me, in the circumstances.
+
+
+3.3. Licence extension
+
+So, I hereby make an extension to my licence for adns (`the Original
+Work' in the text below).
+
+
+ LICENCE DEROGATION
+ ------------------
+
+ (A) Introduction:
+
+  (i)    The GNU GPL version 2, section 2b, and the later parts of
+	 section 2, require that certain works be licenced to all
+	 third parties under the terms of the GPL.
+
+  (ii)	 As special relaxations of this requirement, described in
+	 detail below, the terms of this onward licence to third
+	 parties need not be (though they may be) exactly the terms of
+	 the GPLv2.
+
+ (B) Preconditions:
+
+  (i)    There is a work (the `Original Work') which is licensed under
+         the GNU GPL v2.
+
+  (ii)   There is a work (the `GPL'd Work'), either the same work as
+         the Original Work, or derived work of the Original Work,
+         which is licensed uner the GNU GPL v2.
+
+  (iii)  All of the copyright holders of the GPL'd Work state that
+         this Licence Derogation is to apply, and what the Original
+	 Work is.  (They may limit the Derogation to only some of the
+         Allowable Extra Provisions.)
+
+  (iv)   The GPL'd Work is combined with another work (the Other
+         Work) to make a `work as a whole', the Combined Work.
+
+  (x)    The Other Work is licenced free of charge to third parties;
+	 under the terms of a licence henceforth known as the Other
+	 Licence.
+
+  (xi)   The Other Licence is Free.
+
+  (v)    It would be an infringement of the copyright in the Other
+         Work for you to distribute the Combined Work under the terms
+	 of the GNU GPL v2.
+
+  (vi)   There is a Resulting Licence which is the GNU GPL v2 amended
+	 by the addition of Extra Provisions and the relevant
+	 conditions from this Licence Derogation, where
+
+  (viii) the Extra Provisions are some or all of the Allowable Extra
+         Provisions (see below), and
+
+  (x)    the Extra Provisions are provisions of the Other Licence.
+
+
+ (C) Permission:
+
+  (i)    Provided that the the conditions in this Licence Derogation
+         are met, you may distribute the Combined Work under the terms
+         of the Resulting Licence.
+
+  (ii)   When the Combined Work is distributed under the terms of the
+         Resulting Licence, references to `this licence' in the text
+         of the GPL v2 may be read as references to the Resulting
+         Licence, or as references to the GPL v2, at your option.
+
+ (D) Further Conditions:
+
+  (i)    All parts of the Combined Work which are (identical to, parts
+	 of, or derived from) the GPL'd Work can be easily separated
+	 out from the Whole Work's source code to form once more a
+         Re-separated Work.
+
+  (ii)   The Re-separated Work is a version of the Original Work which
+	 is similar or superior in all respects (including
+	 completeness, functionality, quality etc.) to the Original
+	 Work.
+
+  (iii)  The Re-separated Work is licensed to third parties under
+	 terms identical to those under which the GPL'd Work is
+	 licenced to those same third parties.
+
+  (iv)   Copyright licences and notices which would appear to the
+         reader to cover the Combined Work contain the following
+	 statement or an equivalent:
+	   Different parts of this software may be covered by
+	   different copying conditions.  See individual source code
+	   files or copyright statements for details.
+
+
+ (E) The Allowable Extra Provision Kinds:
+
+   (i)   In each of the following Kinds (`(1)' onwards), the nature of
+         the Extra Provisions which are made Allowable, and the
+         further conditions which must be satisfied (and which
+         therefore form part of the Resulting Licence) are stated.
+
+   (ii)  All of the paragraphs (`(i)' onwards) stated in each Kind
+         must be satisfied, for Extra Provisions to be Allowable.
+
+  (1) `Obnoxious advertising clause':
+  
+   (i)   The Extra Provisions are those of the form:
+	    All advertising materials mentioning features or use of
+	    this software must display the following acknowledgement:
+	      This product includes software developed by DEVELOPERS.
+	 and re-wordings with similar effect, where DEVELOPERS is a
+	 person or group associated with the development of the Other
+	 Work.
+
+   (ii)  All advertising materials mentioning features or use of the
+	 Combined Work must display a similar acknowledgement for
+	 every Identifiable Author.
+
+   (iii) All distributions of the Combined Work must contain a list of
+	 the Identifiable Authors.	 
+
+  (2) `Endorsement restriction':
+
+   (i)   The Extra Provisions are ones which restrict the use of the 
+         authors', copyright holders' and/or contributors' names for
+         endorsement or promotion of products.
+
+   (ii)  The endorsement restriction(s) must benefit all of the
+         natural persons and organisations with an interest in the
+         Whole Work, unless those people wish otherwise.
+
+  (3) `Liability limitation':
+
+   (i) 	 The Extra Provisions are ones which claim to exclude or limit
+	 in any way the liability, for malfunctions, failures etc. of
+	 the Whole Work or parts thereof, of any contributors,
+	 distributors, copyright holders, authors, etc. of the
+	 software.  Provisions which seek to deny warranties, even
+	 implied warranties, or which otherwise seek to limit similar 
+	 exposure(s) to risk(s), count.
+
+   (ii)	 The protections of the Extra Provisions must be extended to
+	 all of the authors and distributors of the Whole Work, unless
+	 those people wish otherwise.
+
+
+  (4) `Pointless restatements':
+
+   (i)	 The Extra Provisions are ones which require distributions of
+	 the Whole Work to contain notices in source and/or binary
+	 distributions, and/or in the documentation and/or other
+	 materials provided with the distributions.
+
+   (ii)	 The required notices must be simple truths, or restatements
+	 of licence provisions which actually apply to the Combined
+	 Work.
+
+   (iii) (The author of this Licence Derogation believes that
+	 `pointless restatement requirements' are compatible with the
+	 GPLv2, since they seem to fall under the heading of an
+	 `appropriate copyright notice and disclaimer of warranty',
+	 which is already required by the GPLv2.  However, this
+	 relaxation is provided in case of doubt.)
+
+
+  (5) `Service provision - source code to users' (eg AGPL):
+
+   (i)   The Extra Provisions apply only
+        (a) when the Other Work or Combined Work is intended to
+            interact with people (`Users') through a computer network,
+            or
+        (b) when the Other Work or Combined Work is executed on behalf
+            of a third party (the `User'),
+         (or when both (a) and (b) apply).
+
+   (ii)  There exists a Sensible Publication Mechanism such that the
+         Extra Provisions are satisfied when:
+        (a) the Combined Work is made available free of charge to the
+            public, by that Sensible Publication Mechanism, and
+        (b) the existence and details of the Sensible Publication
+            Mechanism are made known in appropriate ways to each
+            User.
+
+   (iii) A Sensible Publication Mechanism is a reasonable and
+         convenient means for allowing members of the public
+         (`Downloaders') to obtain the source code in machine-readable
+         form.
+
+   (iv)  A Sensible Publication Mechanism is not more onerous to
+         provide than a public-facing World Wide Web server.
+
+
+ (F) Additional definitions:
+
+  (i)    A Free software licence is one which is approved both
+        (a) as a Free Software licence by the Free Software
+	    Foundation, and
+        (b) as an Open Source Licence by the Open Source Initiative.
+
+  (ii)   A Combining Participant includes any person:
+        (a) who makes a modification to the Other Work, which is
+            now included in the Combined Work, with a view to the
+            creation of any work which might be a Combined Work
+            according to this Licence Derogation; or
+        (b) who obtains the Other Work and GPL'd work separately and
+            distributes the Combined Work.
+
+  (iii)  An Identifiable Author is
+        (a) a natural person
+        (b) who contributed to the Combined Work (including without
+            limitation as a work for hire)
+        (c) whose identity or proper form of acknowledgement it
+	    reasonably practical to determine by inspection of the
+	    Authorship Documentation,
+        (d) and who has not stated publicly that they do not wish such
+	    acknowledgements to be displayed.
+
+  (iv)   The Authorship Documentation includes all copyright notices,
+         authorship notices, credits files, change logs,
+         acknowledgements, and similar documentation, in the source
+         code for the Original Work, the GPL'd Work, the Other Work
+	 and the Combined Work.
+
+  (v)    The Authorship Documentation also includes any communications
+         received by a Combining Participant regarding authorship of
+         any part of the Combined Work.
+
+
+
+
+
+   (iv)  A Sensible Publication Mechanism does not require any
+         Downloader to provide any identification or authorisation
+         other than that inherently required by the underlying
+         technical mechanisms.
+
+   (v)   A Sensible Publication Mechanism is free of charge.
+
+   (vi)  A Sensible Publication Mechanism does not make any efforts to
+         trace, track, cross-reference, or otherwise gain information
+         about Downloaders, other than the minimum data required for
+         direct technical fault-finding; any data collected shall be
+         used only for direct technical fault-finding.
+
+   (vii) Where a Sensible Publication Mechanism involves
+         implementation of a technical communications protocol, the
+         Mechanism must permit the use by Downloaders of the widest
+         feasible range of standards-compliant software.
+
+   (vii) For example, for download via the public World Wide Web to
+         satisfy this paragraph, the HTTP server must permit downloads
+         from any IP address, and it may not have any access controls,
+         cookies, reverse DNS requirements, registration forms, adult
+         checks, authorisation codes, email confirmations, URL
+         session-ids, browser restrictions, JavaScript, Java, Flash,
+         and must use the most conservative possible HTML, and the
+         webserver logs must contain the least possible information
+         and be expired quickly.
+
+DRAFT
+
+, or to pay anyone any
+         money.
+
+   
+
+which there is a
+         Sensible Mechanism  can be 
+
+(to the Other Work publicly and freely available.
+
+          (a) (from `AGPL version 1')
+	       If the Program as you received it is intended to
+	       interact with users through a computer network and if,
+	       in the version you received, any user interacting with
+	       the Program was given the opportunity to request
+	       transmission to that user of the Program's complete
+	       source code, you must not remove that facility from
+	       your modified version of the Program or work based on
+	       the Program, and must offer an equivalent opportunity
+	       for all users interacting with your Program through a
+	       computer network to request immediate transmission by
+	       HTTP of the complete source code of your modified
+	       version or other derivative work.
+
+
+DRAFT --- Ian Jackson 10.5.1999
 
 Local variables:
 mode: text
