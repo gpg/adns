@@ -3,6 +3,7 @@ adns (0.6) unstable; urgency=medium
   Bugfixes:
   * Do not fail assertion if _qf_owner, _qf_search, domain ends in `.'.
   * Dynamic library building works properly.
+  * adnshost prints somewhat better messages about some wrong usages.
 
  --
 

@@ -285,12 +285,14 @@ static const struct optioninfo *find(const char **optp,
 				     const char *prefix,
 				     comparer_type *comparer) {
   const struct optioninfo *oip;
+  const char *opt;
 
+  opt= *optp;
   oip= find1(optp,perquery_options,comparer);
   if (oip) return oip;
   oip= find1(optp,global_options,comparer);
-  if (!oip) usageerr("unknown option %s%s",prefix,*optp);
-  if (ads) usageerr("global option %s%s specified after query domain(s)",prefix,*optp);
+  if (!oip) usageerr("unknown option %s%s",prefix,opt);
+  if (ads) usageerr("global option %s%s specified after query domain(s)",prefix,opt);
   return oip;
 }
 
