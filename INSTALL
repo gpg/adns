@@ -18,8 +18,8 @@ In particular, the build system assumes that you have ELF shared
 libraries.  If you don't then please don't send me patches to support
 your kind of shared libraries, and don't send me patches to use
 libtool.  I'm not interested in supporting non-ELF shared libraries.
-However, if you send me an appropriate patch I'd be willing to make it
-easy or automatic to disable the ELF shared library arrangements.
+If you do not have ELF shared libraries then please use the
+--disable-shared configure option.
 
 The adnsresfilter utility uses `tsearch' from the C library (a la SVID
 and X/Open).  If your C library doesn't have tsearch you will find
