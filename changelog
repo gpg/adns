@@ -10,6 +10,7 @@ adns (1.1); urgency=medium
   * Added wishlist entry re configurable port no.
   * Problem with SERVFAIL in TODO.
   * Mentioned Jarle Aase's Windows port in README.html.
+  * Some better source code formatting/wrapping in a few places.
 
  --
 
