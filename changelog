@@ -23,12 +23,14 @@ adns (0.5) unstable; urgency=medium
   General improvements:
   * Promise not to change fds in adns_beforepoll (if now is specified).
   * Improved textual error string for _s_prohibitedcname.
+  * New comment in adns_processany and return 0 (not r which is 0).
 
   Portability and build improvements:
   * Give install the '-c' flag (otherwise some delete the original !).
   * Do not remove top-level Makefile on `make clean'.
   * Don't complain so much about poll(2) tests if not available.
   * Do not give -u 0 -g 0 options to install.
+  * Remove trailing , from some enums in adns.h.
 
  --
 
