@@ -1,4 +1,4 @@
-adns (0.10) unstable; urgency=low
+adns (1.0); urgency=low
 
   Bugfixes:
   * Fix incorrect `compressed datagram contains loop' error.
@@ -11,6 +11,9 @@ adns (0.10) unstable; urgency=low
   * Improvements to adnslogres (incl. new -c option) from Tony Finch.
   * adnslogres has --help option.
   * Documentation improved somewhat, including new GPL-vs-LGPL file.
+
+  Changes for non-BETA release:
+  * Change shared library soname to 1.0.
   * Do not install adnstest test utility.
 
   Regression test improvements:
@@ -34,7 +37,7 @@ adns (0.10) unstable; urgency=low
 
  --
 
-adns (0.9) unstable; urgency=high
+adns (0.9) BETA; urgency=high
 
   Bug fixes:
   * Don't make _processany always kill the TCP connection with the message

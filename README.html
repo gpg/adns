@@ -1,13 +1,6 @@
-<html><head><title>adns - advanced, alternative, asynchronous resolver</title>
-<!--
-  Note: this file is maintained in Ian Jackson's private CVS.
-
-  It is served on the GNU site and also from my own system, under the
-  URL http://www.chiark.greenend.org.uk/adns/ Please ensure that all
-  links continine to be correct both for www.gnu.org and chiark.
-
-  $Id$
-  -->   
+<html>
+<head>
+<title>adns - advanced, alternative, asynchronous resolver</title>
 <link rev="made" href="mailto:adns-maint@chiark.greenend.org.uk">
 </head>
 <body>
@@ -16,12 +9,25 @@
 <strong>Advanced, easy to use, asynchronous-capable DNS client
 library and utilities.</strong>
 
+<!-- Note: this file is maintained in Ian Jackson's private CVS.  -->
+<!--                                                              -->
+<!--  It is served on the GNU site and also from my own system,   -->
+<!--  under the URL http://www.chiark.greenend.org.uk/adns/       -->
+<!--  Please ensure that all links continine to be correct        -->
+<!--  both for www.gnu.org and chiark.                            -->
+<!--                                                              -->
+<!--  $Id$        -->   
+
 <p>
 
 adns is a resolver library for C (and C++) programs, and a collection
-of useful DNS resolver utilities.  In contrast with the existing
-interfaces, gethostbyname et al and libresolv, it has the following
-features:
+of useful DNS resolver utilities.
+
+
+<h2>C library</h2>
+
+In contrast with the standard interfaces, gethostbyname et al and
+libresolv, it has the following features:
 
 <ul>
 
@@ -81,21 +87,10 @@ which can be used easily in from the command line and from shell
 scripts to do simple lookups.  In a more advanced mode it can be used
 as a general-purpose DNS helper program for scripting languages which
 can invoke and communicate with subprocesses.  See the
-<A href="http://www.chiark.greenend.org.uk/~ian/adns/usage/adnsresfilter_usage.text">usage
-message</A> for a summary of its capabilities.
+<A href="http://www.chiark.greenend.org.uk/~ian/adns/adnshost.txt">adnshost
+usage message</A> for a summary of its capabilities.
 
 </ul>
-
-<h2>Technical note</h2>
-
-adns requires a real nameserver like
-<A href="http://www.isc.org/view.cgi?/products/BIND/index.phtml">BIND</A>
-or
-<A href="http://www.dents.org/">Dents</A> running on
-the same system or a nearby one, which must be willing to provide
-`recursive service'.  I.e., adns is a `stub resolver'.  All properly
-configured UN*X and GNU systems will already have such nameserver(s);
-they are usually listed in /etc/resolv.conf.
 
 <h2>Documentation</h2>
 
@@ -122,7 +117,7 @@ list, send it to <code>adns-maint@chiark.greenend.org.uk</code>.
 
 I have set up mailinglists <code>adns-announce</code> and
 <code>adns-discuss</code>.  The announcements list is moderated and
-will contain only announcements of important bugs, new versions, &c.
+will contain only announcements of important bugs, new versions, etc.
 The bug reports address mentioned above is also a mailing list; feel
 free to subscribe to it.
 
@@ -141,13 +136,15 @@ Available for download from
 <A href="http://www.chiark.greenend.org.uk/~ian/adns/">chiark.greenend.org.uk</A>
 are:
 <ul>
-<li>The <A href="http://www.chiark.greenend.org.uk/~ian/adns/adns.tar.gz">current beta version</A>
-    as a gzipped tarfile.
+<li>The <A href="http://www.chiark.greenend.org.uk/~ian/adns/adns.tar.gz">current
+    release</A> as a gzipped tarfile.
 <li><A href="http://www.chiark.greenend.org.uk/~ian/adns/adns.h.txt">adns.h</A>
-    API header file with comments (currently there is no manual, sorry).
+    API header file with comments, and
+    <A href="http://www.chiark.greenend.org.uk/~ian/adns/adnsresfilter.txt">usage
+    message for adnshost</A> (currently there is no manual, sorry).
 <li>All versions released so far are also available via
     <A href="ftp://ftp.chiark.greenend.org.uk/users/ian/adns/">anonymous
-    FTP</A>.
+    FTP</A> and <A href="http://www.chiark.greenend.org.uk/~/ian/adns/ftp/">HTTP</A>,
 <li>A mirror of my CVS repository is available via rsync from
     <code>rsync.chiark.greenend.org.uk::ftp/users/ian/cvs-pub/adns</code>
     (use FTP first to find your way around), or via
@@ -158,11 +155,22 @@ adns is also available from the
 <A href="http://www.gnu.org/">GNU Project</A> FTP servers and their
 <A href="http://www.gnu.org/order/ftp.html">mirrors</A>.
 
+<h2>Technical note</h2>
+
+adns requires a real nameserver like
+<A href="http://www.isc.org/view.cgi?/products/BIND/index.phtml">BIND</A>
+or
+<A href="http://www.dents.org/">Dents</A> running on
+the same system or a nearby one, which must be willing to provide
+`recursive service'.  I.e., adns is a `stub resolver'.  All properly
+configured UN*X and GNU systems will already have such nameserver(s);
+they are usually listed in /etc/resolv.conf.
+
 <h2>Copyright and licensing</h2>
 
-<kbd>adns</kbd> is Copyright 1997-2000 Ian Jackson, Copyright 1999
-Tony Finch, and Copyright (C) 1991 Massachusetts Institute of
-Technology.
+<kbd>adns</kbd> is Copyright 1997-2000 Ian Jackson, Copyright
+1999-2000 Tony Finch, and Copyright (C) 1991 Massachusetts Institute
+of Technology.
 
 <p>
 
