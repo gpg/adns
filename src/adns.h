@@ -8,7 +8,7 @@
  *    Copyright (C) 1997-1999 Ian Jackson <ian@davenant.greenend.org.uk>
  *
  *  It is part of adns, which is
- *    Copyright (C) 1997-1999 Ian Jackson <ian@davenant.greenend.org.uk>
+ *    Copyright (C) 1997-2000 Ian Jackson <ian@davenant.greenend.org.uk>
  *    Copyright (C) 1999 Tony Finch <dot@dotat.at>
  *  
  *  This program is free software; you can redistribute it and/or modify
@@ -39,7 +39,7 @@
  *  applications where the whole distribution is not GPL'd, are still
  *  likely to be in violation of the GPL.  Anyone who wants to do this
  *  should contact Ian Jackson.  Please note that to avoid encouraging
- *  people to infringe the GPL as it applies the body of adns, I think
+ *  people to infringe the GPL as it applies the body of adns, Ian thinks
  *  that if you take advantage of the special exception to redistribute
  *  just adns.h under the LGPL, you should retain this paragraph in its
  *  place in the appropriate copyright statements.

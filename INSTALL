@@ -56,7 +56,8 @@ DNSSEC cryptographic signature checking.
 COPYRIGHT
 
 This file, INSTALL, contains installation instructions and other
-details for adns.
+details for adns.  It is
+ Copyright (C) 1997-2000 Ian Jackson <ian@davenant.greenend.org.uk>
 
 adns is
  Copyright (C) 1997-2000 Ian Jackson <ian@davenant.greenend.org.uk>

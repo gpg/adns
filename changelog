@@ -23,12 +23,13 @@ adns (0.8) BETA; urgency=medium
   * Documented that adns_rr_info _rr_hostaddr ( ) for address list
     means permanent failure, and ? means temporary failure.
   * Typo (*now for now in _beforeselect description) in adns.h fixed.
+  * Copyright notices updated.
   
   Changes to produce more defensive code:
   * In adns_wait, assert that the timeout is not infinite.
   * Make qu->id start out as -2 when initially allocated.
 
- -- Ian Jackson <ian@davenant.greenend.org.uk>  Sun,  7 May 2000 23:11:44 +0100
+ -- Ian Jackson <ian@davenant.greenend.org.uk>  Sun,  7 May 2000 23:37:13 +0100
 
 adns (0.7) BETA; urgency=medium
 
