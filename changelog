@@ -9,6 +9,7 @@ adns (1.2); urgency=medium
   * Darwin listed in INSTALL.
   * New adnsheloex client courtesy of Tony Finch (and copyright notices
     updated).
+  * Add documentation comment by definition of adns_r_ptr_raw type enum.
 
  --
 

@@ -117,7 +117,7 @@ typedef enum {
  adns_r_soa_raw=          6,
  adns_r_soa=                 adns_r_soa_raw|adns__qtf_mail822, 
  		     
- adns_r_ptr_raw=         12,
+ adns_r_ptr_raw=         12, /* do not mind PTR with wrong or missing A */
  adns_r_ptr=                 adns_r_ptr_raw|adns__qtf_deref,
  		     
  adns_r_hinfo=           13,  
