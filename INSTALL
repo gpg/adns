@@ -33,7 +33,7 @@ and appear to install and run correctly.
 Notes/known problems:
    [1] IRIX 6.5 inet_ntoa seems to break with GCC.
    [2] The SGI IRIX compiler produces many spurious warnings.
-   [3] Dynamically linked, needs some help to find libadns.so.0.1.
+   [3] Dynamically linked, needs some help to find libadns.so.1.0.
 
 The following platforms are known to be deficient and will not work:
    Solaris 2.5			Lacks vsnprintf - install glibc ?

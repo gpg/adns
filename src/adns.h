@@ -186,20 +186,20 @@ typedef enum {
  *
  * adns will reject local parts containing control characters (byte
  * values 0-31, 127-159, and 255) - these appear to be legal according
- * to RFC822 but are clearly a bad idea.  RFC1035 syntax does not make
- * any distinction between a single RFC822 quoted-string containing
- * full stops, and a series of quoted-strings separated by full stops;
- * adns will return anything that isn't all valid atoms as a single
- * quoted-string.  RFC822 does not allow high-bit-set characters at
- * all, but adns does allow them in local-parts, treating them as
- * needing quoting.
+ * to RFC822 (at least 0-127) but are clearly a bad idea.  RFC1035
+ * syntax does not make any distinction between a single RFC822
+ * quoted-string containing full stops, and a series of quoted-strings
+ * separated by full stops; adns will return anything that isn't all
+ * valid atoms as a single quoted-string.  RFC822 does not allow
+ * high-bit-set characters at all, but adns does allow them in
+ * local-parts, treating them as needing quoting.
  *
  * If you ask for the domain with _raw then _no_ checking is done
  * (even on the host part, regardless of adns_qf_quoteok_anshost), and
  * you just get the domain name in master file format.
  *
  * If no mailbox is supplied the returned string will be `.' in either
- * caswe.
+ * case.
  */
 
 typedef enum {
