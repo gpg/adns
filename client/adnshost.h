@@ -49,18 +49,18 @@
 /* declarations related to option processing */
 
 struct optioninfo;
-typedef void optfunc(const struct optioninfo *oi, const char *arg);
+typedef void optfunc(const struct optioninfo *oi, const char *arg, const char *arg2);
 
 struct optioninfo {
   enum oi_type {
     ot_end, ot_desconly,
-    ot_flag, ot_value, ot_func, ot_funcarg
+    ot_flag, ot_value, ot_func, ot_funcarg, ot_funcarg2
   } type;
   const char *desc;
   const char *sopt, *lopt;
   int *storep, value;
   optfunc *func;
-  const char *argdesc;
+  const char *argdesc, *argdesc2;
 };
 
 enum ttlmode { tm_none, tm_rel, tm_abs };
@@ -79,11 +79,11 @@ extern int ov_tcp, ov_cname, ov_format;
 extern char *ov_id;
 extern struct perqueryflags_remember ov_pqfr;
 
-extern optfunc of_help, of_type, of_ptr, of_asynch_id, of_cancel_id;
+extern optfunc of_help, of_type, of_ptr, of_reverse, of_asynch_id, of_cancel_id;
 
 const struct optioninfo *opt_findl(const char *opt);
 const struct optioninfo *opt_finds(const char **optp);
-void opt_do(const struct optioninfo *oip, const char *arg, int invert);
+void opt_do(const struct optioninfo *oip, int invert, const char *arg, const char *arg2);
 
 /* declarations related to query processing */
 
@@ -100,9 +100,6 @@ extern struct outstanding_list { struct query_node *head, *tail; } outstanding;
 void ensure_adns_init(void);
 void query_do(const char *domain);
 void query_done(struct query_node *qun, adns_answer *answer);
-
-void of_asynch_id(const struct optioninfo *oi, const char *arg);
-void of_cancel_id(const struct optioninfo *oi, const char *arg);
 
 /* declarations related to main program and useful utility functions */
 

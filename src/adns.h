@@ -511,6 +511,19 @@ int adns_submit_reverse(adns_state ads,
  * addr->sa_family must be AF_INET or you get ENOSYS.
  */
 
+int adns_submit_reverse_any(adns_state ads,
+			    const struct sockaddr *addr,
+			    const char *rzone,
+			    adns_rrtype type,
+			    adns_queryflags flags,
+			    void *context,
+			    adns_query *query_r);
+/* For RBL-style reverse `zone's; look up
+ *   <reversed-address>.<zone>
+ * Any type is allowed.  _qf_search is ignored.
+ * addr->sa_family must be AF_INET or you get ENOSYS.
+ */
+
 void adns_finish(adns_state ads);
 /* You may call this even if you have queries outstanding;
  * they will be cancelled.

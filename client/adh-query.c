@@ -79,7 +79,7 @@ static void prep_query(struct query_node **qun_r, int *quflags_r) {
   *qun_r= qun;
 }
   
-void of_ptr(const struct optioninfo *oi, const char *arg) {
+void of_ptr(const struct optioninfo *oi, const char *arg, const char *arg2) {
   struct query_node *qun;
   int quflags, r;
   struct sockaddr_in sa;
@@ -96,6 +96,29 @@ void of_ptr(const struct optioninfo *oi, const char *arg) {
 			 quflags,
 			 qun,
 			 &qun->qu);
+  if (r) sysfail("adns_submit_reverse",r);
+
+  LIST_LINK_TAIL(outstanding,qun);
+}
+
+void of_reverse(const struct optioninfo *oi, const char *arg, const char *arg2) {
+  struct query_node *qun;
+  int quflags, r;
+  struct sockaddr_in sa;
+
+  memset(&sa,0,sizeof(sa));
+  sa.sin_family= AF_INET;
+  if (!inet_aton(arg,&sa.sin_addr)) usageerr("invalid IP address %s",arg);
+
+  prep_query(&qun,&quflags);
+  qun->owner= xmalloc(strlen(arg) + strlen(arg2) + 2);
+  sprintf(qun->owner, "%s %s", arg,arg2);
+  r= adns_submit_reverse_any(ads,
+			     (struct sockaddr*)&sa, arg2,
+			     ov_type == adns_r_none ? adns_r_txt : ov_type,
+			     quflags,
+			     qun,
+			     &qun->qu);
   if (r) sysfail("adns_submit_reverse",r);
 
   LIST_LINK_TAIL(outstanding,qun);
@@ -263,12 +286,12 @@ void query_done(struct query_node *qun, adns_answer *answer) {
   dequeue_query(qun);
 }
 
-void of_asynch_id(const struct optioninfo *oi, const char *arg) {
+void of_asynch_id(const struct optioninfo *oi, const char *arg, const char *arg2) {
   free(ov_id);
   ov_id= xstrsave(arg);
 }
 
-void of_cancel_id(const struct optioninfo *oi, const char *arg) {
+void of_cancel_id(const struct optioninfo *oi, const char *arg, const char *arg2) {
   struct query_node *qun;
 
   for (qun= outstanding.head;

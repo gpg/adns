@@ -1,11 +1,14 @@
 adns (0.7) BETA; urgency=medium
 
+  * New adns_submit_reverse_any for eg RBL lookups, and corresponding
+    option to adnshost.
   * README updated (from www home page).
-  * Better reporting of unexpected or weird replies from nameserver.
+
+  * In answers, quote all except alphanums and - _ / + (and document).
+  * Don't reject specials in cnames even without adns_qf_quotefail_cname.
   * Better checking of long domain names and labels in queries.
-  * Unfortunately, answer->owner may be null on error.  Documented.
-  * In answers, quote everything except alphanums and - _ / + and document
-    this behaviour.  Make not setting adns_qf_quotefail_cname work.
+  * answer->owner may be null on error.  Documented, and adnshost copes.
+  * Better reporting of unexpected or weird replies from nameserver.
 
  --
 
