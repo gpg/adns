@@ -122,6 +122,10 @@ static void procaddr(void) {
 			   rrt,0,foundthing,&foundthing->qu);
     if (r) adnsfail("submit",r);
   }
+  if (!forever && foundthing->ans && foundthing->ans->status == adns_s_timeout) {
+    free(foundthing->ans);
+    foundthing->ans= 0;
+  }
   if (!foundthing->ans) {
     expectreturn= foundthing;
     r= (forever ? adns_wait : adns_check)
