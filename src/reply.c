@@ -167,9 +167,11 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
 	adns__query_fail(qu,adns_s_prohibitedcname);
 	return;
       } else if (qu->cname_dgram) { /* Ignore second and subsequent CNAME(s) */
-	adns__debug(ads,serv,qu,"ignoring duplicate CNAME (%s, as well as %s)",
-		    adns__diag_domain(ads,serv,qu, &qu->vb, dgram,dglen,rdstart),
-		    qu->answer->cname);
+	adns__debug(ads,serv,qu,"allegedly canonical name %s is actually alias for %s",
+		    qu->answer->cname,
+		    adns__diag_domain(ads,serv,qu, &qu->vb, dgram,dglen,rdstart));
+	adns__query_fail(qu,adns_s_prohibitedcname);
+	return;
       } else if (wantedrrs) { /* Ignore CNAME(s) after RR(s). */
 	adns__debug(ads,serv,qu,"ignoring CNAME (to %s) coexisting with RR",
 		    adns__diag_domain(ads,serv,qu, &qu->vb, dgram,dglen,rdstart));

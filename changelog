@@ -20,6 +20,8 @@ adns (0.5) unstable; urgency=medium
   * Do not give -u 0 -g 0 options to install.
   * Do not scramble innards when a query on the output queue is cancelled.
   * Promise not to change fds in adns_beforepoll (if now is specified).
+  * Correct error messages for qname CNAME foo, foo CNAME bar.
+  * Improved textual error string for _s_prohibitedcname.
 
  --
 
