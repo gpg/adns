@@ -32,7 +32,7 @@ HCPPFLAGS:= $(foreach F,			\
 	sendto recvfrom read write writev	\
 , -D$F=H$F)
 
-HARNLOBJS=	$(addsuffix _d.o, $(basename $(LIBOBJS)))
+HARNLOBJS=	$(addsuffix _d.o, $(basename $(LIBOBJS))) $(LDLIBS)
 ALLOBJS=	$(HARNLOBJS) dtest.o hrecord.o hplayback.o hcommon.o
 
 .PRECIOUS:	$(AUTOCSRCS)

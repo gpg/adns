@@ -23,7 +23,7 @@ TARGETS=	$(SHLIBFILE)
 include		$(srcdir)/../settings.make
 include		$(srcdir)/../src/adns.make
 
-ALLOBJS=	$(addsuffix _p.o, $(basename $(LIBOBJS)))
+ALLOBJS=	$(addsuffix _p.o, $(basename $(LIBOBJS))) $(LDLIBS)
 
 install:
 		$(INSTALL_PROGRAM) $(SHLIBFILE) $(lib_dir)/$(SHLIBFILE)
