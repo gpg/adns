@@ -17,13 +17,16 @@ typedef unsigned char byte;
 /* Configuration and constants */
 
 #define MAXSERVERS 5
-#define MAXUDPRETRIES /*15*/5
+#define UDPMAXRETRIES /*15*/5
 #define UDPRETRYMS 2000
 #define TCPMS 30000
 #define LOCALRESOURCEMS 20
-#define MAXUDPDGRAM 512
-#define NSPORT 53
-#define MAXDNAME 255
+
+#define DNS_UDPPORT 53
+#define DNS_MAXUDP 512
+#define DNS_MAXDOMAIN 255
+#define DNS_HDRSIZE 12
+#define DNS_CLASS_IN 1
 
 /* Shared data structures */
 
@@ -53,7 +56,7 @@ struct adns__query {
   struct { adns_query head, tail; } children;
   struct { adns_query back, next; } siblings;
   adns_rrtype type;
-  vbuf answer;
+  vbuf ans;
   int id, flags, udpretries;
   int udpnextserver;
   unsigned long udpsent, tcpfailed; /* bitmap indexed by server */
