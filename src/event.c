@@ -98,20 +98,28 @@ static void inter_maxto(struct timeval **tv_io, struct timeval *tvbuf,
 
   if (!tv_io) return;
   rbuf= *tv_io;
-  if (!rbuf) { *tvbuf= maxto; *tv_io= tvbuf; return; }
-  if (timercmp(rbuf,&maxto,>)) *rbuf= maxto;
+  if (!rbuf) {
+    *tvbuf= maxto; *tv_io= tvbuf;
+  } else {
+    if (timercmp(rbuf,&maxto,>)) *rbuf= maxto;
+  }
+fprintf(stderr,"inter_maxto maxto=%ld.%06ld result=%ld.%06ld\n",
+	maxto.tv_sec,maxto.tv_usec,(**tv_io).tv_sec,(**tv_io).tv_usec);
 }
 
 static void inter_maxtoabs(struct timeval **tv_io, struct timeval *tvbuf,
 			   struct timeval now, struct timeval maxtime) {
   ldiv_t dr;
 
+fprintf(stderr,"inter_maxtoabs now=%ld.%06ld maxtime=%ld.%06ld\n",
+	now.tv_sec,now.tv_usec,maxtime.tv_sec,maxtime.tv_usec);
   if (!tv_io) return;
-  maxtime.tv_sec -= (now.tv_sec-1);
-  maxtime.tv_usec += (1000-now.tv_usec);
-  dr= ldiv(maxtime.tv_usec,1000);
+  maxtime.tv_sec -= (now.tv_sec+2);
+  maxtime.tv_usec -= (now.tv_usec-2000000);
+  dr= ldiv(maxtime.tv_usec,1000000);
   maxtime.tv_sec += dr.quot;
-  maxtime.tv_usec -= dr.rem;
+  maxtime.tv_usec -= dr.quot*1000000;
+  if (maxtime.tv_sec<0) timerclear(&maxtime);
   inter_maxto(tv_io,tvbuf,maxtime);
 }
 
@@ -147,7 +155,9 @@ void adns_interest(adns_state ads, int *maxfd,
   struct timeval tvto_lr;
   int r;
   
-  r= gettimeofday(&now,0);
+fprintf(stderr,"adns_interest\n");
+
+r= gettimeofday(&now,0);
   if (r) {
     adns__warn(ads,-1,"gettimeofday failed - will sleep for a bit: %s",strerror(errno));
     timerclear(&tvto_lr); timevaladd(&tvto_lr,LOCALRESOURCEMS);
@@ -352,7 +362,7 @@ int adns_wait(adns_state ads,
   
   for (;;) {
     r= internal_check(ads,query_io,answer_r,context_r);
-    if (r && r != EWOULDBLOCK) return r;
+    if (r != EWOULDBLOCK) return r;
     maxfd= 0; tvp= 0;
     FD_ZERO(&readfds); FD_ZERO(&writefds); FD_ZERO(&exceptfds);
     adns_interest(ads,&maxfd,&readfds,&writefds,&exceptfds,&tvp,&tvbuf);

@@ -132,16 +132,16 @@ static void ccf_nameserver(adns_state ads, const char *fn, int lno, const char *
 
 static void ccf_search(adns_state ads, const char *fn, int lno, const char *buf) {
   if (!buf) return;
-  adns__diag(ads,-1,"warning - `search' ignored FIXME");
+  adns__diag(ads,-1,"warning - `search' ignored fixme");
 }
 
 static void ccf_sortlist(adns_state ads, const char *fn, int lno, const char *buf) {
-  adns__diag(ads,-1,"warning - `sortlist' ignored FIXME");
+  adns__diag(ads,-1,"warning - `sortlist' ignored fixme");
 }
 
 static void ccf_options(adns_state ads, const char *fn, int lno, const char *buf) {
   if (!buf) return;
-  adns__diag(ads,-1,"warning - `options' ignored FIXME");
+  adns__diag(ads,-1,"warning - `options' ignored fixme");
 }
 
 static void ccf_clearnss(adns_state ads, const char *fn, int lno, const char *buf) {
@@ -289,16 +289,19 @@ int adns_init(adns_state *ads_r, adns_initflags flags, FILE *diagfile) {
   ads->udpsocket= socket(AF_INET,SOCK_DGRAM,proto->p_proto);
   if (ads->udpsocket<0) { r= errno; goto x_free; }
 
-  /*fixme: nonblock */
+  r= adns__setnonblock(ads,ads->udpsocket);
+  if (r) { r= errno; goto x_closeudp; }
   
   *ads_r= ads;
   return 0;
 
+ x_closeudp:
+  close(ads->udpsocket);
  x_free:
   free(ads);
   return r;
 }
 
 int adns_finish(adns_state ads) {
-  abort(); /* FIXME */
+  abort(); /* fixme */
 }

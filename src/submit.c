@@ -72,7 +72,7 @@ int adns_submit(adns_state ads,
   stat= adns__mkquery(ads,owner,ol,id,type,flags);
   if (stat) return failsubmit(ads,context,query_r,type,flags,id,stat);
 
-  qu= allocquery(ads,owner,ol,id,type,flags,context); if (!qu) return errno;
+  qu= allocquery(ads,owner,ol,id,type,flags,&ctx); if (!qu) return errno;
   adns__query_udp(ads,qu,now);
   adns__autosys(ads,now);
 
@@ -99,5 +99,5 @@ int adns_synchronous(adns_state ads,
 }
 
 void adns_cancel(adns_state ads, adns_query query) {
-  abort(); /* FIXME */
+  abort(); /* fixme */
 }

@@ -17,7 +17,7 @@ adns_status adns__mkquery(adns_state ads, const char *owner, int ol, int id,
 #define MKQUERY_ADDB(b) *rqp++= (b)
 #define MKQUERY_ADDW(w) (MKQUERY_ADDB(((w)>>8)&0x0ff), MKQUERY_ADDB((w)&0x0ff))
 
-  if (!adns__vbuf_ensure(&ads->rqbuf,12+strlen(owner)+3)) return adns_s_nolocalmem;
+  if (!adns__vbuf_ensure(&ads->rqbuf,12+strlen(owner)+1+5)) return adns_s_nolocalmem;
   rqp= ads->rqbuf.buf;
 
   MKQUERY_ADDW(id);
@@ -67,7 +67,7 @@ adns_status adns__mkquery(adns_state ads, const char *owner, int ol, int id,
   MKQUERY_ADDW(1); /* QCLASS=IN */
 
   ads->rqbuf.used= rqp - ads->rqbuf.buf;
-  assert(ads->rqbuf.used < ads->rqbuf.avail);
+  assert(ads->rqbuf.used <= ads->rqbuf.avail);
   
   return adns_s_ok;
 }
