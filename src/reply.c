@@ -119,7 +119,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
     return;
   case rcode_servfail:
     if (qu) adns__query_fail(qu,adns_s_rcodeservfail);
-    else adns__warn(ads,serv,qu,"server failure on unidentifiable query");
+    else adns__debug(ads,serv,qu,"server failure on unidentifiable query");
     return;
   case rcode_notimp:
     adns__warn(ads,serv,qu,"server claims not to implement our query");
