@@ -1,3 +1,11 @@
+adns (1.1); urgency=medium
+
+  Bugfixes:
+  * Stop searching on a CNAME (even if it's broken).
+  * When search list runs out, _qf_owner sets owner to query domain.
+
+ --
+
 adns (1.0); urgency=medium
 
   Bugfixes:

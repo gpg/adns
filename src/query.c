@@ -157,8 +157,8 @@ void adns__search_next(adns_state ads, adns_query qu, struct timeval now) {
   } else {
     if (qu->search_pos >= ads->nsearchlist) {
       if (qu->search_doneabs) {
+	qu->search_vb.used= qu->search_origlen;
 	stat= adns_s_nxdomain; goto x_fail;
-	return;
       } else {
 	nextentry= 0;
 	qu->search_doneabs= 1;
@@ -171,9 +171,8 @@ void adns__search_next(adns_state ads, adns_query qu, struct timeval now) {
   qu->search_vb.used= qu->search_origlen;
   if (nextentry) {
     if (!adns__vbuf_append(&qu->search_vb,".",1) ||
-	!adns__vbuf_appendstr(&qu->search_vb,nextentry)) {
-      stat= adns_s_nomemory; goto x_fail;
-    }
+	!adns__vbuf_appendstr(&qu->search_vb,nextentry))
+      goto x_nomemory;
   }
 
   free(qu->query_dgram);
@@ -181,7 +180,9 @@ void adns__search_next(adns_state ads, adns_query qu, struct timeval now) {
 
   query_simple(ads,qu, qu->search_vb.buf, qu->search_vb.used, qu->typei, qu->flags, now);
   return;
-  
+
+x_nomemory:
+  stat= adns_s_nomemory;
 x_fail:
   adns__query_fail(qu,stat);
 }
@@ -189,6 +190,8 @@ x_fail:
 static int save_owner(adns_query qu, const char *owner, int ol) {
   /* Returns 1 if OK, otherwise there was no memory. */
   adns_answer *ans;
+
+  if (!(qu->flags & adns_qf_owner)) return 1;
 
   ans= qu->answer;
   assert(!ans->owner);
@@ -508,8 +511,7 @@ void adns__query_done(adns_query qu) {
   qu->id= -1;
   ans= qu->answer;
 
-  if (qu->flags & adns_qf_owner && qu->flags & adns_qf_search &&
-      ans->status != adns_s_nomemory) {
+  if (qu->flags & adns_qf_search && ans->status != adns_s_nomemory) {
     if (!save_owner(qu, qu->search_vb.buf, qu->search_vb.used)) {
       adns__query_fail(qu,adns_s_nomemory);
       return;

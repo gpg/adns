@@ -198,7 +198,8 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
 	qu->cname_begin= rdstart;
 	qu->cname_dglen= dglen;
 	st= adns__parse_domain(ads,serv,qu, &qu->vb,
-			       qu->flags & adns_qf_quotefail_cname ? 0 : pdf_quoteok,
+			       qu->flags & adns_qf_quotefail_cname
+			       ? 0 : pdf_quoteok,
 			       dgram,dglen, &rdstart,rdstart+rdlength);
 	if (!qu->vb.used) goto x_truncated;
 	if (st) { adns__query_fail(qu,st); return; }
@@ -257,7 +258,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
       /* We still wanted to look for the SOA so we could find the TTL. */
       adns__update_expires(qu,soattl,now);
 
-      if (qu->flags & adns_qf_search) {
+      if (qu->flags & adns_qf_search && !qu->cname_dgram) {
 	adns__search_next(ads,qu,now);
       } else {
 	adns__query_fail(qu,adns_s_nxdomain);
