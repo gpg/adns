@@ -283,7 +283,8 @@ struct query_queue { adns_query head, tail; };
 
 struct adns__state {
   adns_initflags iflags;
-  FILE *diagfile;
+  adns_logcallbackfn *logfn;
+  void *logfndata;
   int configerrno;
   struct query_queue udpw, tcpw, childw, output;
   adns_query forallnext;
@@ -317,6 +318,10 @@ struct adns__state {
 int adns__setnonblock(adns_state ads, int fd); /* => errno value */
 
 /* From general.c: */
+
+void adns__vlprintf(adns_state ads, const char *fmt, va_list al);
+void adns__lprintf(adns_state ads, const char *fmt,
+		   ...) PRINTFFORMAT(2,3);
 
 void adns__vdiag(adns_state ads, const char *pfx, adns_initflags prevent,
 		 int serv, adns_query qu, const char *fmt, va_list al);

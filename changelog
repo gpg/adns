@@ -1,3 +1,10 @@
+adns (1.3); urgency=medium
+
+  * New adns_init_logfn etc. for having logging done with a callback
+    function.
+
+ --
+
 adns (1.2); urgency=medium
 
   * Fix error in prototype in definition of adns__parse_domain.
