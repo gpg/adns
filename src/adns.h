@@ -456,6 +456,8 @@ int adns_submit(adns_state ads,
 		void *context,
 		adns_query *query_r);
 
+/* The owner should be quoted in master file format. */
+
 int adns_check(adns_state ads,
 	       adns_query *query_io,
 	       adns_answer **answer_r,
@@ -737,7 +739,6 @@ adns_status adns_rr_info(adns_rrtype type,
 			 int *len_r,
 			 const void *datap, char **data_r);
 /*
-  
  * Get information about a query type, or convert reply data to a
  * textual form.  type must be specified, and the official name of the
  * corresponding RR type will be returned in *rrtname_r, and
