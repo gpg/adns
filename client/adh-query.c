@@ -197,7 +197,7 @@ void of_cancel_id(const struct optioninfo *oi, const char *arg) {
   struct query_node *qun;
 
   for (qun= outstanding.head;
-       qun && !strcmp(qun->id,arg);
+       qun && strcmp(qun->id,arg);
        qun= qun->next);
   if (!qun) return;
   adns_cancel(qun->qu);

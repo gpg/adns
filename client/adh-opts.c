@@ -309,7 +309,7 @@ void opt_do(const struct optioninfo *oip, const char *arg, int invert) {
   switch (oip->type) {
   case ot_flag:
     assert(!arg);
-    *oip->storep= invert ? !oip->value : oip->value;
+    *oip->storep= !invert;
     return;
   case ot_value:
     assert(!arg);
