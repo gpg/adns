@@ -30,8 +30,10 @@ SHLIBFORLINK=	@SHLIBFORLINK@
 
 CC=		@CC@
 CFLAGS=		$(AUTOCFLAGS) $(WARNS) $(WERROR) $(DIRCFLAGS) $(XCFLAGS)
+LDFLAGS=	$(AUTOLDFLAGS) $(DIRLDFLAGS) $(XLDFLAGS)
 LDLIBS=		@LIBS@ $(XLIBS)
 AUTOCFLAGS=	@CFLAGS@
+AUTOLDFLAGS=	@LDFLAGS@
 WARNS=		@WARNS@
 #WERROR=	-Werror
 
@@ -57,7 +59,7 @@ INSTALL_DATA=		$(INSTALL) -m 644
 all:			$(TARGETS)
 
 clean mostlyclean:
-		rm -f *.o *.tmp*
+		rm -f *.o *.tmp* *.so *.so.*
 
 distclean:		clean
 		rm -f $(TARGETS) *~ ./#*# core *.orig *.rej Makefile
