@@ -363,6 +363,9 @@ int adns_init_strcfg(adns_state *newstate_r, adns_initflags flags,
 
 typedef void adns_logcallbackfn(adns_state ads, void *logfndata,
 				const char *fmt, va_list al);
+  /* will be called perhaps several times for each message; when the
+   * message is complete, the string implied by fmt and al will end in
+   * a newline. */
 
 int adns_init_logfn(adns_state *newstate_r, adns_initflags flags,
 		    const char *configtext /*0=>use default config files*/,
