@@ -42,17 +42,61 @@ static adns_status cs_inaddr(vbuf *vb, const void *data) {
   return adns__vbuf_appendstr(vb,ia) ? adns_s_ok : adns_s_nolocalmem;
 }
 
-static void fr_null(adns_query qu, void *data) { }
+static adns_status pa_domain_raw(adns_query qu, int serv,
+				 const byte *dgram, int dglen, int cbyte, int max,
+				 void *store_r) {
+  char **dpp= store_r;
+  adns_status st;
+  vbuf vb;
+  char *dp;
 
-#define TYPE_SF(size,func,cp,free) size, pa_##func, fr_##free, cs_##cp
-#define TYPE_SN(size,func,cp)      size, pa_##func, fr_null, cs_##cp
+  adns__vbuf_init(&vb);
+  st= adns__parse_domain(qu->ads,serv,qu,&vb,qu->flags,
+			 dgram,dglen, &cbyte,max);
+  if (st) goto x_error;
+
+  dp= adns__alloc_interim(qu,vb.used+1);
+  if (!dp) { st= adns_s_nolocalmem; goto x_error; }
+
+  dp[vb.used]= 0;
+  memcpy(dp,vb.buf,vb.used);
+
+  if (cbyte != max) { st= adns_s_invaliddata; goto x_error; }
+
+  st= adns_s_ok;
+  *dpp= dp;
+
+ x_error:
+  adns__vbuf_free(&vb);
+  return st;
+}
+
+static void mf_str(adns_query qu, void *data) {
+  char **ddp= data;
+
+  adns__makefinal_str(qu,ddp);
+}
+
+static adns_status cs_str(vbuf *vb, const void *data) {
+  const char *const *ddp= data;
+  const char *dp= *ddp;
+  
+  return (adns__vbuf_append(vb,"\"",1) &&
+	  adns__vbuf_appendstr(vb,dp) &&
+	  adns__vbuf_append(vb,"\"",1))
+    ? adns_s_ok : adns_s_nolocalmem;
+}
+
+static void mf_flat(adns_query qu, void *data) { }
+
+#define TYPE_SF(size,func,cp,free) size, pa_##func, mf_##free, cs_##cp
+#define TYPE_SN(size,func,cp)      size, pa_##func, mf_flat, cs_##cp
 #define TYPESZ_M(member)           (sizeof(((adns_answer*)0)->rrs.member))
 #define TYPE_MF(memb,parse)        TYPE_SF(TYPESZ_M(memb),parse,memb,memb)
 #define TYPE_MN(memb,parse)        TYPE_SN(TYPESZ_M(memb),parse,memb)
 
-#define DEEP_MEMB(memb) TYPESZ_M(memb), fr_##memb, cs_##memb
-#define FLAT_MEMB(memb) TYPESZ_M(memb), fr_null, cs_##memb
-#define NULL_MEMB       0, fr_null, cs_null
+#define DEEP_MEMB(memb) TYPESZ_M(memb), mf_##memb, cs_##memb
+#define FLAT_MEMB(memb) TYPESZ_M(memb), mf_flat, cs_##memb
 
 /* TYPE_<ms><nf>
  *  ms is M  specify member name
@@ -66,12 +110,13 @@ static const typeinfo typeinfos[] = {
   /* rr type code   rrt     fmt        mem.mgmt  member      parser        */
   
   { adns_r_a,       "A",     0,        FLAT_MEMB(inaddr),    pa_inaddr      },
-#if 0 /*fixme*/	    	                    	       	  		   
   { adns_r_ns_raw,  "NS",   "raw",     DEEP_MEMB(str),       pa_domain_raw  },
   { adns_r_cname,   "CNAME", 0,        DEEP_MEMB(str),       pa_domain_raw  },
+#if 0 /*fixme*/	    	                    	       	  		   
   { adns_r_soa_raw, "SOA",  "raw",     DEEP_MEMB(soa),       pa_soa         },
-  { adns_r_null,    "NULL",  0,        NULL_MEMB,            pa_null        },
+#endif
   { adns_r_ptr_raw, "PTR",  "raw",     DEEP_MEMB(str),       pa_domain_raw  },
+#if 0 /*fixme*/
   { adns_r_hinfo,   "HINFO", 0,        DEEP_MEMB(strpair),   pa_hinfo       },
   { adns_r_mx_raw,  "MX",   "raw",     DEEP_MEMB(intstr),    pa_mx_raw      },
   { adns_r_txt,     "TXT",   0,        DEEP_MEMB(str),       pa_txt         },

@@ -131,11 +131,12 @@ adns_status adns__parse_domain(adns_state ads, int serv, adns_query qu,
       if (!vbuf__append_quoted1035(vb,dgram+labstart,lablen))
 	return adns_s_nolocalmem;
     } else {
-      if (!ctype_alpha(dgram[labstart])) return adns_s_invaliddomain;
+      ch= dgram[labstart];
+      if (!ctype_alpha(ch) && !ctype_digit(ch)) return adns_s_invalidanswerdomain;
       for (i= labstart+1; i<labstart+lablen; i++) {
 	ch= dgram[i];
 	if (ch != '-' && !ctype_alpha(ch) && !ctype_digit(ch))
-	  return adns_s_invaliddomain;
+	  return adns_s_invalidanswerdomain;
       }
       if (!adns__vbuf_append(vb,dgram+labstart,lablen))
 	return adns_s_nolocalmem;

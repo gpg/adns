@@ -34,52 +34,69 @@ static void failure(const char *what, adns_status st) {
 
 static const char *defaultargv[]= { "ns.chiark.greenend.org.uk", 0 };
 
+static const adns_rrtype defaulttypes[]= {
+  adns_r_a,
+  adns_r_ns_raw,
+  adns_r_cname,
+  adns_r_ptr_raw,
+  adns_r_none
+};
+
 int main(int argc, const char *const *argv) {
   adns_state ads;
   adns_query *qus, qu;
   adns_answer *ans;
   const char *rrtn, *fmtn;
   char *show;
-  int len, i, qc, qi;
+  int len, i, qc, qi, tc, ti;
   adns_status r, ri;
+  const adns_rrtype *types;
 
   if (argv[0] && argv[1]) argv++;
   else argv= defaultargv;
 
+  types= defaulttypes;
+
   for (qc=0; qc[argv]; qc++);
-  qus= malloc(sizeof(qus)*qc);
+  for (tc=0; types[tc] != adns_r_none; tc++);
+  qus= malloc(sizeof(qus)*qc*tc);
   if (!qus) { perror("malloc qus"); exit(3); }
 
   r= adns_init(&ads,adns_if_debug|adns_if_noautosys,0);
   if (r) failure("init",r);
 
   for (qi=0; qi<qc; qi++) {
-    r= adns_submit(ads,argv[qi],adns_r_a,0,0,&qus[qi]);
-    if (r) failure("submit",r);
+    for (ti=0; ti<tc; ti++) {
+      fprintf(stdout,"submitting %s %d\n",argv[qi],types[ti]);
+      r= adns_submit(ads,argv[qi],types[ti],0,0,&qus[qi*tc+ti]);
+      if (r) failure("submit",r);
+    }
   }
 
   for (qi=0; qi<qc; qi++) {
-    qu= qus[qi];
-    r= adns_wait(ads,&qu,&ans,0);
-    if (r) failure("wait",r);
+    for (ti=0; ti<tc; ti++) {
+      qu= qus[qi*tc+ti];
+      r= adns_wait(ads,&qu,&ans,0);
+      if (r) failure("wait",r);
 
-    ri= adns_rr_info(ans->type, &rrtn,&fmtn,&len, 0,0);
-    fprintf(stdout, "%s: %s; nrrs=%d; cname=%s; ",
-	    argv[qi], adns_strerror(ans->status),
-	    ans->nrrs, ans->cname ? ans->cname : "$");
-    fprintf(stdout, "type %s(%s) %s\n",
-	    ri ? "?" : rrtn, ri ? "?" : fmtn ? fmtn : "-",
-	    adns_strerror(ri));
-    if (ans->nrrs) {
-      assert(!ri);
-      for (i=0; i<ans->nrrs; i++) {
-	r= adns_rr_info(ans->type, 0,0,0, ans->rrs.bytes+i*len,&show);
-	if (r) failure("info",r);
-	printf(" %s\n",show);
-	free(show);
+      ri= adns_rr_info(ans->type, &rrtn,&fmtn,&len, 0,0);
+      fprintf(stdout, "%s: %s; nrrs=%d; cname=%s; ",
+	      argv[qi], adns_strerror(ans->status),
+	      ans->nrrs, ans->cname ? ans->cname : "$");
+      fprintf(stdout, "type %s(%s) %s\n",
+	      ri ? "?" : rrtn, ri ? "?" : fmtn ? fmtn : "-",
+	      adns_strerror(ri));
+      if (ans->nrrs) {
+	assert(!ri);
+	for (i=0; i<ans->nrrs; i++) {
+	  r= adns_rr_info(ans->type, 0,0,0, ans->rrs.bytes+i*len,&show);
+	  if (r) failure("info",r);
+	  printf(" %s\n",show);
+	  free(show);
+	}
       }
+      free(ans);
     }
-    free(ans);
   }
 
   free(qus);

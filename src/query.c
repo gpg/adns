@@ -126,7 +126,7 @@ int adns_submit(adns_state ads,
   adns__vbuf_init(&vb);
 
   ol= strlen(owner);
-  if (ol<=1 || ol>DNS_MAXDOMAIN+1) { stat= adns_s_invaliddomain; goto xit; }
+  if (ol<=1 || ol>DNS_MAXDOMAIN+1) { stat= adns_s_domaintoolong; goto xit; }
 				 
   if (owner[ol-1]=='.' && owner[ol-2]!='\\') { flags &= ~adns_qf_search; ol--; }
 

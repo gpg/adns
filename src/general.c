@@ -199,24 +199,25 @@ static const struct sinfo {
   adns_status st;
   const char *string;
 } sinfos[]= {
-  SINFO(  ok,                "OK"                                    ),
-  SINFO(  timeout,           "Timed out"                             ),
-  SINFO(  nolocalmem,        "Out of memory"                         ),
-  SINFO(  allservfail,       "No working nameservers"                ),
-  SINFO(  servfail,          "Nameserver failure"                    ),
-  SINFO(  notimplemented,    "Query not implemented"                 ),
-  SINFO(  refused,           "Refused by nameserver"                 ),
-  SINFO(  reasonunknown,     "Reason unknown"                        ),
-  SINFO(  norecurse,         "Recursion denied by nameserver"        ),
-  SINFO(  serverfaulty,      "Nameserver sent bad data"              ),
-  SINFO(  unknownreply,      "Reply from nameserver not understood"  ),
-  SINFO(  invaliddata,       "Invalid data"                          ),
-  SINFO(  inconsistent,      "Inconsistent data"                     ),
-  SINFO(  cname,             "RR refers to an alias"                 ),
-  SINFO(  nxdomain,          "No such domain"                        ),
-  SINFO(  nodata,            "No such data"                          ),
-  SINFO(  invaliddomain,     "Domain syntactically invalid"          ),
-  SINFO(  domaintoolong,     "Domain name too long"                  )
+  SINFO(  ok,                  "OK"                                    ),
+  SINFO(  timeout,             "Timed out"                             ),
+  SINFO(  nolocalmem,          "Out of memory"                         ),
+  SINFO(  allservfail,         "No working nameservers"                ),
+  SINFO(  servfail,            "Nameserver failure"                    ),
+  SINFO(  notimplemented,      "Query not implemented"                 ),
+  SINFO(  refused,             "Refused by nameserver"                 ),
+  SINFO(  reasonunknown,       "Reason unknown"                        ),
+  SINFO(  norecurse,           "Recursion denied by nameserver"        ),
+  SINFO(  serverfaulty,        "Nameserver sent bad data"              ),
+  SINFO(  unknownreply,        "Reply from nameserver not understood"  ),
+  SINFO(  invaliddata,         "Invalid data"                          ),
+  SINFO(  inconsistent,        "Inconsistent data"                     ),
+  SINFO(  cname,               "RR refers to an alias"                 ),
+  SINFO(  invalidanswerdomain, "Received syntactically invalid domain" ),
+  SINFO(  nxdomain,            "No such domain"                        ),
+  SINFO(  nodata,              "No such data"                          ),
+  SINFO(  invalidquerydomain,  "Domain syntactically invalid"          ),
+  SINFO(  domaintoolong,       "Domain name too long"                  )
 };
 
 static int si_compar(const void *key, const void *elem) {

@@ -23,7 +23,8 @@
 #include "internal.h"
 
 static void cname_recurse(adns_query qu, adns_queryflags xflags) {
-  assert(!"cname not implemented"); /* FIXME */
+  adns__diag(qu->ads,-1,qu,"cname following not implemented fixme");
+  adns__query_fail(qu,adns_s_notimplemented);
 }
     
 void adns__procdgram(adns_state ads, const byte *dgram, int dglen,

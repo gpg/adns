@@ -54,35 +54,35 @@ adns_status adns__mkquery(adns_state ads, vbuf *vb, int *id_r,
   MKQUERY_ADDW(0); /* ARCOUNT=0 */
   p= owner; pe= owner+ol;
   nlabs= 0;
-  if (!*p) return adns_s_invaliddomain;
+  if (!*p) return adns_s_invalidquerydomain;
   do {
     ll= 0;
     while (p!=pe && (c= *p++)!='.') {
       if (c=='\\') {
-	if (!(flags & adns_qf_anyquote)) return adns_s_invaliddomain;
+	if (!(flags & adns_qf_anyquote)) return adns_s_invalidquerydomain;
 	if (ctype_digit(p[0])) {
 	  if (ctype_digit(p[1]) && ctype_digit(p[2])) {
 	    c= (*p++ - '0')*100 + (*p++ - '0')*10 + (*p++ - '0');
-	    if (c >= 256) return adns_s_invaliddomain;
+	    if (c >= 256) return adns_s_invalidquerydomain;
 	  } else {
-	    return adns_s_invaliddomain;
+	    return adns_s_invalidquerydomain;
 	  }
 	} else if (!(c= *p++)) {
-	  return adns_s_invaliddomain;
+	  return adns_s_invalidquerydomain;
 	}
       }
       if (!(flags & adns_qf_anyquote)) {
-	if (ctype_digit(c) || c == '-') {
-	  if (!ll) return adns_s_invaliddomain;
-	} else if (!ctype_alpha(c)) {
-	  return adns_s_invaliddomain;
+	if (c == '-') {
+	  if (!ll) return adns_s_invalidquerydomain;
+	} else if (!ctype_alpha(c) && !ctype_digit(c)) {
+	  return adns_s_invalidquerydomain;
 	}
       }
-      if (ll == sizeof(label)) return adns_s_invaliddomain;
+      if (ll == sizeof(label)) return adns_s_invalidquerydomain;
       label[ll++]= c;
     }
-    if (!ll) return adns_s_invaliddomain;
-    if (nlabs++ > 63) return adns_s_invaliddomain;
+    if (!ll) return adns_s_invalidquerydomain;
+    if (nlabs++ > 63) return adns_s_domaintoolong;
     MKQUERY_ADDB(ll);
     memcpy(rqp,label,ll); rqp+= ll;
   } while (p!=pe);
