@@ -198,7 +198,7 @@ void query_done(struct query_node *qun, adns_answer *answer) {
     }
   }
   if (qun->pqfr.show_owner) {
-    realowner= answer->cname ? answer->cname : answer->owner;;
+    realowner= answer->cname ? answer->cname : answer->owner;
     assert(realowner);
   } else {
     realowner= 0;
