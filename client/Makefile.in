@@ -59,4 +59,4 @@ adnshost_s:	$(ADH_OBJS) $(STATIC_LIB)
 		$(CC) $(LDFLAGS) $< $(DYNAMIC_LINK) -o $@ $(LDLIBS)
 
 %_s:		%.o $(STATIC_LIB)
-		$(CC) $(LDFLAGS) $< -o $@ $(LDLIBS)
+		$(CC) $(LDFLAGS) $< $(STATIC_LIB) -o $@ $(LDLIBS)
