@@ -17,4 +17,4 @@
 #  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
 
 LIBOBJS=	types.o event.o query.o reply.o general.o setup.o transmit.o \
-		parse.o poll.o
+		parse.o poll.o check.o

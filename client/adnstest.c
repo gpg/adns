@@ -206,7 +206,8 @@ int main(int argc, char *const *argv) {
 
   if (initstring) {
     r= adns_init_strcfg(&ads,
-			(adns_if_debug|adns_if_noautosys)^initflagsnum,
+			(adns_if_debug|adns_if_noautosys|adns_if_checkc_freq)
+			^initflagsnum,
 			stdout,initstring);
   } else {
     r= adns_init(&ads,

@@ -60,6 +60,12 @@ typedef unsigned char byte;
 #define MAX_POLLFDS  ADNS_POLLFDS_RECOMMENDED
 
 typedef enum {
+  cc_user,
+  cc_entex,
+  cc_freq
+} consistency_checks;
+
+typedef enum {
   rcode_noerror,
   rcode_formaterror,
   rcode_servfail,
@@ -206,14 +212,14 @@ struct adns__query {
 
   /* Possible states:
    *
-   *  state   Queue   child  id   nextudpserver  sentudp     failedtcp
+   *  state   Queue   child  id   nextudpserver  udpsent     tcpfailed
    *				  
    *  tosend  NONE    null   >=0  0              zero        zero
    *  tosend  timew   null   >=0  any            nonzero     zero
    *  tosend  NONE    null   >=0  any            nonzero     zero
    *				  
-   *  tcpwait timew   null   >=0  irrelevant     zero        any
-   *  tcpsent timew   null   >=0  irrelevant     zero        any
+   *  tcpwait timew   null   >=0  irrelevant     any         any
+   *  tcpsent timew   null   >=0  irrelevant     any         any
    *				  
    *  child   childw  set    >=0  irrelevant     irrelevant  irrelevant
    *  child   NONE    null   >=0  irrelevant     irrelevant  irrelevant
@@ -633,6 +639,10 @@ void adns__fdevents(adns_state ads,
 		    int maxfd, const fd_set *readfds,
 		    const fd_set *writefds, const fd_set *exceptfds,
 		    struct timeval now, int *r_r);
+
+/* From check.c: */
+
+void adns__consistency(adns_state ads, consistency_checks cc);
 
 /* Useful static inline functions: */
 

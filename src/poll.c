@@ -29,12 +29,14 @@
 int adns_beforepoll(adns_state ads, struct pollfd *fds, int *nfds_io, int *timeout_io,
 		    const struct timeval *now) {
   struct timeval tv_nowbuf, tv_tobuf, *tv_to;
-  int space, found, timeout_ms;
+  int space, found, timeout_ms, r;
   struct pollfd fds_tmp[MAX_POLLFDS];
+
+  adns__consistency(ads,cc_entex);
 
   if (timeout_io) {
     adns__must_gettimeofday(ads,&now,&tv_nowbuf);
-    if (!now) { *nfds_io= 0; return 0; }
+    if (!now) { *nfds_io= 0; r= 0; goto xit; }
 
     timeout_ms= *timeout_io;
     if (timeout_ms == -1) {
@@ -65,21 +67,26 @@ int adns_beforepoll(adns_state ads, struct pollfd *fds, int *nfds_io, int *timeo
   } else {
     found= adns__pollfds(ads,fds_tmp);
     *nfds_io= found;
-    if (space < found) return ERANGE;
+    if (space < found) { r= ERANGE; goto xit; }
     memcpy(fds,fds_tmp,sizeof(struct pollfd)*found);
   }
-  return 0;
+  r= 0;
+xit:
+  adns__consistency(ads,cc_entex);
+  return r;
 }
 
 void adns_afterpoll(adns_state ads, const struct pollfd *fds, int nfds,
 		    const struct timeval *now) {
   struct timeval tv_buf;
 
+  adns__consistency(ads,cc_entex);
   adns__must_gettimeofday(ads,&now,&tv_buf);
-  if (!now) return;
-
-  adns__timeouts(ads, 1, 0,0, *now);
-  adns__fdevents(ads, fds,nfds, 0,0,0,0, *now,0);
+  if (now) {
+    adns__timeouts(ads, 1, 0,0, *now);
+    adns__fdevents(ads, fds,nfds, 0,0,0,0, *now,0);
+  }
+  adns__consistency(ads,cc_entex);
 }
 
 #endif

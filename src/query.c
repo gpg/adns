@@ -201,6 +201,8 @@ int adns_submit(adns_state ads,
   adns_query qu;
   const char *p;
 
+  adns__consistency(ads,cc_entex);
+
   typei= adns__findtype(type);
   if (!typei) return ENOSYS;
 
@@ -236,15 +238,18 @@ int adns_submit(adns_state ads,
     }
     query_simple(ads,qu, owner,ol, typei,flags, now);
   }
+  adns__consistency(ads,cc_entex);
   return 0;
 
  x_adnsfail:
   adns__query_fail(qu,stat);
+  adns__consistency(ads,cc_entex);
   return 0;
 
  x_errno:
   r= errno;
   assert(r);
+  adns__consistency(ads,cc_entex);
   return r;
 }
 
@@ -361,15 +366,19 @@ static void free_query_allocs(adns_query qu) {
 }
 
 void adns_cancel(adns_query qu) {
+  adns_state ads;
+
+  ads= qu->ads;
+  adns__consistency(ads,cc_entex);
   switch (qu->state) {
   case query_tosend: case query_tcpwait: case query_tcpsent:
-    LIST_UNLINK(qu->ads->timew,qu);
+    LIST_UNLINK(ads->timew,qu);
     break;
   case query_child:
-    LIST_UNLINK(qu->ads->childw,qu);
+    LIST_UNLINK(ads->childw,qu);
     break;
   case query_done:
-    LIST_UNLINK(qu->ads->output,qu);
+    LIST_UNLINK(ads->output,qu);
     break;
   default:
     abort();
@@ -377,6 +386,7 @@ void adns_cancel(adns_query qu) {
   free_query_allocs(qu);
   free(qu->answer);
   free(qu);
+  adns__consistency(ads,cc_entex);
 }
 
 void adns__update_expires(adns_query qu, unsigned long ttl, struct timeval now) {
@@ -464,6 +474,7 @@ void adns__query_done(adns_query qu) {
     makefinal_query(qu);
     LIST_LINK_TAIL(qu->ads->output,qu);
   }
+  qu->state= query_done;
 }
 
 void adns__query_fail(adns_query qu, adns_status stat) {

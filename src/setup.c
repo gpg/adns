@@ -226,6 +226,21 @@ static void ccf_options(adns_state ads, const char *fn, int lno, const char *buf
       ads->searchndots= v;
       continue;
     }
+    if (l>=12 && !memcmp(word,"adns_checkc:",12)) {
+      if (!strcmp(word+12,"none")) {
+	ads->iflags &= ~adns_if_checkc_freq;
+	ads->iflags |= adns_if_checkc_entex;
+      } else if (!strcmp(word+12,"entex")) {
+	ads->iflags &= ~adns_if_checkc_freq;
+	ads->iflags |= adns_if_checkc_entex;
+      } else if (!strcmp(word+12,"freq")) {
+	ads->iflags |= adns_if_checkc_freq;
+      } else {
+	configparseerr(ads,fn,lno, "option adns_checkc has bad value `%s' "
+		       "(must be none, entex or freq", word+12);
+      }
+      continue;
+    }
     adns__diag(ads,-1,0,"%s:%d: unknown option `%.*s'", fn,lno, l,word);
   }
 }
@@ -530,6 +545,7 @@ int adns_init(adns_state *ads_r, adns_initflags flags, FILE *diagfile) {
   r= init_finish(ads);
   if (r) return r;
 
+  adns__consistency(ads,cc_entex);
   *ads_r= ads;
   return 0;
 }
@@ -549,11 +565,14 @@ int adns_init_strcfg(adns_state *ads_r, adns_initflags flags,
   }
 
   r= init_finish(ads);  if (r) return r;
+  adns__consistency(ads,cc_entex);
   *ads_r= ads;
   return 0;
 }
 
+
 void adns_finish(adns_state ads) {
+  adns__consistency(ads,cc_entex);
   for (;;) {
     if (ads->timew.head) adns_cancel(ads->timew.head);
     else if (ads->childw.head) adns_cancel(ads->childw.head);
@@ -568,6 +587,7 @@ void adns_finish(adns_state ads) {
 }
 
 void adns_forallqueries_begin(adns_state ads) {
+  adns__consistency(ads,cc_entex);
   ads->forallnext=
     ads->timew.head ? ads->timew.head :
     ads->childw.head ? ads->childw.head :
@@ -577,6 +597,7 @@ void adns_forallqueries_begin(adns_state ads) {
 adns_query adns_forallqueries_next(adns_state ads, void **context_r) {
   adns_query qu, nqu;
 
+  adns__consistency(ads,cc_entex);
   nqu= ads->forallnext;
   for (;;) {
     qu= nqu;
