@@ -20,10 +20,50 @@
  *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
  */
 
+#include <assert.h>
+#include <string.h>
+#include <fcntl.h>
+#include <errno.h>
+
 #include "harness.h"
 
 static int begin_set;
 static struct timeval begin;
+
+void Q_str(const char *str) {
+  Tensureoutputfile();
+  if (fprintf(Toutputfile," %s\n",str) == EOF) Toutputerr();
+  if (fflush(Toutputfile)) Toutputerr();
+}
+
+void Q_vb(void) {
+  if (!adns__vbuf_append(&vb,"",1)) Tnomem();
+  Q_str(vb.buf);
+}
+
+static void Rvb(void) {
+  Q_vb();
+}
+  
+static void Rf(const char *fmt, ...) PRINTFFORMAT(1,2);
+static void Rf(const char *fmt, ...) {
+  va_list al;
+
+  va_start(al,fmt);
+  Tvbvf(fmt,al);
+  va_end(al);
+  Rvb();
+}
+
+static void Rerrno(const char *call) {
+  int e;
+
+  e= errno;
+  Tvbf("%s ",call);
+  Tvberrno(e);
+  Rvb();
+  errno= e;
+}
 
 int Hgettimeofday(struct timeval *tv, struct timezone *tz) {
   int r;
@@ -35,8 +75,9 @@ int Hgettimeofday(struct timeval *tv, struct timezone *tz) {
 
   r= gettimeofday(tv,0); if (r) Tfailed("gettimeofday");
 
+  vb.used= 0;
   if (!begin_set) {
-    printf(" gettimeofday= %ld.%06ld",tv->tv_sec,tv->tv_usec);
+    Tvbf("gettimeofday= %ld.%06ld",tv->tv_sec,tv->tv_usec);
     begin= *tv;
     begin_set= 1;
   } else {
@@ -48,55 +89,80 @@ int Hgettimeofday(struct timeval *tv, struct timezone *tz) {
     }
     assert(diff.tv_sec >= 0);
     assert(diff.tv_usec >= 0);
-    Tprintf(" gettimeofday= +%ld.%06ld\n",diff.tv_sec,diff.tv_usec);
+    Tvbf("gettimeofday= +%ld.%06ld",diff.tv_sec,diff.tv_usec);
   }
+  Rvb();
+  
   return 0;
 }
 
-int Hselect(int n, fd_set reads, fd_set writes, fd_set excepts, struct timeval *to) {
-  Qselect(n,reads,writes,excepts,to);
+int Hselect(int n, fd_set *rfds, fd_set *wfds, fd_set *efds, struct timeval *to) {
+  int r;
+  
+  Qselect(n,rfds,wfds,efds,to);
 
-  r= select(n,reads,writes,excepts,to);
+  r= select(n,rfds,wfds,efds,to);
 
   if (r==-1) {
-    Terrorno("select");
+    Rerrno("select");
   } else {
-    Tprintf(" select= %d",r);
-    Tfdset(reads); Tfdset(writes); Tfdset(excepts);
-    Tprintf("\n");
+    vb.used= 0;
+    Tvbf("select= %d",r);
+    Tvbfdset(n,rfds);
+    Tvbfdset(n,wfds);
+    Tvbfdset(n,efds);
+    Rvb();
   }
 
   if (to) memset(to,0x5a,sizeof(*to));
-}
 
-int Hsocket(int domain, int type, int protocol) {
-  assert(domain == AF_INET);
-
-  Qsocket(type);
-  r= socket(domain,type,protocol); if (r) Tfailed("socket");
-
-  Tprintf(" socket= %d\n",r);
   return r;
 }
 
-int Hfcntl(int fd, int cmd, long arg) {
-  Qfcntl(fd,cmd,arg);
+int Hsocket(int domain, int type, int protocol) {
+  int r;
+  
+  assert(domain == AF_INET);
 
-  r= fcntl(fd, cmd, arg); if (r==-1) Tfailed("fcntl");
+  Qsocket(type);
+  r= socket(domain,type,protocol); if (r==-1) Tfailed("socket");
 
-  Tprintf(" fcntl= %d\n",r);
+  Rf("socket= %d",r);
+  return r;
+}
+
+int Hfcntl(int fd, int cmd, ...) {
+  long arg;
+  int r;
+  va_list al;
+
+  if (cmd == F_SETFL) {
+    va_start(al,cmd);
+    arg= va_arg(al,long);
+    va_end(al);
+    Qfcntl_setfl(fd,cmd,arg);
+    r= fcntl(fd, cmd, arg);
+  } else {
+    Qfcntl_other(fd,cmd);
+    r= fcntl(fd, cmd);
+  }
+
+  if (r==-1) Tfailed("fcntl");
+  Rf("fcntl= %d",r);
   return r;
 }
 
 int Hconnect(int fd, struct sockaddr *addr, int addrlen) {
+  int r;
+  
   Qconnect(fd,addr,addrlen);
 
   r= connect(fd, addr, addrlen);
 
   if (r) {
-    Terrno("connect");
+    Rerrno("connect");
   } else {
-    Tprintf(" connect= OK\n");
+    Rf("connect= ok");
   }
   return r;
 }
@@ -108,59 +174,69 @@ int Hclose(int fd) {
 
 int Hsendto(int fd, const void *msg, int msglen, unsigned int flags,
 	    const struct sockaddr *addr, int addrlen) {
-  assert(!flags)
+  int r;
+  
+  assert(!flags);
   Qsendto(fd,msg,msglen,addr,addrlen);
 
   r= sendto(fd,msg,msglen,flags,addr,addrlen);
   if (r==-1) {
-    Terrno("sendto");
+    Rerrno("sendto");
   } else {
-    Tprintf(" sendto= %d\n",r);
+    Rf("sendto= %d",r);
   }
   return r;
 }
 
 int Hrecvfrom(int fd, void *buf, int buflen, unsigned int flags,
 	      struct sockaddr *addr, int *addrlen) {
-  assert(!flags)
-  Qrecvfrom(fd,buflen,addr,*addrlen);
+  int r;
+  
+  assert(!flags);
+  Qrecvfrom(fd,buflen,*addrlen);
 
   r= recvfrom(fd,buf,buflen,flags,addr,addrlen);
   if (r==-1) {
-    Terrno("recvfrom");
+    Rerrno("recvfrom");
   } else {
-    Tprintf(" recvfrom=",r);
-    Taddr(addr,addrlen);
-    Tbuf(buf,r);
-    Tprintf("\n");
+    vb.used= 0;
+    Tvbf("recvfrom= %d",r);
+    Tvbaddr(addr,*addrlen);
+    Tvbbytes(buf,r);
+    Rvb();
   }
 
   return r;
 }
 
 int Hread(int fd, void *buf, size_t len) {
+  int r;
+  
   Qread(fd,len);
 
   r= read(fd,buf,len);
   if (r==-1) {
-    Terrno("read");
+    Rerrno("read");
   } else {
-    Tprintf(" read=");
-    Tbuf(buf,r);
-    Tprintf("\n");
+    vb.used= 0;
+    Tvba("read=");
+    Tvbbytes(buf,r);
+    Rvb();
   }
 
   return r;
 }
 
 int Hwrite(int fd, const void *buf, size_t len) {
+  int r;
+  
   Qwrite(fd,buf,len);
 
   r= write(fd,buf,len);
   if (r==-1) {
-    Terrno("write");
+    Rerrno("write");
   } else {
-    Tprintf(" write= %d\n",r);
+    Rf("write= %d",r);
   }
   
   return r;

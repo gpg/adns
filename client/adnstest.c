@@ -25,6 +25,10 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#ifndef OUTPUTSTREAM
+# define OUTPUTSTREAM stdout
+#endif
+
 #include "adns.h"
 
 static void failure(const char *what, adns_status st) {
@@ -116,7 +120,7 @@ int main(int argc, char *const *argv) {
 	failure("submit",r);
       } else {
 	ri= adns_rr_info(types[ti], &rrtn,&fmtn,0, 0,0);
-	putchar(' ');
+	putc(' ',stdout);
 	dumptype(ri,rrtn,fmtn);
 	fprintf(stdout," submitted\n");
       }
@@ -141,7 +145,7 @@ int main(int argc, char *const *argv) {
 	for (i=0; i<ans->nrrs; i++) {
 	  r= adns_rr_info(ans->type, 0,0,0, ans->rrs.bytes+i*len,&show);
 	  if (r) failure("info",r);
-	  printf(" %s\n",show);
+	  fprintf(stdout," %s\n",show);
 	  free(show);
 	}
       }
