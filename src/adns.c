@@ -6,7 +6,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <unistd.h>
 
+#include <netdb.h>
 #include <arpa/nameser.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -62,6 +64,7 @@ static void diag(adns_state ads, const char *fmt, ...) {
 
 static void addserver(adns_state ads, struct in_addr addr) {
   int i;
+  struct server *ss;
   
   for (i=0; i<ads->nservers; i++) {
     if (ads->servers[i].addr.s_addr == addr.s_addr) {
@@ -75,8 +78,10 @@ static void addserver(adns_state ads, struct in_addr addr) {
     return;
   }
 
-  ads->servers[ads->nservers].addr= addr;
-  ads->servers[ads->nservers].tcpsocket= -1;
+  ss= ads->servers+ads->nservers;
+  ss->addr= addr;
+  ss->state= server_disc;
+  ss->connw.head= ss->connw.tail= 0;
   ads->nservers++;
 }
 
@@ -210,12 +215,16 @@ static void readconfigenv(adns_state ads, const char *envvar) {
 int adns_init(adns_state *ads_r, adns_initflags flags) {
   adns_state ads;
   const char *res_options, *adns_res_options;
+  struct protoent *proto;
+  struct sockaddr_in udpaddr;
+  int udpaddrlen, r;
   
   ads= malloc(sizeof(*ads)); if (!ads) return errno;
   ads->input.head= ads->input.tail= 0;
   ads->timew.head= ads->timew.tail= 0;
   ads->childw.head= ads->childw.tail= 0;
   ads->output.head= ads->output.tail= 0;
+  ads->nextid= 0x311f;
   ads->udpsocket= -1;
   ads->qbufavail= 0;
   ads->qbuf= 0;
@@ -247,9 +256,36 @@ int adns_init(adns_state *ads_r, adns_initflags flags) {
     ia.s_addr= INADDR_LOOPBACK;
     addserver(ads,ia);
   }
+
+  proto= getprotobyname("udp"); if (!proto) { r= ENOPROTOOPT; goto x_free; }
+  ads->udpsocket= socket(AF_INET,SOCK_DGRAM,proto->p_proto);
+  if (!ads->udpsocket) { r= errno; goto x_closeudp; }
+
+  memset(&udpaddr,0,sizeof(udpaddr));
+  udpaddr.sin_family= AF_INET;
+  udpaddr.sin_addr.s_addr= INADDR_ANY;
+  udpaddr.sin_port= 0;
+  r= bind(ads->udpsocket,&udpaddr,sizeof(udpaddr));
+  if (r) { r= errno; goto x_closeudp; }
+
+  udpaddrlen= sizeof(udpaddr);
+  r= getsockname(ads->udpsocket,&udpaddr,&udpaddrlen);
+  if (r) { r= errno; goto x_closeudp; }
+  if (udpaddr.sin_family != AF_INET) {
+    diag(ads,"network API error: UDP socket not AF_INET but %lu",
+	 (unsigned long)udpaddr.sin_family);
+    r= EPROTOTYPE; goto x_closeudp;
+  }
+  debug(ads,"UDP socket is %s:%u",inet_ntoa(udpaddr.sin_addr),ntohs(udpaddr.sin_port));
   
   *ads_r= ads;
   return 0;
+
+ x_closeudp:
+  close(ads->udpsocket);
+ x_free:
+  free(ads);
+  return r;
 }
 
 static void query_fail(adns_state ads, adns_query qu, adns_status stat) {
@@ -265,6 +301,10 @@ static void query_fail(adns_state ads, adns_query qu, adns_status stat) {
   }
   qu->answer= ans;
   LIST_LINK_TAIL(ads->input,qu);
+}
+
+int adns_finish(adns_state ads) {
+  abort(); /* FIXME */
 }
 
 void adns_interest(adns_state ads, int *maxfd,
@@ -342,6 +382,12 @@ int adns_synchronous(adns_state ads,
   return r;
 }
 
+static int mkquery(adns_state ads,
+		   const char *owner,
+		   adns_rrtype type) {
+  abort();
+}
+
 int adns_submit(adns_state ads,
 		const char *owner,
 		adns_rrtype type,
@@ -358,13 +404,19 @@ int adns_submit(adns_state ads,
   if (ol>0 && owner[ol-1]=='.') { flags &= ~adns_f_search; ol--; }
   qu= malloc(sizeof(*qu)+ol+1); if (!qu) return errno;
   qu->next= qu->back= qu->parent= qu->child= 0;
+  qu->id= ads->nextid++;
   qu->type= type;
   qu->answer= 0;
   qu->flags= flags;
   qu->context= context;
   qu->udpretries= 0;
-  qu->server= 0;
+  qu->sentudp= qu->senttcp= 0;
+  qu->nextserver= 0;
   memcpy(qu->owner,owner,ol); qu->owner[ol]= 0;
+
+
+  mkquery(ads,owner,type);
+
   if (stat) {
     query_fail(ads,qu,stat);
   } else {
