@@ -1,106 +1,64 @@
 adns debug: using nameserver 172.18.45.6
-2.144.21.12.in-addr.arpa flags 0 type 1 A(-) submitted
-2.144.21.12.in-addr.arpa flags 0 type 2 NS(raw) submitted
-2.144.21.12.in-addr.arpa flags 0 type 5 CNAME(-) submitted
-2.144.21.12.in-addr.arpa flags 0 type 6 SOA(raw) submitted
-2.144.21.12.in-addr.arpa flags 0 type 12 PTR(raw) submitted
-2.144.21.12.in-addr.arpa flags 0 type 13 HINFO(-) submitted
-2.144.21.12.in-addr.arpa flags 0 type 15 MX(raw) submitted
-2.144.21.12.in-addr.arpa flags 0 type 16 TXT(-) submitted
-2.144.21.12.in-addr.arpa flags 0 type 17 RP(raw) submitted
-2.144.21.12.in-addr.arpa flags 0 type 65537 A(addr) submitted
-2.144.21.12.in-addr.arpa flags 0 type 65538 NS(+addr) submitted
-2.144.21.12.in-addr.arpa flags 0 type 65548 PTR(checked) submitted
-2.144.21.12.in-addr.arpa flags 0 type 65551 MX(+addr) submitted
-2.144.21.12.in-addr.arpa flags 0 type 131078 SOA(822) submitted
-2.144.21.12.in-addr.arpa flags 0 type 131089 RP(822) submitted
-2.144.21.12.in-addr.arpa flags 0 type NS(raw): No such data; nrrs=0; cname=$; owner=$; ttl=0
-2.144.21.12.in-addr.arpa flags 0 type SOA(raw): No such data; nrrs=0; cname=$; owner=$; ttl=0
-2.144.21.12.in-addr.arpa flags 0 type TXT(-): No such data; nrrs=0; cname=$; owner=$; ttl=0
-2.144.21.12.in-addr.arpa flags 0 type MX(raw): No such data; nrrs=0; cname=$; owner=$; ttl=0
-2.144.21.12.in-addr.arpa flags 0 type RP(raw): No such data; nrrs=0; cname=$; owner=$; ttl=0
-2.144.21.12.in-addr.arpa flags 0 type NS(+addr): No such data; nrrs=0; cname=$; owner=$; ttl=0
-2.144.21.12.in-addr.arpa flags 0 type MX(+addr): No such data; nrrs=0; cname=$; owner=$; ttl=0
-2.144.21.12.in-addr.arpa flags 0 type A(addr): No such data; nrrs=0; cname=$; owner=$; ttl=0
-2.144.21.12.in-addr.arpa flags 0 type SOA(822): No such data; nrrs=0; cname=$; owner=$; ttl=0
-2.144.21.12.in-addr.arpa flags 0 type RP(822): No such data; nrrs=0; cname=$; owner=$; ttl=0
-2.144.21.12.in-addr.arpa flags 0 type A(-): No such data; nrrs=0; cname=$; owner=$; ttl=0
-adns debug: TCP connected (NS=172.18.45.6)
-2.144.21.12.in-addr.arpa flags 0 type PTR(raw): OK; nrrs=36; cname=$; owner=$; ttl=3600
- proxy.elux.com
- ferrari.elux.com
- dns.elux.com
- elux.elux.com
- mail.elux.com
- mail.tristarclean.com
- mail.electrolux-online.com
- ftp.electrolux-online.com
- mail.electroluxonline
- ftp.electroluxonline
- mail.electroluxonline.com
- ftp.electroluxonline.com
- ftp.electrolux-online.net
- mail.electrolux-online.net
- ftp.electrolux-online.org
- mail.electrolux-online.org
- ftp.electroluxonline.net
- mail.electroluxonline.net
- ftp.electroluxonline.org
- mail.electroluxonline.org
- ftp.elux-online.com
- mail.elux-online.com
- ftp.elux-online.net
- mail.elux-online.net
- ftp.elux-online.org
- mail.elux-online.org
- ftp.eluxonline.com
- mail.eluxonline.com
- ftp.eluxonline.net
- mail.eluxonline.net
- ftp.eluxonline.org
- mail.eluxonline.org
- mail.globaltek-intl.com
- boas.elux.com
- mail.evacuumcleaners.com
- mail.evacuumcleaners.net
-2.144.21.12.in-addr.arpa flags 0 type CNAME(-): No such data; nrrs=0; cname=$; owner=$; ttl=0
-adns debug: reply not found, id 3130, query owner dns.elux.com (NS=172.18.45.6)
-adns debug: reply not found, id 3131, query owner elux.elux.com (NS=172.18.45.6)
-adns debug: reply not found, id 3132, query owner mail.elux.com (NS=172.18.45.6)
-adns debug: reply not found, id 314f, query owner boas.elux.com (NS=172.18.45.6)
-2.144.21.12.in-addr.arpa flags 0 type PTR(checked): Inconsistent resource records in DNS; nrrs=0; cname=$; owner=$; ttl=3598
-adns debug: reply not found, id 312e, query owner proxy.elux.com (NS=172.18.45.6)
-adns debug: reply not found, id 3135, query owner ftp.electrolux-online.com (NS=172.18.45.6)
-adns debug: reply not found, id 3136, query owner mail.electroluxonline (NS=172.18.45.6)
-adns debug: reply not found, id 3137, query owner ftp.electroluxonline (NS=172.18.45.6)
-adns debug: reply not found, id 3134, query owner mail.electrolux-online.com (NS=172.18.45.6)
-adns debug: reply not found, id 3133, query owner mail.tristarclean.com (NS=172.18.45.6)
-adns debug: reply not found, id 3138, query owner mail.electroluxonline.com (NS=172.18.45.6)
-adns debug: reply not found, id 3139, query owner ftp.electroluxonline.com (NS=172.18.45.6)
-adns debug: reply not found, id 313a, query owner ftp.electrolux-online.net (NS=172.18.45.6)
-adns debug: reply not found, id 313c, query owner ftp.electrolux-online.org (NS=172.18.45.6)
-adns debug: reply not found, id 313d, query owner mail.electrolux-online.org (NS=172.18.45.6)
-adns debug: reply not found, id 313b, query owner mail.electrolux-online.net (NS=172.18.45.6)
-adns debug: reply not found, id 313e, query owner ftp.electroluxonline.net (NS=172.18.45.6)
-adns debug: reply not found, id 3141, query owner mail.electroluxonline.org (NS=172.18.45.6)
-adns debug: reply not found, id 313f, query owner mail.electroluxonline.net (NS=172.18.45.6)
-adns debug: reply not found, id 3140, query owner ftp.electroluxonline.org (NS=172.18.45.6)
-adns debug: reply not found, id 3142, query owner ftp.elux-online.com (NS=172.18.45.6)
-adns debug: reply not found, id 3145, query owner mail.elux-online.net (NS=172.18.45.6)
-adns debug: reply not found, id 3144, query owner ftp.elux-online.net (NS=172.18.45.6)
-adns debug: reply not found, id 3143, query owner mail.elux-online.com (NS=172.18.45.6)
-adns debug: reply not found, id 3146, query owner ftp.elux-online.org (NS=172.18.45.6)
-adns debug: reply not found, id 3148, query owner ftp.eluxonline.com (NS=172.18.45.6)
-adns debug: reply not found, id 3149, query owner mail.eluxonline.com (NS=172.18.45.6)
-adns debug: reply not found, id 3147, query owner mail.elux-online.org (NS=172.18.45.6)
-adns debug: reply not found, id 314b, query owner mail.eluxonline.net (NS=172.18.45.6)
-adns debug: reply not found, id 314c, query owner ftp.eluxonline.org (NS=172.18.45.6)
-adns debug: reply not found, id 314a, query owner ftp.eluxonline.net (NS=172.18.45.6)
-adns debug: reply not found, id 314d, query owner mail.eluxonline.org (NS=172.18.45.6)
-adns debug: reply not found, id 314e, query owner mail.globaltek-intl.com (NS=172.18.45.6)
-adns debug: reply not found, id 3150, query owner mail.evacuumcleaners.com (NS=172.18.45.6)
-adns debug: reply not found, id 3151, query owner mail.evacuumcleaners.net (NS=172.18.45.6)
-adns debug: reply not found, id 312a, query owner 2.144.21.12.in-addr.arpa (NS=172.18.45.6)
-adns debug: reply not found, id 311f, query owner 2.144.21.12.in-addr.arpa (NS=172.18.45.6)
-2.144.21.12.in-addr.arpa flags 0 type HINFO(-): No such data; nrrs=0; cname=$; owner=$; ttl=0
+4.204.50.158.in-addr.arpa flags 0 type 1 A(-) submitted
+4.204.50.158.in-addr.arpa flags 0 type 2 NS(raw) submitted
+4.204.50.158.in-addr.arpa flags 0 type 5 CNAME(-) submitted
+4.204.50.158.in-addr.arpa flags 0 type 6 SOA(raw) submitted
+4.204.50.158.in-addr.arpa flags 0 type 12 PTR(raw) submitted
+4.204.50.158.in-addr.arpa flags 0 type 13adns debug: TCP connected (NS=172.18.45.6)
+ HINFO(-) submitted
+4.204.50.158.in-addr.arpa flags 0 type 15adns warning: TCP connection lost: poll/select: exceptional condition detected (NS=172.18.45.6)
+ MX(raw) submitted
+4.204.50.158.in-addr.arpa flags 0 type 16 TXT(-) submitted
+4.204.50.158.in-addr.arpa flags 0 type 17 RP(raw) submitted
+4.204.50.158.in-addr.arpa flags 0 type 65537 A(addr) submitted
+4.204.50.158.in-addr.arpa flags 0 type 65538 NS(+addr) submitted
+4.204.50.158.in-addr.arpa flags 0 type 65548 PTR(checked) submitted
+4.204.50.158.in-addr.arpa flags 0 type 65551adns debug: TCP connected (NS=172.18.45.6)
+ MX(+addr) submitted
+4.204.50.158.in-addr.arpa flags 0 type 131078adns warning: TCP connection lost: poll/select: exceptional condition detected (NS=172.18.45.6)
+ SOA(822) submitted
+4.204.50.158.in-addr.arpa flags 0 type 131089 RP(822) submitted
+4.204.50.158.in-addr.arpa flags 0 type PTR(raw): OK; nrrs=23; cname=$; owner=$; ttl=78991
+ ns2.afp.com
+ ns.afp.com
+ news.afp.com
+ ns2.afp.fr
+ ns.afp.fr
+ news.afp.fr
+ ns2.agencefrancepresse.com
+ news.agencefrancepresse.com
+ ns2.agencefrancepresse.fr
+ news.agencefrancepresse.fr
+ ns2.agencefrance-presse.com
+ news.agencefrance-presse.com
+ ns2.agencefrance-presse.fr
+ news.agencefrance-presse.fr
+ ns2.imageforum.com
+ news.imageforum.com
+ ns2.imageforum.tm.fr
+ news.imageforum.tm.fr
+ ns2.ooh-lah-lah.com
+ ns2.afpsciences.com
+ ns2.afpdoc.com
+ ns2.afp-notes.com
+ ns2.afp-domino.com
+4.204.50.158.in-addr.arpa flags 0 type A(-): No such data; nrrs=0; cname=$; owner=$; ttl=0
+4.204.50.158.in-addr.arpa flags 0 type MX(raw): No such data; nrrs=0; cname=$; owner=$; ttl=0
+4.204.50.158.in-addr.arpa flags 0 type HINFO(-): No such data; nrrs=0; cname=$; owner=$; ttl=0
+4.204.50.158.in-addr.arpa flags 0 type NS(raw): No such data; nrrs=0; cname=$; owner=$; ttl=0
+4.204.50.158.in-addr.arpa flags 0 type SOA(raw): No such data; nrrs=0; cname=$; owner=$; ttl=0
+4.204.50.158.in-addr.arpa flags 0 type TXT(-): No such data; nrrs=0; cname=$; owner=$; ttl=0
+4.204.50.158.in-addr.arpa flags 0 type NS(+addr): No such data; nrrs=0; cname=$; owner=$; ttl=0
+4.204.50.158.in-addr.arpa flags 0 type MX(+addr): No such data; nrrs=0; cname=$; owner=$; ttl=0
+4.204.50.158.in-addr.arpa flags 0 type PTR(checked): Inconsistent resource records in DNS; nrrs=0; cname=$; owner=$; ttl=78990
+adns debug: reply not found, id 3140, query owner ns2.afpsciences.com (NS=172.18.45.6)
+4.204.50.158.in-addr.arpa flags 0 type RP(822): No such data; nrrs=0; cname=$; owner=$; ttl=0
+4.204.50.158.in-addr.arpa flags 0 type RP(raw): No such data; nrrs=0; cname=$; owner=$; ttl=0
+4.204.50.158.in-addr.arpa flags 0 type A(addr): No such data; nrrs=0; cname=$; owner=$; ttl=0
+4.204.50.158.in-addr.arpa flags 0 type SOA(822): No such data; nrrs=0; cname=$; owner=$; ttl=0
+adns debug: reply not found, id 312c, query owner 4.204.50.158.in-addr.arpa (NS=172.18.45.6)
+adns debug: reply not found, id 3128, query owner 4.204.50.158.in-addr.arpa (NS=172.18.45.6)
+adns debug: reply not found, id 3127, query owner 4.204.50.158.in-addr.arpa (NS=172.18.45.6)
+adns debug: reply not found, id 312e, query owner ns.afp.com (NS=172.18.45.6)
+4.204.50.158.in-addr.arpa flags 0 type CNAME(-): No such data; nrrs=0; cname=$; owner=$; ttl=0
 rc=0
