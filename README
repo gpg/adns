@@ -69,8 +69,8 @@ Forthcoming:
 Documentation
 
    I'm afraid there is no manual yet. However, competent C programmers
-   should be able to use the library based on the commented [3]adns.h
-   header file (from version 0.6).
+   should be able to use the library based on the [3]commented adns.h
+   header file.
    
 Feedback
 
@@ -144,11 +144,11 @@ References
 
    1. http://www.isc.org/view.cgi?/products/BIND/index.phtml
    2. http://www.dents.org/
-   3. http://www.chiark.greenend.org.uk/~ian/adns/adns.h.0.6.txt
+   3. http://www.chiark.greenend.org.uk/~ian/adns/adns.h.txt
    4. http://www.chiark.greenend.org.uk/mailman/listinfo
    5. http://www.chiark.greenend.org.uk/~ian/adns/
    6. http://www.chiark.greenend.org.uk/~ian/adns/adns.tar.gz
-   7. http://www.chiark.greenend.org.uk/~ian/adns/adns.h.0.6.txt
+   7. http://www.chiark.greenend.org.uk/~ian/adns/adns.h.txt
    8. ftp://ftp.chiark.greenend.org.uk/users/ian/adns/
    9. http://www.chiark.greenend.org.uk/ucgi/~ijackson/cvsweb/adns/
   10. http://www.gnu.org/
