@@ -255,58 +255,58 @@ int main(int argc, char *const *argv) {
     mc= mcw;
     qu= mcw->qu;
 
-      if (strchr(owninitflags,'p')) {
+    if (strchr(owninitflags,'p')) {
+      for (;;) {
+	r= adns_check(ads,&qu,&ans,&mcr);
+	if (r != EWOULDBLOCK) break;
 	for (;;) {
-	  r= adns_check(ads,&qu,&ans,&mcr);
-	  if (r != EWOULDBLOCK) break;
-	  for (;;) {
-	    npollfds= npollfdsavail;
-	    timeout= -1;
-	    r= adns_beforepoll(ads, pollfds, &npollfds, &timeout, 0);
-	    if (r != ERANGE) break;
-	    pollfds= realloc(pollfds,sizeof(*pollfds)*npollfds);
-	    if (!pollfds) failure_errno("realloc pollfds",errno);
-	    npollfdsavail= npollfds;
-	  }
-	  if (r) failure_errno("beforepoll",r);
-	  r= poll(pollfds,npollfds,timeout);
-	  if (r == -1) failure_errno("poll",errno);
-	  adns_afterpoll(ads,pollfds, r?npollfds:0, 0);
+	  npollfds= npollfdsavail;
+	  timeout= -1;
+	  r= adns_beforepoll(ads, pollfds, &npollfds, &timeout, 0);
+	  if (r != ERANGE) break;
+	  pollfds= realloc(pollfds,sizeof(*pollfds)*npollfds);
+	  if (!pollfds) failure_errno("realloc pollfds",errno);
+	  npollfdsavail= npollfds;
 	}
-      } else {
-	r= adns_wait(ads,&qu,&ans,&mcr);
+	if (r) failure_errno("beforepoll",r);
+	r= poll(pollfds,npollfds,timeout);
+	if (r == -1) failure_errno("poll",errno);
+	adns_afterpoll(ads,pollfds, r?npollfds:0, 0);
       }
-      if (r) failure_errno("wait/check",r);
+    } else {
+      r= adns_wait(ads,&qu,&ans,&mcr);
+    }
+    if (r) failure_errno("wait/check",r);
+    
+    assert(mcr==mc);
+    fdom_split(mc->fdom,&domain,&qflags,ownflags,sizeof(ownflags));
 
-      assert(mcr==mc);
-      fdom_split(mc->fdom,&domain,&qflags,ownflags,sizeof(ownflags));
-
-      if (gettimeofday(&now,0)) { perror("gettimeofday"); exit(3); }
+    if (gettimeofday(&now,0)) { perror("gettimeofday"); exit(3); }
       
-      ri= adns_rr_info(ans->type, &rrtn,&fmtn,&len, 0,0);
-      fprintf(stdout, "%s flags %d type ",domain,qflags);
-      dumptype(ri,rrtn,fmtn);
-      fprintf(stdout, "%s%s: %s; nrrs=%d; cname=%s; owner=%s; ttl=%ld\n",
-	      ownflags[0] ? " ownflags=" : "", ownflags,
-	      strchr(ownflags,'a')
-	      ? adns_errabbrev(ans->status)
-	      : adns_strerror(ans->status),
-	      ans->nrrs,
-	      ans->cname ? ans->cname : "$",
-	      ans->owner ? ans->owner : "$",
-	      (long)ans->expires - (long)now.tv_sec);
-      if (ans->nrrs) {
-	assert(!ri);
-	for (i=0; i<ans->nrrs; i++) {
-	  r= adns_rr_info(ans->type, 0,0,0, ans->rrs.bytes + i*len, &show);
-	  if (r) failure_status("info",r);
-	  fprintf(stdout," %s\n",show);
-	  free(show);
-	}
+    ri= adns_rr_info(ans->type, &rrtn,&fmtn,&len, 0,0);
+    fprintf(stdout, "%s flags %d type ",domain,qflags);
+    dumptype(ri,rrtn,fmtn);
+    fprintf(stdout, "%s%s: %s; nrrs=%d; cname=%s; owner=%s; ttl=%ld\n",
+	    ownflags[0] ? " ownflags=" : "", ownflags,
+	    strchr(ownflags,'a')
+	    ? adns_errabbrev(ans->status)
+	    : adns_strerror(ans->status),
+	    ans->nrrs,
+	    ans->cname ? ans->cname : "$",
+	    ans->owner ? ans->owner : "$",
+	    (long)ans->expires - (long)now.tv_sec);
+    if (ans->nrrs) {
+      assert(!ri);
+      for (i=0; i<ans->nrrs; i++) {
+	r= adns_rr_info(ans->type, 0,0,0, ans->rrs.bytes + i*len, &show);
+	if (r) failure_status("info",r);
+	fprintf(stdout," %s\n",show);
+	free(show);
       }
-      free(ans);
+    }
+    free(ans);
 
-      mc->doneyet= 1;
+    mc->doneyet= 1;
   }
 
   free(mcs);
