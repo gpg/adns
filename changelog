@@ -1,4 +1,4 @@
-adns (0.8) BETA; urgency=low
+uadns (0.8) BETA; urgency=low
 
   * Spurious `server failure on unidentifiable query' warning suppressed.
   * install-sh (from autoconf 2.12 Debian r13) included.
@@ -7,6 +7,7 @@ adns (0.8) BETA; urgency=low
   * Documented that adns_rr_info _rr_hostaddr ( ) for address list
     means permanent failure, and ? means temporary failure.
   * Typo (*now for now in _beforeselect description) in adns.h fixed.
+  * In _beforeselect, global system failure now produces zero timeout.
 
  --
 

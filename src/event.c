@@ -531,7 +531,7 @@ void adns_beforeselect(adns_state ads, int *maxfd_io, fd_set *readfds_io,
   if (tv_mod && (!*tv_mod || (*tv_mod)->tv_sec || (*tv_mod)->tv_usec)) {
     /* The caller is planning to sleep. */
     adns__must_gettimeofday(ads,&now,&tv_nowbuf);
-    if (!now) goto xit;
+    if (!now) { inter_immed(tv_mod,tv_iobuf); goto xit; }
     adns__timeouts(ads, 1, tv_mod,tv_tobuf, *now);
   }
 
@@ -656,7 +656,7 @@ int adns_wait(adns_state ads,
 	      void **context_r) {
   int r, maxfd, rsel;
   fd_set readfds, writefds, exceptfds;
-  struct timeval tvbuf, *tvp;
+  struct timeval *now, nowbuf, tvbuf, *tvp;
   
   adns__consistency(ads,*query_io,cc_entex);
   for (;;) {
