@@ -48,7 +48,8 @@ static const char * const cvsid =
 #include "adns.h"
 
 /* maximum number of concurrent DNS queries */
-#define MAXPENDING 1000
+#define MAXMAXPENDING 64000
+#define DEFMAXPENDING 2000
 
 /* maximum length of a line */
 #define MAXLINE 1024
@@ -157,7 +158,7 @@ static logline *readline(FILE *inf, adns_state adns, int opts) {
   return NULL;
 }
 	
-static void proclog(FILE *inf, FILE *outf, int opts) {
+static void proclog(FILE *inf, FILE *outf, int maxpending, int opts) {
   int eof, err, len;
   adns_state adns;
   adns_answer *answer;
@@ -168,18 +169,19 @@ static void proclog(FILE *inf, FILE *outf, int opts) {
   head= tail= readline(inf, adns, opts);
   len= 1; eof= 0;
   while (head) {
-    if (opts & OPT_DEBUG)
-      msg("%d in queue; checking %.*s", len,
-	  head->rest-head->addr, guard_null(head->addr));
-    if (eof || len > MAXPENDING) {
-      if (opts & OPT_POLL)
-	err= adns_wait_poll(adns, &head->query, &answer, NULL);
-      else
-	err= adns_wait(adns, &head->query, &answer, NULL);
-    } else {
-      err= adns_check(adns, &head->query, &answer, NULL);
-    }
-    if (err != EAGAIN) {
+    while (head) {
+      if (opts & OPT_DEBUG)
+	msg("%d in queue; checking %.*s", len,
+	    head->rest-head->addr, guard_null(head->addr));
+      if (eof || len > maxpending) {
+	if (opts & OPT_POLL)
+	  err= adns_wait_poll(adns, &head->query, &answer, NULL);
+	else
+	  err= adns_wait(adns, &head->query, &answer, NULL);
+      } else {
+	err= adns_check(adns, &head->query, &answer, NULL);
+      }
+      if (err == EAGAIN) break;
       printline(outf, head->start, head->addr, head->rest,
 		answer->status == adns_s_ok ? *answer->rrs.str : NULL);
       line= head; head= head->next;
@@ -188,15 +190,12 @@ static void proclog(FILE *inf, FILE *outf, int opts) {
     }
     if (!eof) {
       line= readline(inf, adns, opts);
-      if (!line)
+      if (line) {
+        if (!head) head= line;
+        else tail->next= line;
+        tail= line; len++;
+      } else {
 	eof= 1;
-      else {
-	if (!head)
-	  head= line;
-	else
-	  tail->next= line;
-	tail= line;
-	len++;
       }
     }
   }
@@ -204,12 +203,13 @@ static void proclog(FILE *inf, FILE *outf, int opts) {
 }
 
 static void usage(void) {
-  fprintf(stderr, "usage: %s [-d] [-p] [logfile]\n", progname);
+  fprintf(stderr, "usage: %s [-d] [-p] [-c concurrency] [logfile]\n", progname);
   exit(1);
 }
 
 int main(int argc, char *argv[]) {
-  int c, opts;
+  int c, opts, maxpending;
+  extern char *optarg;
   FILE *inf;
 
   progname= strrchr(*argv, '/');
@@ -217,10 +217,18 @@ int main(int argc, char *argv[]) {
     progname++;
   else
     progname= *argv;
-  opts= 0;
 
-  while ((c= getopt(argc, argv, "dp")) != -1)
+  maxpending= DEFMAXPENDING;
+  opts= 0;
+  while ((c= getopt(argc, argv, "c:dp")) != -1)
     switch (c) {
+    case 'c':
+      maxpending= atoi(optarg);
+      if (maxpending < 1 || maxpending > MAXMAXPENDING) {
+       fprintf(stderr, "%s: unfeasible concurrency %d\n", progname, maxpending);
+       exit(1);
+      }
+      break;
     case 'd':
       opts|= OPT_DEBUG;
       break;
@@ -245,7 +253,7 @@ int main(int argc, char *argv[]) {
   if (!inf)
     aargh("couldn't open input");
 
-  proclog(inf, stdout, opts);
+  proclog(inf, stdout, maxpending, opts);
 
   if (fclose(inf))
     aargh("fclose input");

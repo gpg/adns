@@ -6,6 +6,7 @@ adns (0.10) unstable; urgency=low
 
   General Improvements:
   * adnshost has --config option for overriding configuration.
+  * Improvements to adnslogres (incl. new -c option) from Tony Finch.
   * Regression tests now include `adnshost' invocations.
   * Test cancellation both before and after query completion.
 
@@ -25,7 +26,6 @@ adns (0.10) unstable; urgency=low
   * Kill bogus warning, adh-main.c: `arg2' might be used uninitialized ...
   * Add extra {...} near adnslogres.c:167 to kill spurious warning.
   * Use `printf' instead of `echo -n'.
-  
 
  --
 
