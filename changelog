@@ -3,12 +3,14 @@ adns (0.5) unstable; urgency=medium
   Incompatible changes:
   * RRs with mailboxes never rejected due to strange chars if _raw.
   * Lack of a mailbox produces `.' not `<>'.
+  * Better usage messages (and no default query domain) for adnstest.
   
   Bugfixes and portability improvements:
   * Mailboxes containing spaces in their names are quoted.
   * adns_rr_hostaddr naddrs is -1 on temporary failure (as documented).
   * Give install the '-c' flag (otherwise some delete the original !).
   * Reject TXT RRs with no strings.
+  * Don't complain so much about poll(2) tests if not available.
 
  --
 
