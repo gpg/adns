@@ -5,10 +5,10 @@
 /*
  *  This file is
  *   Copyright (C) 1999 Tony Finch <dot@dotat.at>
- *   Copyright (C) 1999 Ian Jackson <ian@davenant.greenend.org.uk>
+ *   Copyright (C) 1999-2000 Ian Jackson <ian@davenant.greenend.org.uk>
  *
  *  It is part of adns, which is
- *    Copyright (C) 1997-1999 Ian Jackson <ian@davenant.greenend.org.uk>
+ *    Copyright (C) 1997-2000 Ian Jackson <ian@davenant.greenend.org.uk>
  *    Copyright (C) 1999 Tony Finch <dot@dotat.at>
  *  
  *  This program is free software; you can redistribute it and/or modify
@@ -25,8 +25,9 @@
  *  along with this program; if not, write to the Free Software Foundation,
  *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * This version was originally supplied by Tony Finch, but has been
- * modified by Ian Jackson as it was incorporated into adns.
+ *  This version was originally supplied by Tony Finch, but has been
+ *  modified by Ian Jackson as it was incorporated into adns and
+ *  subsequently.
  */
 
 static const char * const cvsid =
