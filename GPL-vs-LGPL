@@ -1,0 +1,171 @@
+              GPL vs LGPL, in the context of adns
+              -----------------------------------
+
+Several people have asked me to release adns under the GNU Lesser
+General Public Licence (LGPL, formerly the Library GPL) instead of the
+`stronger' GPL.  This file is intended to answer most of these
+questions.  If you still have questions or comments, please mail me at
+<adns-maint@chiark.greenend.org.uk>.
+
+Typically there are two or three kinds of situation where people make
+this request: the first is where someone is developing a proprietary
+program and wishes to make use of adns but doesn't wish to make their
+program free software.  The second case is where a free software
+project is currently using an MIT-like licence and fear `GPL
+infection'.  The third case, which often overlaps with the second, is
+where another free software project currently using a GPL-incompatible
+licence, wishes to use adns.
+
+
+1. Proprietary applications of adns
+-----------------------------------
+
+So, let me get this straight.  You're writing a proprietary
+program, by which I mean that you will not be distributing source code
+and not allowing users to modify and share your software; most likely
+you are doing this for your own (personal or corporate) financial
+gain.
+
+However, you want to take advantage of adns, software which I have
+spent my time and effort on, and which I release as free software so
+that everyone can improve, share and use it.
+
+Don't you think that is a little hypocritical ?  I'm sorry, but I
+don't want you to just take my nice convenient software, without
+giving something back to the free software community or giving the
+same rights to your users as I do to you.
+
+If you really aren't the nasty kind of person I've described here, for
+example if you have a good reason other than your own selfishness for
+wanting to restrict distribution of your program, then perhaps you
+should contact me to discuss it.
+
+
+2. GPL-avoiding projects (MIT licence, et al)
+---------------------------------------------
+
+Some free software projects prefer to avoid the GPL and other licences
+which force the software always to be free.  Instead they use
+something like the MIT X licence, which allows proprietary versions of
+their software.  I have to say that I don't understand why they do
+this, and think they are misguided, but that doesn't mean that they
+don't have a perfect right to.
+
+Some of these people think that merely writing to an interface
+provided by GPL'd software will cause their program to become GPL'd
+too, even if they don't distribute the GPL'd software.  I don't think
+this is the case.  I'm perfectly happy for non-GPL'd software to refer
+to adns in its source code or executables (eg, dynamic linking).
+However, if you distribute adns yourself then whether a program which
+uses it needs also to be GPL'd depends on the interpretation of the
+`work as a whole' and `mere aggregation' parts of the GPL.
+
+Whether you are distributing a `work as a whole' might depend on many
+things, but they key one to me is what the appearance is to a user.
+If the user knows that they are getting a collection of software
+rather than a single product, then it's probably an aggregation which
+works together.  So, you can distribute both your (i) non-GPLd program
+source and/or binaries and (ii) adns source code or even binaries
+(provided the adns source is available as per the GPL), eg from your
+website, provided the user can tell that these are separate works and
+can tell which parts are which.
+
+But, if you package your program and adns together so that the user is
+no longer aware of adns as a separate work, then I think you are
+distributing a `work as a whole', and the whole work including adns
+and your software which depends on it must be GPL'd.  This is of
+course not a problem if your non-GPL licence is GPL-compatible (see
+the next section): it just means that _when the whole lot is shipped
+together as one work_ it is covered by the GPL.  People who wish to
+make proprietary works based on just your code can do so, provided
+they (or you) arrange for something to fill the hole left by the lack
+of adns.
+
+
+3. GPL-incompatible free software licences
+------------------------------------------
+
+Regrettably, there are a number of free software licences (and
+semi-free licences) in existence which are not compatible with the
+GPL.  That is, they impose restrictions which are not present in the
+GPL, and therefore distributing a whole work which contains such a
+program and a GPL'd program is not possible: either the work would
+have to be distributed under the GPL (violating the restrictions made
+by the original author), or under the GPL-incompatible licence
+(violating the GPL).
+
+I may be prepared to make exceptions for such a licence.  Please
+contact me at <adns-maint@chiark.greenend.org.uk> with the full text
+of the GPL-incompatible licence.  However, I would prefer it if you
+could use a GPL-compatible licence for your project instead.
+
+There are a couple of common extra restrictions, and I make some
+specific extensions to my licence for adns below.
+
+3.1. BSD advertising clause and endorsement restriction
+
+The most notable and common extra restriction found in free software
+licences is the `obnoxious BSD advertising clause' (see Richard
+Stallman's article on the subject, available from www.gnu.org) and the
+endorsement restriction.
+
+The problem with the advertising clause isn't that the sentence
+required, referring the the Regents of the UC Berkeley, is awkward.
+The problem is that if everyone contributing to a large project gets
+such a mention the number of sentences required becomes very large;
+however, it is unfair for some people to get credit and others not to.
+
+I disapprove of these clause, but I recognise that it may be difficult
+for some people to get them removed from particular programs.
+
+So, I hereby make an extension to my licence for adns:
+
+ You may alternatively distribute adns under the GNU GPL version 2
+ with the following banner and either one or both of the following
+ additional restrictions, to be inserted at the end of section 1:
+
+  ADDITIONAL RESTRICTIONS:
+  (The permissions granted in this licence only apply if you comply
+  with the following restrictions:)
+
+  (a) All advertising materials mentioning features or use of the Program
+      (or a work based on the Program, GPL section 2) must display the
+      following acknowledgement for each author, copyright holder or
+      group of authors or copyright holders:
+
+       This product includes software developed by PERSON OR GROUP.
+
+      where PERSON OR GROUP is the name of the (group of) authors or
+      copyright holders, in the form in which they reasonably wish
+      themselves to be identified in such acknowledgements.  A
+      reasonable alternative form of words must be used if requested
+      by the person or group.
+
+      The desires of the persons or groups are to be inferred from
+      statements made about the desired form of such acknowledgements
+      by these persons or groups in their own copyright notices and
+      licences.  Such statements are to be considered part of the
+      appropriate copyright notice that the GPL requires you to
+      publish (section 1).
+
+      This credit must be given for every author and copyright holder
+      of the Program or the work based on the Program, in so far as it
+      reasonably possible to determine who the author(s) and copyright
+      holder(s) are.
+
+  (b) None of the names of the copyright holders and authors of the
+      Program or works based on the Program may be used to endorse or
+      promote the Program or works based on the Program without
+      specific prior written permission.
+
+      Any rephrasing of this restriction provided by authors or
+      copyright holders in their copyright notices is to be retained
+      as part of the appropriate copyright notice that the GPL
+      requires you to publish (section 1).
+
+
+--- Ian Jackson 9.5.1999
+
+Local variables:
+mode: text
+End: 

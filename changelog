@@ -10,6 +10,7 @@ adns (0.2) experimental; urgency=low
   * Look for inet_aton and inet_ntoa (in -lnsl and -lsocket).
   
   * Added COPYING (copy of the GPL).
+  * New GPL-vs-LGPL copyright policy explanation file.
 
  --
 
