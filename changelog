@@ -13,7 +13,7 @@ adns (1.1); urgency=medium
   * Always #include <sys/types.h> before <sys/socket.h> (for FreeBSD 4.6).
   * Added wishlist entry re configurable port no.
   * Problem with SERVFAIL in TODO.
-  * Mentioned Jarle Aase's Windows port in README.html.
+  * README.html: mentioned Jarle Aase's Windows port, and other fixes.
   * Some better source code formatting/wrapping.
 
  --
