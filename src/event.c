@@ -394,7 +394,10 @@ int adns_wait(adns_state ads,
     FD_ZERO(&readfds); FD_ZERO(&writefds); FD_ZERO(&exceptfds);
     adns_interest(ads,&maxfd,&readfds,&writefds,&exceptfds,&tvp,&tvbuf);
     rsel= select(maxfd,&readfds,&writefds,&exceptfds,tvp);
-    if (rsel==-1) return r;
+    if (rsel==-1) {
+      if (errno == EINTR && !(ads->iflags & adns_if_eintr)) continue;
+      return errno;
+    }
     rcb= adns_callback(ads,maxfd,&readfds,&writefds,&exceptfds);
     assert(rcb==rsel);
   }

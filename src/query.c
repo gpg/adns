@@ -147,15 +147,10 @@ int adns_synchronous(adns_state ads,
   r= adns_submit(ads,owner,type,flags,0,&qu);
   if (r) return r;
 
-  do {
-    r= adns_wait(ads,&qu,answer_r,0);
-  } while (r==EINTR);
+  r= adns_wait(ads,&qu,answer_r,0);
   if (r) adns_cancel(qu);
-  return r;
-}
 
-void adns_cancel(adns_query query) {
-  abort(); /* fixme */
+  return r;
 }
 
 static void *alloc_common(adns_query qu, size_t sz) {
@@ -197,22 +192,58 @@ void *adns__alloc_final(adns_query qu, size_t sz) {
 }
 
 void adns__reset_cnameonly(adns_query qu) {
+  /* fixme: cancel children */
   assert(!qu->final_allocspace);
   qu->answer->nrrs= 0;
   qu->answer->rrs= 0;
   qu->interim_allocd= qu->answer->cname ? MEM_ROUND(strlen(qu->answer->cname)+1) : 0;
 }
 
+static void free_query_allocs(adns_query qu) {
+  allocnode *an, *ann;
+  adns_query cqu, ncqu;
+
+  for (cqu= qu->children.head; cqu; cqu= ncqu) {
+    ncqu= cqu->siblings.next;
+    adns_cancel(cqu);
+  }
+  for (an= qu->allocations; an; an= ann) { ann= an->next; free(an); }
+  adns__vbuf_free(&qu->vb);
+}
+
+void adns_cancel(adns_query query) {
+  switch (qu->state) {
+  case query_udp: case query_tcpwait: case query_tcpsent:
+    LIST_UNLINK(ads->timew,qu);
+    break;
+  case query_child:
+    LIST_UNLINK(ads->childw,qu);
+    break;
+  case query_done:
+    LIST_UNLINK(ads->output,qu);
+    break;
+  default:
+    abort();
+  }
+  free_query_allocs(qu);
+  free(qu->answer);
+  free(qu);
+}
+  
 void adns__query_done(adns_query qu) {
   adns_answer *ans;
-  allocnode *an, *ann;
-  int i;
+  int rrn;
 
-  if (qu->answer->status == adns_s_nolocalmem && !qu->interim_allocd) {
-    ans= qu->answer;
-  } else {
-    ans= realloc(qu->answer,
-		 MEM_ROUND(MEM_ROUND(sizeof(*ans)) + qu->interim_allocd));
+  ans= qu->answer;
+  
+  if (qu->interim_allocd) {
+    if (qu->answer->nrrs && qu->typei->diff_needswap) {
+      if (!adns__vbuf_ensure(&qu->vb,qu->typei->rrsz)) {
+	adns__query_fail(qu,adns_s_nolocalmem);
+	return;
+      }
+    }
+    ans= realloc(qu->answer, MEM_ROUND(MEM_ROUND(sizeof(*ans)) + qu->interim_allocd));
     if (!ans) {
       qu->answer->cname= 0;
       adns__query_fail(qu, adns_s_nolocalmem);
@@ -220,18 +251,22 @@ void adns__query_done(adns_query qu) {
     }
     qu->answer= ans;
   }
-  qu->final_allocspace= (byte*)ans + MEM_ROUND(sizeof(*ans));
 
+  qu->final_allocspace= (byte*)ans + MEM_ROUND(sizeof(*ans));
   adns__makefinal_str(qu,&ans->cname);
+  
   if (ans->nrrs) {
-    adns__makefinal_block(qu,&ans->rrs.untyped,ans->rrsz*ans->nrrs);
-    for (i=0; i<ans->nrrs; i++)
-      qu->typei->makefinal(qu,ans->rrs.bytes+ans->rrsz*i);
+    adns__makefinal_block(qu, &ans->rrs.untyped, ans->nrrs*ans->rrsz);
+
+    for (rrn=0; rrn<ans->nrrs; rrn++)
+      qu->typei->makefinal(qu, ans->rrs.bytes + rrn*ans->rrsz);
+
+    if (qu->typei->diff_needswap)
+      adns__isort(ans->rrs.bytes, ans->nrrs, ans->rrsz,
+		  qu->vb.buf, qu->typei->diff_needswap);
   }
 
-  for (an= qu->allocations; an; an= ann) { ann= an->next; free(an); }
-
-  adns__vbuf_free(&qu->vb);
+  free_query_allocs(qu);
   
   qu->id= -1;
   LIST_LINK_TAIL(qu->ads->output,qu);
@@ -264,4 +299,3 @@ void adns__makefinal_block(adns_query qu, void **blpp, size_t sz) {
   memcpy(after,before,sz);
   *blpp= after;
 }
-

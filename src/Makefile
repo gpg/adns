@@ -21,7 +21,7 @@ WARNS=	-Wall -Wmissing-prototypes -Wwrite-strings -Wstrict-prototypes \
 	-Wcast-qual -Wpointer-arith
 WERROR=-Werror
 
-LIBOBJS=	event.o query.o setup.o transmit.o general.o reply.o parse.o types.o
+LIBOBJS=	event.o types.o reply.o query.o setup.o transmit.o parse.o general.o
 ALLOBJS=	$(LIBOBJS) dtest.o
 
 all:		dtest
@@ -31,5 +31,5 @@ dtest:		$(ALLOBJS)
 clean:
 		rm -f dtest *.o
 
-dtest.o:	adns.h
 $(LIBOBJS):	adns.h internal.h
+dtest.o:	adns.h

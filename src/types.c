@@ -34,7 +34,7 @@ static int dip_inaddr(struct in_addr a, struct in_addr b) {
 
 static adns_status pa_inaddr(adns_query qu, int serv,
 			     const byte *dgram, int dglen, int cbyte, int max,
-			     void *datap) {
+			     int nsstart, int *arstart_io, void *datap) {
   struct in_addr *storeto= datap;
   
   if (max-cbyte != 4) return adns_s_invaliddata;
@@ -58,7 +58,7 @@ static adns_status cs_inaddr(vbuf *vb, const void *datap) {
 
 static adns_status pa_addr(adns_query qu, int serv,
 			   const byte *dgram, int dglen, int cbyte, int max,
-			   void *datap) {
+			   int nsstart, int *arstart_io, void *datap) {
   adns_addr *storeto= datap;
   
   if (max-cbyte != 4) return adns_s_invaliddata;
@@ -117,7 +117,7 @@ static adns_status pap_domain(adns_query qu, int serv, parsedomain_flags flags,
 
 static adns_status pa_host_raw(adns_query qu, int serv,
 			       const byte *dgram, int dglen, int cbyte, int max,
-			       void *datap) {
+			       int nsstart, int *arstart_io, void *datap) {
   char **rrp= datap;
   adns_status st;
 
@@ -132,7 +132,7 @@ static adns_status pa_host_raw(adns_query qu, int serv,
 
 static adns_status pa_mx_raw(adns_query qu, int serv,
 			     const byte *dgram, int dglen, int cbyte, int max,
-			     void *datap) {
+			     int nsstart, int *arstart_io, void *datap) {
   adns_rr_intstr *rrp= datap;
   adns_status st;
   int pref;
@@ -159,7 +159,7 @@ static int di_mx_raw(const void *datap_a, const void *datap_b) {
 
 static adns_status pa_txt(adns_query qu, int serv,
 			  const byte *dgram, int dglen, int startbyte, int max,
-			  void *datap) {
+			  int nsstart, int *arstart_io, void *datap) {
   adns_rr_intstr **rrp= datap, *table, *te;
   int ti, tc, cbyte, l;
 
@@ -320,8 +320,8 @@ static const typeinfo typeinfos[] = {
    		      	                                  		   
 #endif
 #if 0 /*fixme*/
-  { adns_r_soa,     "SOA",  "822",   DEEP_MEMB(soa),       pa_soa,        0          },
-  { adns_r_rp,      "RP",   "822",   DEEP_MEMB(strpair),   pa_rp,         0          },
+  { adns_r_soa,     "SOA","822",     DEEP_MEMB(soa),       pa_soa,        0          },
+  { adns_r_rp,      "RP", "822",     DEEP_MEMB(strpair),   pa_rp,         0          },
 #endif
 };
 

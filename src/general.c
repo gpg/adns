@@ -22,6 +22,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 
 #include <arpa/inet.h>
 
@@ -237,4 +238,20 @@ const char *adns_strerror(adns_status st) {
   
   snprintf(buf,sizeof(buf),"code %d",st);
   return buf;
+}
+
+void adns__isort(void *array, int nobjs, int sz, void *tempbuf,
+		 int (*needswap)(const void *a, const void *b)) {
+  byte *data= array;
+  int i, place;
+
+  for (i=0; i<nobjs; i++) {
+    for (place= i; place>0 && needswap(data + (place-1)*sz, data + i*sz); place--);
+
+    if (place != i) {
+      memcpy(tempbuf, data + i*sz, sz);
+      memmove(data + (place+1)*sz, data + place*sz, (i-place)*sz);
+      memcpy(data + place*sz, tempbuf, sz);
+    }
+  }
 }

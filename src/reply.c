@@ -32,7 +32,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
   int flg_ra, flg_rd, flg_tc, flg_qr, opcode;
   int rrtype, rrclass, rdlength, rdstart;
   int anstart, nsstart, arstart;
-  int ownermatched, l, nrrs, place;
+  int ownermatched, l, nrrs;
   const typeinfo *typei;
   adns_query qu, nqu;
   dns_rcode rcode;
@@ -99,6 +99,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
     return;
   }
   anstart= qu->query_dglen;
+  arstart= -1;
 
   LIST_UNLINK(ads->timew,qu);
   /* We're definitely going to do something with this query now */
@@ -256,17 +257,9 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
 
   typei= qu->typei;
   cbyte= anstart;
-  arstart= -1;
   rrsdata= qu->answer->rrs.bytes;
   
-  if (typei->diff_needswap) {
-    if (!adns__vbuf_ensure(&qu->vb,typei->rrsz)) {
-      adns__query_fail(qu,adns_s_nolocalmem);
-      return;
-    }
-  }
   nrrs= 0;
-  
   for (rri=0; rri<ancount; rri++) {
     st= adns__findrr(qu,serv, dgram,dglen,&cbyte,
 		     &rrtype,&rrclass,&rdlength,&rdstart,
@@ -277,23 +270,9 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
 	!ownermatched)
       continue;
     st= typei->parse(qu,serv, dgram,dglen, rdstart,rdstart+rdlength,
-		     rrsdata+nrrs*typei->rrsz);
+		     nsstart,&arstart, rrsdata+nrrs*typei->rrsz);
     if (st) { adns__query_fail(qu,st); return; }
     if (rdstart==-1) goto x_truncated;
-
-    if (typei->diff_needswap) {
-      for (place= nrrs;
-	   place>0 && typei->diff_needswap(rrsdata+(place-1)*typei->rrsz,
-					   rrsdata+nrrs*typei->rrsz);
-	   place--);
-      if (place != nrrs) {
-	memcpy(qu->vb.buf,rrsdata+nrrs*typei->rrsz,typei->rrsz);
-	memmove(rrsdata+(place+1)*typei->rrsz,
-		rrsdata+place*typei->rrsz,
-		(nrrs-place)*typei->rrsz);
-	memcpy(rrsdata+place*typei->rrsz,qu->vb.buf,typei->rrsz);
-      }
-    }
     nrrs++;
   }
   assert(nrrs==wantedrrs);

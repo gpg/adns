@@ -99,7 +99,7 @@ typedef struct {
 
   adns_status (*parse)(adns_query qu, int serv,
 		       const byte *dgram, int dglen, int cbyte, int max,
-		       void *store_r);
+		       int nsstart, int *arstart_io, void *store_r);
   /* Parse one RR, in dgram of length dglen, starting at cbyte and
    * extending until at most max.
    *
@@ -107,10 +107,14 @@ typedef struct {
    *
    * If there is an overrun which might indicate truncation, it should set
    * *rdstart to -1; otherwise it may set it to anything else positive.
+   *
+   * nsstart is the offset of the authority section; *arstart_io is
+   * -1 or the offset of the additional section; if it is -1 then
+   * parse may set it to the correct offset.
    */
 
   int (*diff_needswap)(const void *datap_a, const void *datap_b);
-  /* Returns >0 if RR a should be strictly after RR b in the sort order,
+  /* Returns !0 if RR a should be strictly after RR b in the sort order,
    * 0 otherwise.  Must not fail.
    */
 } typeinfo;
@@ -269,6 +273,14 @@ const char *adns__diag_domain(adns_state ads, int serv, adns_query qu,
  *
  * Returns either vb->buf, or a pointer to a string literal.  Do not modify
  * vb before using the return value.
+ */
+  
+void adns__isort(void *array, int nobjs, int sz, void *tempbuf,
+		 int (*needswap)(const void *a, const void *b));
+/* Does an insertion sort of array which must contain nobjs objects
+ * each sz bytes long.  tempbuf must point to a buffer at least
+ * sz bytes long.  needswap should return !0 if a>b (strictly, ie
+ * wrong order) 0 if a<=b (ie, order is fine).
  */
   
 /* From transmit.c: */
