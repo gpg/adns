@@ -1,3 +1,7 @@
+BUGS:
+* config.cache shipped !
+
+
 DNSSEC compatibility
  - be able to retreive KEY and SIG RRs
 

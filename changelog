@@ -2,6 +2,7 @@ adns (0.4) unstable; urgency=low
 
   Bugfixes:
   * adns_s_systemfail is in table of errors (for eg adns_strerror).
+  * Improvements to install instructions.
 
  --
 
