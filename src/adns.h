@@ -13,36 +13,61 @@ typedef enum {
   adns_if_noenv=        0x0001, /* do not look at environment */
   adns_if_noerrprint=   0x0002, /* never print output to stderr (_debug overrides) */
   adns_if_noserverwarn= 0x0004, /* do not warn to stderr about duff nameservers etc */
-  adns_if_debug=        0x0008, /* enable all output to stderr plus debug msgs*/
+  adns_if_debug=        0x0008, /* enable all output to stderr plus debug msgs */
   adns_if_noautosys=    0x0010, /* do not make syscalls at every opportunity */
 } adns_initflags;
 
 typedef enum {
-  adns_f_search=     0x0001, /* use the searchlist */
-  adns_f_usevc=      0x0002, /* use a virtual circuit (TCP connection) */
-  adns_f_anyquote=   0x0004,
+  adns_qf_search=     0x0001, /* use the searchlist */
+  adns_qf_usevc=      0x0002, /* use a virtual circuit (TCP connection) */
+  adns_qf_anyquote=   0x0004,
+  adns_qf_loosecname= 0x0008, /* allow refs to CNAMEs - without, get _s_cname */
+  adns_qf_nocname=    0x0010, /* don't follow CNAMEs, instead give _s_cname */
 } adns_queryflags;
 
 typedef enum {
   adns__rrt_typemask=  0x0ffff,
-  adns__qtf_deref=     0x10000, /* dereference domains and produce extra data */
-  adns__qtf_mailconv=  0x20000, /* put @ between first and second labels */
+  adns__qtf_deref=     0x10000, /* dereference domains and perhaps produce extra data */
+  adns__qtf_mail822=   0x20000, /* make mailboxes be in RFC822 rcpt field format */
+  adns__qtf_masterfmt= 0x80000, /* convert RRs to master file format, return as str */
+  
   adns_r_none=               0,
+  
   adns_r_a=                  1,
+  adns_r_a_mf=                  adns_r_a|adns__qtf_mf,
+  
   adns_r_ns_raw=             2,
   adns_r_ns=                    adns_r_ns_raw|adns__qtf_deref,
+  adns_r_ns_mf=                 adns_r_ns_raw|adns__qtf_mf,
+  
   adns_r_cname=              5,
+  adns_r_cname_mf=              adns_r_cname|adns__qtf_mf,
+  
   adns_r_soa_raw=            6,
-  adns_r_soa=                   adns_r_soa_raw|adns__qtf_mailconv,
+  adns_r_soa=                   adns_r_soa_raw|adns__qtf_mail822, 
+  adns_r_soa_mf=                adns_r_soa_raw|adns__qtf_mf,
+  
   adns_r_null=              10,
+  adns_r_null_mf=               adns_r_null|adns__qtf_mf,
+  
   adns_r_ptr_raw=           12,
   adns_r_ptr=                   adns_r_ptr_raw|adns__qtf_deref,
+  adns_r_ptr_mf=                adns_r_ptr_raw|adns__qtf_mf,
+  
   adns_r_hinfo=             13,  
+  adns_r_hinfo_mf=              adns_r_hinfo|adns__qtf_mf,
+  
   adns_r_mx_raw=            15,
   adns_r_mx=                    adns_r_mx_raw|adns__qtf_deref,
+  adns_r_mx_mf=                 adns_r_mx_raw|adns__qtf_mf,
+  
   adns_r_txt=               16,
+  adns_r_txt_mf=                adns_r_txt|adns__qtf_mf,
+  
   adns_r_rp_raw=            17,
-  adns_r_rp=                    adns_r_rp_raw|adns__qtf_mailconv
+  adns_r_rp=                    adns_r_rp_raw|adns__qtf_mail822
+  adns_r_rp_mf=                 adns_r_rp_raw|adns__qtf_mf,
+  
 } adns_rrtype;
 
 /* In queries without qtf_anyquote, all domains must have standard
@@ -55,8 +80,10 @@ typedef enum {
  * not usually legal in domain names will be quoted as \X
  * (if the character is 33-126 except \ and ") or \DDD.
  *
- * Do not ask for records containing mailboxes without
- * specifying qtf_mailconv or qtf_anyquote.
+ * _qtf_anyquote is ignored for _mf queries.
+ *
+ * Do not ask for _raw records containing mailboxes without
+ * specifying _qf_anyquote.
  */
 
 typedef enum {
@@ -64,11 +91,10 @@ typedef enum {
   adns_s_timeout,
   adns_s_unknownqtype,
   adns_s_nolocalmem,
-  adns_s_connlost,
   adns_s_allservfail,
   adns_s_max_tempfail= 99,
   adns_s_inconsistent, /* PTR gives domain whose A does not match */
-  adns_s_badcname, /* CNAME found where actual record expected */
+  adns_s_cname, /* CNAME found where data eg A expected (not if _qf_loosecname) */
   adns_s_max_misconfig= 199;
   adns_s_nxdomain,
   adns_s_norecord,
@@ -89,7 +115,7 @@ typedef struct {
   int nrrs;
   union {
     struct in_addr inaddr[1];                                                    /* a */
-    char (*str)[1];                               /* ns_raw, cname, ptr, ptr_raw, txt */
+    char (*str)[1];                     /* ns_raw, cname, ptr, ptr_raw, txt, <any>_mf */
     adns_dmaddr dmaddr[1];                                                      /* ns */
     struct { char *a, *b; } strpair[1];                          /* hinfo, rp, rp_raw */
     struct { int pref; adns_dmaddrs dmaddr; } intdmaddr[1];                     /* mx */

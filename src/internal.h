@@ -30,6 +30,7 @@ union adns__align {
 
 struct adns__query {
   /* FIXME: make sure this is all init'd properly */
+  enum { query_udp, query_tcpwait, query_tcpsent, query_child, query_done } state;
   adns_query back, next;
   adns_query parent;
   struct { adns_query head, tail; } children;
@@ -37,33 +38,79 @@ struct adns__query {
   adns_rrtype type;
   adns_answer *answer;
   size_t ansalloc; ansused;
-  int id, flags, udpretries; /* udpretries==-1 => _f_usevc or too big for UDP */
-  int nextudpserver, senttcpserver;
-  unsigned long sentudp; /* bitmap indexed by server */
+  int id, flags, udpretries;
+  int nextudpserver;
+  unsigned long sentudp, failedtcp; /* bitmap indexed by server */
   struct timeval timeout;
   void *context;
   unsigned char *querymsg;
   int querylen;
   char owner[1];
+  /* After the owner name and nul comes the query message */
+
   /* Possible states:
-   *  Queue   child  id   answer    nextserver  sentudp             senttcp
-   *  tosend  null   >=0  null      any         any                 any
-   *  timew   null   >=0  null      any         at least 1 bit set  any
-   *  childw  set    >=0  partial   any         any                 any
-   *  output  null   -1   set/null  any         any                 any
+   *
+   *  state   Queue   child  id   answer    nextudpserver  sentudp     failedtcp
+   *
+   *  udp     NONE    null   >=0  null      0              zero        zero
+   *  udp     timew   null   >=0  null      any            nonzero     zero
+   *  udp     NONE    null   >=0  null      any            nonzero     zero
+   *
+   *  tcpwait timew   null   >=0  null      irrelevant     zero        any
+   *  tcpsent timew   null   >=0  null      irrelevant     zero        any
+   *
+   *  child   childw  set    >=0  partial   irrelevant     irrelevant  irrelevant
+   *  done    output  null   -1   set/null  irrelevant     irrelevant  irrelevant
+   *
+   *			      +------------------------+
+   *             START -----> |      udp/NONE          |
+   *			      +------------------------+
+   *                         /                       |\  \
+   *        too big for UDP /             UDP timeout  \  \ send via UDP
+   *        do this ASAP!  /              more retries  \  \   do this ASAP!
+   *                     |_                  desired     \  _|
+   *		  +---------------+     	    	+-----------+
+   *              | tcpwait/timew | ____                | udp/timew |
+   *              +---------------+     \	    	+-----------+
+   *                    |  ^             |                 | |
+   *     TCP conn'd;    |  | TCP died    |                 | |
+   *     send via TCP   |  | more        |     UDP timeout | |
+   *     do this ASAP!  |  | servers     |      no more    | |
+   *                    v  | to try      |      retries    | |
+   *              +---------------+      |      desired    | |
+   *              | tcpsent/timew | ____ |                 | |
+   *    	  +---------------+     \|                 | |
+   *                  \   \ TCP died     | TCP             | |
+   *                   \   \ no more     | timeout         / |
+   *                    \   \ servers    |                /  |
+   *                     \   \ to try    |               /   |
+   *                  got \   \          v             |_    / got
+   *                 reply \   _| +------------------+      / reply
+   *   	       	       	    \  	  | done/output FAIL |     /
+   *                         \    +------------------+    /
+   *                          \                          /
+   *                           _|                      |_
+   *                             (..... got reply ....)
+   *                              /                   \
+   *        need child query/ies /                     \ no child query
+   *                            /                       \
+   *                          |_                         _|
+   *		    +--------------+		       +----------------+
+   *                | child/childw | ----------------> | done/output OK |
+   *                +--------------+  children done    +----------------+
    */
 };
 
-struct adns__vbuf {
+typedef struct {
   size_t used, avail;
   unsigned char *buf;
-};
+} adns__vbuf;
 
 struct adns__state {
   /* FIXME: make sure this is all init'd properly */
   adns_initflags iflags;
   FILE *diagfile;
-  struct { adns_query head, tail; } tosend, timew, childw, output;
+  struct { adns_query head, tail; } timew, childw, output;
   int nextid, udpsocket;
   adns_vbuf rqbuf, tcpsend, tcprecv;
   int nservers, tcpserver;
@@ -83,13 +130,19 @@ void adns__debug(adns_state ads, int serv, const char *fmt, ...) PRINTFFORMAT(3,
 void adns__warn(adns_state ads, int serv, const char *fmt, ...) PRINTFFORMAT(3,4);
 void adns__diag(adns_state ads, int serv, const char *fmt, ...) PRINTFFORMAT(3,4);
 
+static inline int adns__vbuf_ensure(adns__vbuf *vb, size_t want);
+int adns__vbuf_append(adns__vbuf *vb, const byte *data, size_t len);
+int adns__vbuf_appendq(adns__vbuf *vb, const byte *data, size_t len);
+/* 1=>success, 0=>realloc failed */
+
 /* From submit.c: */
 
 void adns__query_fail(adns_state ads, adns_query qu, adns_status stat);
 
 /* From query.c: */
 
-void adns__quproc_tosend(adns_state ads, adns_query qu, struct timeval now);
+void adns__query_udp(adns_state ads, adns_query qu, struct timeval now);
+void adns__query_tcp(adns_state ads, adns_query qu, struct timeval now);
 adns_status adns__mkquery(adns_state ads, const char *owner, int ol, int id,
 			  adns_rrtype type, adns_queryflags flags, int *qml_r);
 
@@ -107,7 +160,7 @@ static inline void timevaladd(struct timeval *tv_io, long ms) {
   tmp.tv_sec += ms/1000;
   if (tmp.tv_usec >= 1000) { tmp.tv_sec++; tmp.tv_usec -= 1000; }
   *tv_io= tmp;
-}    
+}
 
 static inline int ctype_whitespace(int c) { return c==' ' || c=='\n' || c=='\t'; }
 static inline int ctype_digit(int c) { return c>='0' && c<='9'; }

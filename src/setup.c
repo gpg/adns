@@ -38,6 +38,41 @@ void adns__diag(adns_state ads, int serv, const char *fmt, ...) {
   va_end(al);
 }
 
+/* FIXME: unsigned char -> byte everywhere */
+
+
+int adns__vbuf_ensure(adns__vbuf *vb, size_t want) {
+  byte *nb;
+  
+  if (vb->avail >= want) return;
+  nb= realloc(vb->buf,want); if (!nb) return 0;
+  vb->buf= nb;
+  vb->avail= want;
+  return 1;
+}
+  
+void adns__vbuf_appendq(adns__vbuf *vb, const byte *data, size_t len) {
+  memcpy(vb->buf+vb->used,data,len);
+  vb->used+= len;
+}
+
+int adns__vbuf_append(adns__vbuf *vb, const byte *data, size_t len) {
+  size_t newlen, newalloc;
+  byte *nb;
+
+  newlen= vb->used+len;
+  if (vb->avail < newlen) {
+    newlen <<= 1;
+    nb= realloc(vb->buf,newlen);
+    if (!nb) { newlen >>= 1; nb= realloc(vb->buf,newlen); }
+    if (!nb) return 0;
+    vb->buf= nb;
+    vb->avail= newlen;
+  }
+  adns__vbuf_appendq(vb,data,len);
+  return 1;
+}
+
 static void addserver(adns_state ads, struct in_addr addr) {
   int i;
   struct server *ss;
@@ -191,7 +226,6 @@ int adns_init(adns_state *ads_r, adns_initflags flags) {
   int r;
   
   ads= malloc(sizeof(*ads)); if (!ads) return errno;
-  ads->tosend.head= ads->tosend.tail= 0;
   ads->timew.head= ads->timew.tail= 0;
   ads->childw.head= ads->childw.tail= 0;
   ads->output.head= ads->output.tail= 0;

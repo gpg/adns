@@ -2,41 +2,48 @@
 
 #include "adns-internal.h"
 
-static void autosys(adns_state ads, struct timeval now) {
-  if (ads->iflags & adns_if_noautosys) return;
-  adns_callback(ads,-1,0,0,0);
-}
-
-static int callb_checkfd(int maxfd, const fd_set *fds, int fd) {
-  return maxfd<0 || !fds ? 1 :
-         fd<maxfd && FD_ISSET(fd,fds);
-}
+/* TCP connection management */
 
 void adns__tcp_broken(adns_state ads, const char *what, const char *why) {
   int serv;
   
   assert(ads->tcpstate == server_connecting || ads->tcpstate == server_ok);
-  warn("nameserver %s TCP connection lost: %s: %s",
-       inet_ntoa(ads->servers[tcpserver].addr,what,why));
+  serv= ads->tcpserver;
+  warn("TCP connection lost: %s: %s",serv,why);
   close(ads->tcpsocket);
   ads->tcpstate= server_disconnected;
-  serv= ads->tcpserver;
   
   for (qu= ads->timew; qu; qu= nqu) {
     nqu= qu->next;
-    if (qu->senttcpserver == -1) continue;
-    assert(qu->senttcpserver == serv);
-    DLIST_UNLINK(ads->timew,qu);
-    adns__query_fail(ads,qu,adns_s_connlost); /* wishlist: send to other servers ? */
+    if (qu->state == query_udp) continue;
+    assert(qu->state == query_tcpwait || qu->state == query_tcpsent);
+    qu->state= query_tcpwait;
+    qu->tcpfailed |= (1<<serv);
+    if (qu->tcpfailed == (1<<ads->nservers)-1) {
+      DLIST_UNLINK(ads->timew,qu);
+      adns__query_fail(ads,qu,adns_s_allservfail);
+    }
   }
 
   ads->tcpbuf.used= 0;
   ads->tcpserver= (serv+1)%ads->nservers;
 }
 
-void adns__tcp_tryconnect(adns_state ads) {
+static void tcp_connected(adns_state ads, struct timeval now) {
+  debug("TCP connected",ads->tcpserver);
+  ads->tcpstate= server_connected;
+  for (qu= ads->timew.head; qu; qu= nqu) {
+    nqu= qu->next;
+    if (qu->state == query_udp) continue;
+    assert (qu->state == query_tcpwait);
+    adns__query_tcp(ads,qu,now);
+  }
+}
+
+void adns__tcp_tryconnect(adns_state ads, struct timeval now) {
   int r, fd, tries;
   sockaddr_in addr;
+  /* fixme: single TCP timeout, not once per server */
 
   for (tries=0; tries<ads->nservers; tries++) {
     if (ads->tcpstate == server_connecting || ads->tcpstate == server_ok) return;
@@ -55,24 +62,33 @@ void adns__tcp_tryconnect(adns_state ads) {
     r= connect(fd,&addr,sizeof(addr));
     ads->tcpsocket= fd;
     ads->tcpstate= server_connecting;
-    if (r==0) { ads->tcpstate= server_ok; return; }
+    if (r==0) { tcp_connected(ads); continue; }
     if (errno == EWOULDBLOCK || errno == EINPROGRESS) return;
-    tcpserver_broken(ads,"connect",strerror(errno));
+    adns__tcp_broken(ads,"connect",strerror(errno));
   }
 }
 
-int adns_callback(adns_state ads, int maxfd,
-		  const fd_set *readfds, const fd_set *writefds,
-		  const fd_set *exceptfds) {
-  int skip, dgramlen, count, udpaddrlen;
+/* Callback procedures - these do the real work of reception and timeout, etc. */
+
+static int callb_checkfd(int maxfd, const fd_set *fds, int fd) {
+  return maxfd<0 || !fds ? 1 :
+         fd<maxfd && FD_ISSET(fd,fds);
+}
+
+static int internal_callback(adns_state ads, int maxfd,
+			     const fd_set *readfds, const fd_set *writefds,
+			     const fd_set *exceptfds) {
+  int skip, dgramlen, count, udpaddrlen, oldtcpsocket;
   enum adns__tcpstate oldtcpstate;
   unsigned char udpbuf[UDPMAXDGRAM];
   struct sockaddr_in udpaddr;
 
   count= 0;
-  oldtcpstate= ads->tcpstate;
-  
-  if (ads->tcpstate == server_connecting) {
+
+  switch (ads->tcpstate) {
+  case server_disconnected:
+    break;
+  case server_connecting:
     if (callb_checkfd(maxfd,writefds,ads->tcpsocket)) {
       count++;
       assert(ads->tcprecv.used==0);
@@ -80,9 +96,7 @@ int adns_callback(adns_state ads, int maxfd,
       if (ads->tcprecv.buf) {
 	r= read(ads->tcpsocket,&ads->tcprecv.buf,1);
 	if (r==0 || (r<0 && (errno==EAGAIN || errno==EWOULDBLOCK))) {
-	  debug("nameserver %s TCP connected",
-		inet_ntoa(ads->servers[ads->tcpserver].addr));
-	  ads->tcpstate= server_connected;
+	  tcpserver_connected(ads);
 	} else if (r>0) {
 	  tcpserver_broken(ads,"connect/read","sent data before first request");
 	} else if (errno!=EINTR) {
@@ -90,13 +104,12 @@ int adns_callback(adns_state ads, int maxfd,
 	}
       }
     }
-  }
-  if (ads->tcpstate == server_connected) {
-    if (oldtcpstate == server_connected)
-      count+= callb_checkfd(maxfd,readfds,ads->tcpsocket) +
-	      callb_checkfd(maxfd,exceptfds,ads->tcpsocket) +
-	(ads->tcpsend.used && callb_checkfd(maxfd,writefds,ads->tcpsocket));
-    if (oldtcpstate != server_connected || callb_checkfd(maxfd,readfds,ads->tcpsocket)) {
+    break;
+  case server_ok:
+    count+= callb_checkfd(maxfd,readfds,ads->tcpsocket) +
+            callb_checkfd(maxfd,exceptfds,ads->tcpsocket) +
+      (ads->tcpsend.used && callb_checkfd(maxfd,writefds,ads->tcpsocket));
+    if (callb_checkfd(maxfd,readfds,ads->tcpsocket)) {
       skip= 0;
       for (;;) {
 	if (ads->tcprecv.used<skip+2) {
@@ -141,6 +154,8 @@ int adns_callback(adns_state ads, int maxfd,
 	memmove(ads->tcpsend.buf,ads->tcpsend.buf+r,ads->tcpsend.used);
       }
     }
+  default:
+    abort();
   }
 
   if (callb_checkfd(maxfd,readfds,ads->udpsocket)) {
@@ -182,10 +197,42 @@ int adns_callback(adns_state ads, int maxfd,
   }
 }
 
+static void checktimeouts(adns_state ads, struct timeval now,
+			  struct timeval **tv_io, struct timeval *tvbuf) {
+  for (qu= ads->timew; qu; qu= nqu) {
+    nqu= qu->next;
+    if (timercmp(&now,qu->timeout,>)) {
+      DLIST_UNLINK(ads->timew,qu);
+      if (qu->state != state_udp) {
+	query_fail(ads,qu,adns_s_notresponding);
+      } else {
+	adns__query_udp(ads,qu,now);
+      }
+    } else {
+      inter_maxtoabs(tv_io,tvbuf,now,qu->timeout);
+    }
+  }
+}  
+ 
+int adns_callback(adns_state ads, int maxfd,
+		  const fd_set *readfds, const fd_set *writefds,
+		  const fd_set *exceptfds) {
+  struct timeval now;
+
+  r= gettimeofday(&now,0);
+  if (!r) checktimeouts(ads,now,0,0);
+  return internal_callback(ads,maxfd,readfds,writefds,exceptfds);
+}
+
+/* `Interest' functions - find out which fd's we might be interested in,
+ * and when we want to be called back for a timeout.
+ */
+
 static void inter_maxto(struct timeval **tv_io, struct timeval *tvbuf,
 			struct timeval maxto) {
   struct timeval rbuf;
 
+  if (!tv_io) return;
   rbuf= *tv_io;
   if (!rbuf) { *tvbuf= maxto; *tv_io= tvbuf; return; }
   if (timercmp(rbuf,&maxto,>)) *rbuf= maxto;
@@ -194,7 +241,8 @@ static void inter_maxto(struct timeval **tv_io, struct timeval *tvbuf,
 static void inter_maxtoabs(struct timeval **tv_io, struct timeval *tvbuf,
 			   struct timeval now, struct timeval maxtime) {
   ldiv_t dr;
-  
+
+  if (!tv_io) return;
   maxtime.tv_sec -= (now.tv_sec-1);
   maxtime.tv_usec += (1000-now.tv_usec);
   dr= ldiv(maxtime.tv_usec,1000);
@@ -203,17 +251,8 @@ static void inter_maxtoabs(struct timeval **tv_io, struct timeval *tvbuf,
   inter_maxto(tv_io,tvbuf,maxtime);
 }
 
-static void localresourcerr(struct timeval **tv_io, struct timeval *tvbuf,
-			    const char *syscall) {
-  struct timeval tvto_lr;
-  
-  warn(ads,"local system resources scarce (during %s): %s",syscall,strerror(errno));
-  timerclear(&tvto_lr); timevaladd(&tvto_lr,LOCALRESOURCEMS);
-  inter_maxto(tv_io, tvbuf, tvto_lr);
-  return;
-}
-
 static void inter_addfd(int *maxfd, fd_set *fds, int fd) {
+  if (!maxfd || !fds) return;
   if (fd>=*maxfd) *maxfd= fd+1;
   FD_SET(fd,fds);
 }
@@ -222,31 +261,19 @@ void adns_interest(adns_state ads, int *maxfd,
 		   fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
 		   struct timeval **tv_io, struct timeval *tvbuf) {
   struct timeval now;
+  struct timeval tvto_lr;
   adns_query qu;
   int r;
   
   r= gettimeofday(&now,0);
-  if (r) { localresourcerr(tv_io,tvbuf,"gettimeofday"); return; }
-
-  for (qu= ads->timew; qu; qu= nqu) {
-    nqu= qu->next;
-    if (timercmp(&now,qu->timeout,>)) {
-      DLIST_UNLINK(ads->timew,qu);
-      if (qu->nextudpserver == -1) {
-	query_fail(ads,qu,adns_s_notresponding);
-      } else {
-	DLIST_LINKTAIL(ads->tosend,qu);
-      }
-    } else {
-      inter_maxtoabs(tv_io,tvbuf,now,qu->timeout);
-    }
+  if (r) {
+    warn(ads,"gettimeofday failed - will sleep for a bit: %s",-1,strerror(errno));
+    timerclear(&tvto_lr); timevaladd(&tvto_lr,LOCALRESOURCEMS);
+    inter_maxto(tv_io, tvbuf, tvto_lr);
+  } else {
+    checktimeouts(ads,now,tv_io,tvbuf);
   }
   
-  for (qu= ads->tosend; qu; qu= nqu) {
-    nqu= qu->next;
-    quproc_tosend(ads,qu,now);
-  }
-
   inter_addfd(maxfd,readfds,ads->udpsocket);
 
   switch (ads->tcpstate) {
@@ -262,6 +289,13 @@ void adns_interest(adns_state ads, int *maxfd,
   default:
     abort();
   }
+}
+
+/* User-visible functions and their implementation. */
+
+static void autosys(adns_state ads, struct timeval now) {
+  if (ads->iflags & adns_if_noautosys) return;
+  adns_callback(ads,-1,0,0,0);
 }
 
 static int internal_check(adns_state ads,
@@ -300,7 +334,7 @@ int adns_wait(adns_state ads,
     adns_interest(ads,&maxfd,&readfds,&writefds,&exceptfds,&tvp,&tvbuf);
     rsel= select(maxfd,&readfds,&writefds,&exceptfds,tvp);
     if (rsel==-1) return r;
-    rcb= adns_callback(ads,maxfd,&readfds,&writefds,&exceptfds);
+    rcb= internal_callback(ads,maxfd,&readfds,&writefds,&exceptfds);
     assert(rcb==rsel);
   }
 }

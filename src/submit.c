@@ -50,6 +50,8 @@ int adns_submit(adns_state ads,
 
   id= ads->nextid++;
 
+  r= gettimeofday(&now,0); if (r) return errno;
+
   ol= strlen(owner);
   if (ol<=1 || ol>MAXDNAME+1)
     return failsubmit(ads,context,query_r,type,flags,id,adns_s_invaliddomain);
@@ -59,11 +61,7 @@ int adns_submit(adns_state ads,
   if (stat) return failsubmit(ads,context,query_r,type,flags,id,stat);
 
   qu= allocquery(ads,owner,ol,qml,id,type,flags,context); if (!qu) return errno;
-  if (qu->flags & adns_f_usevc) qu->udpretries= -1;
-  LIST_LINK_TAIL(ads->tosend,qu);
-    
-  r= gettimeofday(&now,0); if (r) return;
-  quproc_tosend(ads,qu,now);
+  adns__query_udp(ads,qu,now);
   autosys(ads,now);
 
   *query_r= qu;
