@@ -27,7 +27,7 @@ all install uninstall clean distclean mostlyclean maintainer-clean distprep:
 	set -e; for d in $(SUBDIRS); do $(MAKE) -C $$d $@; done
 	$(MAKE) $@-here
 
-all-here install-here uninstall-here distprep-here:
+all-here install-here uninstall-here distprep-here:	README
 
 clean-here mostlyclean-here:
 		rm -f *~ ./#*# core *.orig *.rej Makefile adns-*.tar.gz
@@ -53,6 +53,11 @@ dist:			distprep
 
 check:			all
 	$(MAKE) -C regress check
+
+README README-update:
+	lynx -dump -number_links -cfg=/dev/null \
+		http://www.chiark.greenend.org.uk/~ian/adns/ >README.tmp
+	mv -f README.tmp README
 
 TAGS info dvi:
 	# do nothing

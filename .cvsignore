@@ -5,3 +5,4 @@ config.status
 dist_tmp
 adns-*.tar.gz
 settings.make
+*.tmp*
