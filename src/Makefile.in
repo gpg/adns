@@ -41,9 +41,15 @@ dtest:		dtest.o $(LIBOBJS)
 %_d.o:		%.c
 		$(CC) $(HCPPFLAGS) -c -g -o $@ $<
 
-clean:
-		rm -f dtest *.o
+%::	%.m4 hmacros.i4 hsyscalls.i4
+	m4 -P $< >$@-a.new
+	sed -e 's/hm_comma/,/g; s/hm_squote/'\''/g; /^[	 ]*$$/d' <$@-a.new >$@-b.new
+	@mv -f $@-b.new $@; rm -f $@-a.new
 
-$(HARNLOBJS):	adns.h internal.h
-$(LIBOBJS):	adns.h internal.h
-dtest.o:	adns.h
+clean:
+		rm -f dtest *.o harness.h hrecord.c hcommon.c
+
+hrecord.o hcommon.o:	adns.h internal.h harness.h
+$(HARNLOBJS):		adns.h internal.h
+$(LIBOBJS):		adns.h internal.h
+dtest.o:		adns.h
