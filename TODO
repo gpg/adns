@@ -1,5 +1,6 @@
 BUGS:
 Arnout Engelen <arnouten@sci.kun.nl> reports servfail is thought conclusive
+semicolon should be comment in resolv.conf
 
 WISHLIST:
 * Support for as-yet-unrecognised query types.
