@@ -76,7 +76,7 @@ extern optfunc of_help, of_type, of_asynch_id, of_cancel_id;
 
 const struct optioninfo *opt_findl(const char *opt);
 const struct optioninfo *opt_finds(const char **optp);
-void opt_do(const struct optioninfo *oip, const char *arg);
+void opt_do(const struct optioninfo *oip, const char *arg, int invert);
 
 /* declarations related to query processing */
 

@@ -297,14 +297,28 @@ static const struct optioninfo *find(const char **optp,
 const struct optioninfo *opt_findl(const char *opt) { return find(&opt,"--",oc_long); }
 const struct optioninfo *opt_finds(const char **optp) { return find(optp,"-",oc_short); }
 
-void opt_do(const struct optioninfo *oip, const char *arg) {
+static void noninvert(const struct optioninfo *oip) NONRETURNING;
+static void noninvert(const struct optioninfo *oip) {
+  usageerr("option %s%s%s%s%s may not be inverted",
+	   oip->sopt ? "-" : "", oip->sopt ? oip->sopt : "",
+	   oip->lopt && oip->sopt ? " / " : "",
+	   oip->lopt ? "--" : "", oip->lopt ? oip->lopt : "");
+}
+
+void opt_do(const struct optioninfo *oip, const char *arg, int invert) {
   switch (oip->type) {
-  case ot_flag: case ot_value:
+  case ot_flag:
     assert(!arg);
+    *oip->storep= invert ? !oip->value : oip->value;
+    return;
+  case ot_value:
+    assert(!arg);
+    if (invert) noninvert(oip);
     *oip->storep= oip->value;
     return;
   case ot_func: case ot_funcarg:
-    oip->func(oip,0);
+    if (invert) noninvert(oip);
+    oip->func(oip,arg);
     return;
   default:
     abort();

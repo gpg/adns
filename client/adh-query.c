@@ -159,11 +159,11 @@ void query_done(struct query_node *qun, adns_answer *answer) {
   st= answer->status;
   nrrs= answer->nrrs;
   if (ov_asynch) {
-    if (printf("%s %d", qun->id, nrrs) == EOF) outerr();
+    if (printf("%s %d ", qun->id, nrrs) == EOF) outerr();
     print_status(st,qun,answer);
   } else {
     if (st) {
-      if (fputs("; failed",stdout) == EOF) outerr();
+      if (fputs("; failed ",stdout) == EOF) outerr();
       print_status(st,qun,answer);
     } else if (answer->cname) {
       print_owner_ttl(qun,answer);

@@ -83,25 +83,32 @@ int main(int argc, const char *const *argv) {
   adns_query qu;
   void *qun_v;
   adns_answer *answer;
-  int r, maxfd;
+  int r, maxfd, invert;
   fd_set readfds, writefds, exceptfds;
   
   while ((arg= *++argv)) {
-    if (arg[0] == '-') {
-      if (arg[1] == '-') {
-	oip= opt_findl(arg+2);
+    if (arg[0] == '-' || arg[0] == '+') {
+      if (arg[0] == '-' && arg[1] == '-') {
+	if (!strncmp(arg,"--no-",5)) {
+	  invert= 1;
+	  oip= opt_findl(arg+5);
+	} else {
+	  invert= 0;
+	  oip= opt_findl(arg+2);
+	}
 	if (oip->type == ot_funcarg) {
 	  arg= *++argv;
 	  if (!arg) usageerr("option --%s requires a value argument",oip->lopt);
 	} else {
 	  arg= 0;
 	}
-	opt_do(oip,arg);
-      } else if (arg[1] == 0) {
+	opt_do(oip,arg,invert);
+      } else if (arg[0] == '-' && arg[1] == 0) {
 	arg= *++argv;
 	if (!arg) usageerr("option `-' must be followed by a domain");
 	domain_do_arg(arg);
       } else { /* arg[1] != '-', != '\0' */
+	invert= (arg[0] == '+');
 	++arg;
 	while (*arg) {
 	  oip= opt_finds(&arg);
@@ -110,11 +117,11 @@ int main(int argc, const char *const *argv) {
 	      arg= *++argv;
 	      if (!arg) usageerr("option -%s requires a value argument",oip->sopt);
 	    }
+	    opt_do(oip,arg,invert);
 	    arg= "";
 	  } else {
-	    arg= 0;
+	    opt_do(oip,0,invert);
 	  }
-	  opt_do(oip,arg);
 	}
       }
     } else { /* arg[0] != '-' */
