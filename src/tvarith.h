@@ -32,9 +32,9 @@ static inline void timevaladd(struct timeval *tv_io, long ms) {
   struct timeval tmp;
   assert(ms>=0);
   tmp= *tv_io;
-  tmp.tv_usec += (ms%1000)*1000000;
+  tmp.tv_usec += (ms%1000)*1000;
   tmp.tv_sec += ms/1000;
-  if (tmp.tv_usec >= 1000000) { tmp.tv_sec++; tmp.tv_usec -= 1000; }
+  if (tmp.tv_usec >= 1000000) { tmp.tv_sec++; tmp.tv_usec -= 1000000; }
   *tv_io= tmp;
 }
 

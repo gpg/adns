@@ -49,7 +49,8 @@ struct outqueuenode {
   struct treething *addr;
 };
 
-static int bracket, forever, timeout=10;
+static int bracket, forever;
+static unsigned long timeout=100;
 static adns_rrtype rrt= adns_r_ptr;
 
 static int outblocked, inputeof;
@@ -110,7 +111,7 @@ static void usage(void) {
 	     "       adnsresfilter  -h|--help\n"
 	     "options: -b|--brackets\n"
 	     "         -w|--wait\n"
-	     "         -t<timeout>|--timeout <timeout>\n"
+	     "         -t<timeout>|--timeout <milliseconds>\n"
 	     "         -u|--unchecked\n")
       == EOF) outputerr();
 }
@@ -128,8 +129,10 @@ static void adnsfail(const char *what, int e) {
   quit(2);
 }
 
-static int comparer(const void *a, const void *b) {
-  return memcmp(a,b,4);
+static void settimeout(const char *arg) {
+  char *ep;
+  timeout= strtoul(arg,&ep,0);
+  if (*ep) usageerr("invalid timeout");
 }
 
 static void parseargs(const char *const *argv) {
@@ -147,6 +150,10 @@ static void parseargs(const char *const *argv) {
 	forever= 1;
       } else if (!strcmp(arg,"--help")) {
 	usage(); quit(0);
+      } else if (!strcmp(arg,"--timeout")) {
+	if (!(arg= *++argv)) usageerr("--timeout needs a value");
+	settimeout(arg);
+	forever= 0;
       } else {
 	usageerr("unknown long option");
       }
@@ -163,7 +170,15 @@ static void parseargs(const char *const *argv) {
 	  forever= 1;
 	  break;
 	case 'h':
-	  usage(); quit(0);
+	  usage();
+	  quit(0);
+	case 't':
+	  if (*++arg) settimeout(arg);
+	  else if ((arg= *++argv)) settimeout(arg);
+	  else usageerr("-t needs a value");
+	  forever= 0;
+	  arg= "\0";
+	  break;
 	default:
 	  usageerr("unknown short option");
 	}
@@ -176,10 +191,10 @@ static void queueoutchar(int c) {
   struct outqueuenode *entry;
   
   entry= outqueue.tail;
-  if (!entry->back || entry->addr || entry->textlen >= peroutqueuenode) {
+  if (!entry || entry->addr || entry->textlen >= peroutqueuenode) {
+    peroutqueuenode= !peroutqueuenode || !entry || entry->addr ? 128 : 
+      peroutqueuenode >= 1024 ? 4096 : peroutqueuenode<<2;
     entry= xmalloc(sizeof(*entry));
-    peroutqueuenode= !entry->back || entry->addr ? 32 : 
-      peroutqueuenode >= 1024 ? 2048 : peroutqueuenode<<1;
     entry->buffer= xmalloc(peroutqueuenode);
     entry->textp= entry->buffer;
     entry->textlen= 0;
@@ -187,12 +202,11 @@ static void queueoutchar(int c) {
     LIST_LINK_TAIL(outqueue,entry);
     outqueuelen++;
   }
-  *entry->textp++= c;
-  entry->textlen++;
+  entry->textp[entry->textlen++]= c;
 }
 
 static void queueoutstr(const char *str, int len) {
-  while (len > 0) queueoutchar(*str++);
+  while (len-- > 0) queueoutchar(*str++);
 }
 
 static void writestdout(struct outqueuenode *entry) {
@@ -205,7 +219,7 @@ static void writestdout(struct outqueuenode *entry) {
       if (errno == EAGAIN) { outblocked= 1; break; }
       sysfail("write stdout");
     }
-    assert(r < entry->textlen);
+    assert(r <= entry->textlen);
     entry->textp += r;
     entry->textlen -= r;
   }
@@ -247,6 +261,10 @@ static void restartbuf(void) {
   inbuf= 0;
 }
 
+static int comparer(const void *a, const void *b) {
+  return memcmp(a,b,4);
+}
+
 static void procaddr(void) {
   struct treething *foundthing;
   void **searchfound;
@@ -265,6 +283,7 @@ static void procaddr(void) {
   foundthing= *searchfound;
 
   if (foundthing == newthing) {
+    newthing= 0;
     memcpy(&sa.sin_addr,bytes,4);
     r= adns_submit_reverse(ads, (const struct sockaddr*)&sa,
 			   rrt,0,foundthing,&foundthing->qu);
@@ -276,6 +295,7 @@ static void procaddr(void) {
   memcpy(entry->textp,addrtextbuf,inbuf);
   entry->textlen= inbuf;
   entry->addr= foundthing;
+  entry->printbefore= printbefore;
   LIST_LINK_TAIL(outqueue,entry);
   outqueuelen++;
   inbuf= 0;
@@ -297,7 +317,7 @@ static void readstdin(void) {
     if (r != EINTR) sysfail("read stdin");
   }
   for (p=readbuf; r>0; r--,p++) {
-    c= *p++;
+    c= *p;
     if (cbyte==-1 && bracket && c=='[') {
       addrtextbuf[inbuf++]= c;
       startaddr();
@@ -333,7 +353,6 @@ static void readstdin(void) {
 static void startup(void) {
   int r;
 
-  if (setvbuf(stdout,0,_IOLBF,0)) sysfail("setvbuf stdout");
   if (nonblock(0,1)) sysfail("set stdin to nonblocking mode");
   if (nonblock(1,1)) sysfail("set stdout to nonblocking mode");
   memset(&sa,0,sizeof(sa));
@@ -362,7 +381,8 @@ int main(int argc, const char *const *argv) {
       if (!entry->addr) {
 	writestdout(entry);
 	continue;
-      } else if (entry->addr->ans) {
+      }
+      if (entry->addr->ans) {
 	if (entry->addr->ans->nrrs) 
 	  replacetextwithname(entry);
 	entry->addr= 0;
@@ -375,8 +395,8 @@ int main(int argc, const char *const *argv) {
 	entry->addr= 0;
 	continue;
       } else {
-	tvbuf.tv_sec= printbefore.tv_sec - now.tv_sec - 1;
-	tvbuf.tv_usec= printbefore.tv_usec - now.tv_usec + 1000000;
+	tvbuf.tv_sec= entry->printbefore.tv_sec - now.tv_sec - 1;
+	tvbuf.tv_usec= entry->printbefore.tv_usec - now.tv_usec + 1000000;
 	tvbuf.tv_sec += tvbuf.tv_usec / 1000000;
 	tvbuf.tv_usec %= 1000000;
 	tv= &tvbuf;
@@ -385,7 +405,7 @@ int main(int argc, const char *const *argv) {
 			&tv,&tvbuf,&now);
     }
     if (outblocked) FD_SET(1,&writefds);
-    if (!inputeof && outqueuelen<1000) FD_SET(0,&readfds);
+    if (!inputeof && outqueuelen<1024) FD_SET(0,&readfds);
     
     r= select(maxfd,&readfds,&writefds,&exceptfds,tv);
     if (r < 0) { if (r == EINTR) continue; else sysfail("select"); }
@@ -404,9 +424,9 @@ int main(int argc, const char *const *argv) {
       outblocked= 0;
     }
   }
-  if (ferror(stdin) || fclose(stdin)) sysfail("read stdin");
-  if (fclose(stdout)) sysfail("close stdout");
   if (nonblock(0,0)) sysfail("un-nonblock stdin");
   if (nonblock(1,0)) sysfail("un-nonblock stdout");
+  if (ferror(stdin) || fclose(stdin)) sysfail("read stdin");
+  if (fclose(stdout)) sysfail("close stdout");
   exit(0);
 }
