@@ -104,5 +104,6 @@ int main(int argc, const char *const *argv) {
       domain_do_arg(arg);
     }
   }
+  if (!ov_pipe && !ads) usageerr("no domains given, and -f/--pipe not used; try --help");
   abort();
 }

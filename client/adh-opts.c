@@ -64,6 +64,8 @@ static const struct optioninfo perquery_options[]= {
   { ot_desconly, "per-query options:" },
   { ot_funcarg,          "Query type (see below)",
     "t", "type",           0,0, &of_type, "type" },
+  { ot_funcarg,          "Do reverse query (address -> name lookup)",
+    "i", "ptr",            0,0, &of_type, "addr" },
 
   { ot_desconly, "per-query binary options:" },
   { ot_flag,             "Use the search list",
@@ -101,7 +103,7 @@ static const struct optioninfo perquery_options[]= {
   
   { ot_desconly, "asynchronous/pipe mode options:" },
   { ot_funcarg,          "Set <id>, default is decimal sequence starting 0",
-    "i", "asynch-id",      0,0, &of_asynch_id, "id" },
+    0, "asynch-id",        0,0, &of_asynch_id, "id" },
   { ot_funcarg,          "Cancel the query with id <id>",
     0, "cancel-id",        0,0, &of_cancel_id, "id" },
 
@@ -237,7 +239,8 @@ static void printusage(void) {
 	"Query types (see adns.h; default is addr):\n"
 	"  ns  soa  ptr  mx  rp  addr       - enhanced versions\n"
 	"  cname  hinfo  txt                - types with only one version\n"
-	"  a  ns-  soa-  ptr-  mx-  rp-     - _raw versions\n",
+	"  a  ns-  soa-  ptr-  mx-  rp-     - _raw versions\n"
+	"Default is addr, or ptr for -i/--ptr queries\n",
 	stdout);
   if (ferror(stdout)) sysfail("write usage message",errno);
 }
