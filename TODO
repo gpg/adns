@@ -1,4 +1,5 @@
 WISHLIST:
+* Support for as-yet-unrecognised query types.
 * Make timeouts configurable.
 * `fake' reverse queries (give nnn.nnn.nnn.nnn either always or on error)
 * `fake' forward queries (allow nnn.nnn.nnn.nnn -> A)
