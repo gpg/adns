@@ -3,6 +3,8 @@ adns (1.1); urgency=medium
   Bugfixes:
   * Stop searching on a CNAME (even if it's broken).
   * When search list runs out, _qf_owner sets owner to query domain.
+  * Don't use <sys/select.h> any more, it was a mistake made in pre-1.0
+    (and there doesn't seem to be much explanation why).
 
  --
 
