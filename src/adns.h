@@ -308,6 +308,104 @@ int adns_init(adns_state *newstate_r, adns_initflags flags,
 int adns_init_strcfg(adns_state *newstate_r, adns_initflags flags,
 		     FILE *diagfile /*0=>discard*/, const char *configtext);
 
+/* Configuration:
+ *  adns_init reads /etc/resolv.conf, which is expected to be (broadly
+ *  speaking) in the format expected by libresolv.  adns_init_strcfg
+ *  is instead passed a string which is interpreted as if it were the
+ *  contents of resolv.conf.  In general, configuration which is set
+ *  later overrides any that is set earlier.
+ *
+ * Standard directives understood in resolv.conf:
+ * 
+ *  nameserver <address>
+ *   Must be followed by the IP address of a nameserver.  Several
+ *   nameservers may be specified, and they will be tried in the order
+ *   found.  There is a compiled in limit, currently 5, on the number
+ *   of nameservers.  (libresolv supports only 3 nameservers.)
+ *
+ *  search <domain> ...
+ *   Specifies the search list for queries which specify
+ *   adns_qf_search.  This is a list of domains to append to the query
+ *   domain.  The query domain will be tried as-is either before all
+ *   of these or after them, depending on the ndots option setting
+ *   (see below).
+ *
+ *  domain <domain>
+ *   This is present only for backward compatibility with obsolete
+ *   versions of libresolv.  It should not be used, and is interpreted
+ *   by adns as if it were `search' - note that this is subtly
+ *   different to libresolv's interpretation of this directive.
+ *
+ *  sortlist <addr>/<mask> ...
+ *   Should be followed by a sequence of IP-address and netmask pairs,
+ *   separated by spaces.  They may be specified as
+ *   eg. 172.30.206.0/24 or 172.30.206.0/255.255.255.0.  Currently up
+ *   to 15 pairs may be specified (but note that libresolv only
+ *   supports up to 10).
+ *
+ *  options
+ *   Should followed by one or more options, separated by spaces.
+ *   Each option consists of an option name, followed by optionally
+ *   a colon and a value.  Options are listed below.
+ *
+ * Non-standard directives understood in resolv.conf:
+ *
+ *  clearnameservers
+ *   Clears the list of nameservers, so that further nameserver lines
+ *   start again from the beginning.
+ *
+ *  include <filename>
+ *   The specified file will be read.
+ *
+ * Additionally, adns will ignore lines in resolv.conf which start with a #.
+ *
+ * Standard options understood:
+ *
+ *  debug
+ *   Enables debugging output from the resolver, which will be written
+ *   to stderr.
+ *
+ *  ndots:<count>
+ *   Affects whether queries with adns_qf_search will be tried first
+ *   without adding domains from the searchlist, or whether the bare
+ *   query domain will be tried last.  Queries which contain at least
+ *   <count> dots will be tried bare first.  The default is 1.
+ *
+ * Non-standard options understood:
+ *
+ *  adns_checkc:none
+ *  adns_checkc:entex
+ *  adns_checkc:freq
+ *   Changes the consistency checking frequency; this overrides the
+ *   setting of adns_if_check_entex, adns_if_check_freq, or neither,
+ *   in the flags passed to adns_init.
+ * 
+ * There are a number of environment variables which can modify the
+ * behaviour of adns.  They take effect only if adns_init is used, and
+ * the caller of adns_init can disable them using adns_if_noenv.  In
+ * each case there is both a FOO and an ADNS_FOO; the latter is
+ * interpreted later so that it can override the former.  Unless
+ * otherwise stated, environment variables are interpreted after
+ * resolv.conf is read, in the order they are listed here.
+ *
+ *  RES_CONF, ADNS_RES_CONF
+ *   A filename, whose contets are in the format of resolv.conf.
+ *
+ *  RES_CONF_TEXT, ADNS_RES_CONF_TEXT
+ *   A string in the format of resolv.conf.
+ *
+ *  RES_OPTIONS, ADNS_RES_OPTIONS
+ *   These are parsed as if they appeared in the `options' line of a
+ *   resolv.conf.  In addition to being parsed at this point in the
+ *   sequence, they are also parsed at the very beginning before
+ *   resolv.conf or any other environment variables are read, so that
+ *   any debug option can affect the processing of the configuration.
+ *
+ *  LOCALDOMAIN, ADNS_LOCALDOMAIN
+ *   These are interpreted as if their contents appeared in a `search'
+ *   line in resolv.conf.
+ */
+
 int adns_synchronous(adns_state ads,
 		     const char *owner,
 		     adns_rrtype type,
