@@ -154,7 +154,8 @@ typedef struct {
   union {
     void *untyped;
     unsigned char *bytes;
-    char *(*str);                  /* ns_raw, cname, ptr, ptr_raw, txt */
+    char *(*str);                  /* ns_raw, cname, ptr, ptr_raw */
+    char *(**manystr);             /* txt (list is null-terminated) */
     struct in_addr *inaddr;        /* a */
     adns_rr_dmaddr *dmaddr;        /* ns */
     adns_rr_strpair *strpair;      /* hinfo, rp, rp_raw */

@@ -68,15 +68,23 @@ int main(int argc, const char *const *argv) {
 
   for (qi=0; qi<qc; qi++) {
     for (ti=0; ti<tc; ti++) {
-      fprintf(stdout,"submitting %s %d\n",argv[qi],types[ti]);
+      fprintf(stdout,"%s type %d",argv[qi],types[ti]);
       r= adns_submit(ads,argv[qi],types[ti],0,0,&qus[qi*tc+ti]);
-      if (r) failure("submit",r);
+      if (r == adns_s_notimplemented) {
+	fprintf(stdout," not implemented\n");
+	qus[qi*tc+ti]= 0;
+      } else if (r) {
+	failure("submit",r);
+      } else {
+	fprintf(stdout," submitted\n");
+      }
     }
   }
 
   for (qi=0; qi<qc; qi++) {
     for (ti=0; ti<tc; ti++) {
       qu= qus[qi*tc+ti];
+      if (!qu) continue;
       r= adns_wait(ads,&qu,&ans,0);
       if (r) failure("wait",r);
 

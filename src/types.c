@@ -73,26 +73,6 @@ static adns_status pa_domain_raw(adns_query qu, int serv,
   return st;
 }
 
-static adns_status pa_txt(adns_query qu, int serv,
-			  const byte *dgram, int dglen, int cbyte, int max,
-			  void *store_r) {
-  vbuf vb;
-
-  adns__vbuf_init(&vb);
-
-  while (dg
-  char *bp;
-
-  max-= cbyte;
-  dgram+= cbyte;
-  
-  bp= adns__alloc_interim(qu,max+1); if (!bp) return adns_s_nolocalmem;
-  bp[max]= 0;
-  memcpy(bp,dgram,max);
-  *(char**)store_r= bp;
-  return adns_s_ok;
-}
-
 static void mf_str(adns_query qu, void *data) {
   char **ddp= data;
 
@@ -156,9 +136,7 @@ static const typeinfo typeinfos[] = {
 #if 0 /*fixme*/
   { adns_r_hinfo,   "HINFO", 0,        DEEP_MEMB(strpair),   pa_hinfo       },
   { adns_r_mx_raw,  "MX",   "raw",     DEEP_MEMB(intstr),    pa_mx_raw      },
-#endif
-  { adns_r_txt,     "TXT",   0,        DEEP_MEMB(str),       pa_txt         },
-#if 0 /*fixme*/
+  { adns_r_txt,     "TXT",   0,        DEEP_MEMB(manystr),   pa_txt         },
   { adns_r_rp_raw,  "RP",   "raw",     DEEP_MEMB(strpair),   pa_rp          },
    		      	                                  		   
   { adns_r_ns,      "NS",   "+addr",   DEEP_MEMB(dmaddr),    pa_dmaddr      },
