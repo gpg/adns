@@ -24,7 +24,7 @@
 srcdir=		@srcdir@
 VPATH=		@srcdir@
 
-PROGRAMS=	adnstest adnslogres adnshost
+PROGRAMS=	adnstest adnslogres adnshost adnsresfilter
 PROGRAMS_LOCAL=	fanftest
 
 TARG_INSTALL=	$(PROGRAMS)
