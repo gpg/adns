@@ -25,7 +25,14 @@ DISTVERSION=	0.9
 srcdir=		@srcdir@
 VPATH=		@srcdir@
 
-SUBDIRS= src dynamic client regress
+ENABLE_DYNAMIC=	@ENABLE_DYNAMIC@
+ifeq ($(ENABLE_DYNAMIC),elf)
+SUBDIRS_DYNAMIC=dynamic
+else
+SUBDIRS_DYNAMIC=
+endif
+
+SUBDIRS= src $(SUBDIRS_DYNAMIC) client regress
 
 all install uninstall clean distclean mostlyclean maintainer-clean distprep:
 	set -e; for d in $(SUBDIRS); do $(MAKE) -C $$d $@; done
