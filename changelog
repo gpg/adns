@@ -1,9 +1,9 @@
-adns (0.6) unstable; urgency=high
+adns (0.6) BETA; urgency=high
 
   Core library bugfixes:
-  * Do not fail assertion if _qf_owner, _qf_search, domain ends in `.'.
   * Avoid infinite timeouts, causing lockup, when they should be zero !
   * TCP handling revamped (avoids undefined behaviour due to reentrancy).
+  * Do not fail assertion if _qf_owner, _qf_search, domain ends in `.'.
   * Many memory leaks fixed.
 
   Test and client program bug and portability fixes:
