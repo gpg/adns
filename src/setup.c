@@ -267,6 +267,35 @@ static void ccf_include(adns_state ads, const char *fn, int lno, const char *buf
   readconfig(ads,buf,1);
 }
 
+static void ccf_lookup(adns_state ads, const char *fn, int lno,
+		       const char *buf) {
+  int found_bind=0;
+  const char *word;
+  int l;
+
+  if (!*buf) {
+    configparseerr(ads,fn,lno,"`lookup' directive with no databases");
+    return;
+  }
+
+  while (nextword(&buf,&word,&l)) {
+    if (l==4 && !memcmp(word,"bind",4)) {
+      found_bind=1;
+    } else if (l==4 && !memcmp(word,"file",4)) {
+      /* ignore this and hope /etc/hosts is not essential */
+    } else if (l==2 && !memcmp(word,"yp",2)) {
+      adns__diag(ads,-1,0,"%s:%d: yp lookups not supported by adns", fn,lno);
+      found_bind=-1;
+    } else {
+      adns__diag(ads,-1,0,"%s:%d: unknown `lookup' database `%.*s'",
+		 fn,lno, l,word);
+      found_bind=-1;
+    }
+  }
+  if (!found_bind)
+    adns__diag(ads,-1,0,"%s:%d: `lookup' specified, but not `bind'", fn,lno);
+}
+
 static const struct configcommandinfo {
   const char *name;
   void (*fn)(adns_state ads, const char *fn, int lno, const char *buf);
@@ -278,6 +307,7 @@ static const struct configcommandinfo {
   { "options",           ccf_options     },
   { "clearnameservers",  ccf_clearnss    },
   { "include",           ccf_include     },
+  { "lookup",            ccf_lookup      }, /* OpenBSD */
   {  0                                   }
 };
 

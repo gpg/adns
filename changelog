@@ -5,6 +5,7 @@ adns (1.1); urgency=medium
   * When search list runs out, _qf_owner sets owner to query domain.
   * Don't use <sys/select.h> any more, it was a mistake made in pre-1.0
     (and there doesn't seem to be much explanation why).
+  * Understand and sort of check OpenBSD `lookup' resolv.conf directive.
 
  --
 
