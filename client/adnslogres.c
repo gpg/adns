@@ -4,12 +4,12 @@
  */
 /*
  *  This file is
- *   Copyright (C) 1999-2000 Tony Finch <dot@dotat.at>
+ *   Copyright (C) 1999 Tony Finch <dot@dotat.at>
  *   Copyright (C) 1999-2000 Ian Jackson <ian@davenant.greenend.org.uk>
  *
  *  It is part of adns, which is
  *    Copyright (C) 1997-2000 Ian Jackson <ian@davenant.greenend.org.uk>
- *    Copyright (C) 1999-2000 Tony Finch <dot@dotat.at>
+ *    Copyright (C) 1999 Tony Finch <dot@dotat.at>
  *  
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -48,8 +48,7 @@ static const char * const cvsid =
 #include "adns.h"
 
 /* maximum number of concurrent DNS queries */
-#define MAXPENDING 64000
-#define MAXPENDING 64000
+#define MAXPENDING 1000
 
 /* maximum length of a line */
 #define MAXLINE 1024
@@ -205,13 +204,12 @@ static void proclog(FILE *inf, FILE *outf, int opts) {
 }
 
 static void usage(void) {
-  fprintf(stderr, "usage: %s [-d] [-p] [-c concurrency] [logfile]\n", progname);
+  fprintf(stderr, "usage: %s [-d] [-p] [logfile]\n", progname);
   exit(1);
 }
 
 int main(int argc, char *argv[]) {
-  int c, opts, maxpending;
-  extern char *optarg;
+  int c, opts;
   FILE *inf;
 
   progname= strrchr(*argv, '/');
@@ -219,18 +217,10 @@ int main(int argc, char *argv[]) {
     progname++;
   else
     progname= *argv;
-
-  maxpending= MAXPENDING;
   opts= 0;
-  while ((c= getopt(argc, argv, "c:dp")) != -1)
+
+  while ((c= getopt(argc, argv, "dp")) != -1)
     switch (c) {
-    case 'c':
-      maxpending= atoi(optarg);
-      if (maxpending < 1 || maxpending > MAXPENDING) {
-       fprintf(stderr, "%s: unfeasible concurrency %d\n", progname, maxpending);
-       exit(1);
-      }
-      break;
     case 'd':
       opts|= OPT_DEBUG;
       break;
@@ -255,7 +245,7 @@ int main(int argc, char *argv[]) {
   if (!inf)
     aargh("couldn't open input");
 
-  proclog(inf, stdout, maxpending, opts);
+  proclog(inf, stdout, opts);
 
   if (fclose(inf))
     aargh("fclose input");
