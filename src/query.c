@@ -1,183 +1,200 @@
-/**/
-
-#include <errno.h>
-#include <string.h>
-#include <stdlib.h>
-
-#include <sys/uio.h>
+/*
+ * query.c
+ * - overall query management (allocation, completion)
+ * - per-query memory management
+ * - query submission and cancellation (user-visible and internal)
+ */
+/*
+ *  This file is part of adns, which is Copyright (C) 1997, 1998 Ian Jackson
+ *  
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2, or (at your option)
+ *  any later version.
+ *  
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *  
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software Foundation,
+ *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
+ */
 
 #include "internal.h"
 
-adns_status adns__mkquery(adns_state ads, vbuf *vb,
-			  const char *owner, int ol, int *id_r,
-			  const typeinfo *typei, adns_queryflags flags) {
-  int ll, c, nlabs, id;
-  byte label[255], *rqp;
-  const char *p, *pe;
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
 
-#define MKQUERY_ADDB(b) *rqp++= (b)
-#define MKQUERY_ADDW(w) (MKQUERY_ADDB(((w)>>8)&0x0ff), MKQUERY_ADDB((w)&0x0ff))
+#include <sys/time.h>
 
-  vb->used= 0;
-  if (!adns__vbuf_ensure(vb,DNS_HDRSIZE+strlen(owner)+1+5))
-    return adns_s_nolocalmem;
-  rqp= vb->buf;
+#include "internal.h"
 
-  *id_r= id= (ads->nextid++) & 0x0ffff;
+int adns__internal_submit(adns_state ads, adns_query *query_r,
+			  adns_rrtype type, vbuf *qumsg_vb, int id,
+			  adns_queryflags flags, struct timeval now,
+			  adns_status failstat, const qcontext *ctx) {
+  adns_query qu;
+  adns_status stat;
+  int ol, id, r;
+  struct timeval now;
+  const typeinfo *typei;
+  adns_query qu;
 
-  MKQUERY_ADDW(id);
-  MKQUERY_ADDB(0x01); /* QR=Q(0), OPCODE=QUERY(0000), !AA, !TC, RD */
-  MKQUERY_ADDB(0x00); /* !RA, Z=000, RCODE=NOERROR(0000) */
-  MKQUERY_ADDW(1); /* QDCOUNT=1 */
-  MKQUERY_ADDW(0); /* ANCOUNT=0 */
-  MKQUERY_ADDW(0); /* NSCOUNT=0 */
-  MKQUERY_ADDW(0); /* ARCOUNT=0 */
-  p= owner; pe= owner+ol;
-  nlabs= 0;
-  if (!*p) return adns_s_invaliddomain;
+  qu= malloc(sizeof(*qu)); if (!qu) goto x_nomemory;
+  qu->answer= malloc(sizeof(*qu->answer)); if (!qu->answer) goto x_freequ_nomemory;
+
+  qu->state= query_udp;
+  qu->back= qu->next= qu->parent= 0;
+  LIST_INIT(qu->children);
+  qu->siblings.next= qu->siblings.back= 0;
+  qu->allocations= 0;
+  qu->interim_allocd= 0;
+  qu->perm_used= 0;
+
+  qu->typei= adns__findtype(type);
+  adns__vbuf_init(&qu->vb);
+
+  qu->cname_dgram= 0;
+  qu->cname_dglen= qu->cname_begin= 0;
+  
+  qu->id= id;
+  qu->flags= flags;
+  qu->udpretries= 0;
+  qu->udpnextserver= 0;
+  qu->udpsent= qu->tcpfailed= 0;
+  timerclear(&qu->timeout);
+  memcpy(&qu->context,ctx,sizeof(qu->context));
+  memcpy(qu->owner,owner,ol); qu->owner[ol]= 0;
+
+  qu->answer->status= adns_s_ok;
+  qu->answer->cname= 0;
+  qu->answer->type= type;
+  qu->answer->nrrs= 0;
+  qu->answer->rrs= 0;
+
+  if (qu->typei) {
+    qu->answer->rrsz= qu->rrsz;
+  } else {
+    qu->answer->rrsz= -1;
+    failstat= adns_s_notimplemented;
+  }
+  
+  *query_r= qu;
+
+  qu->query_dgram= malloc(qumsg_vb->used);
+  if (!qu->query_dgram) {
+    adns__query_fail(ads,qu,adns_s_nomemory);
+    return;
+  }
+  memcpy(qu->query_dgram,qumsg_vb->buf,qumsg_vb->used);
+  qu->vb= *qumsg_vb;
+  adns__vbuf_init(qumsg_vb);
+  
+  if (failstat) {
+    adns__query_fail(ads,qu,failstat);
+    return;
+  }
+  adns__query_udp(ads,qu,now);
+  adns__autosys(ads,now);
+
+  return 0;
+
+ x_freequ_nomemory:
+  free(qu);
+ x_nomemory:
+  free(query_dgram);
+  return adns_s_nomemory;
+}
+
+int adns_submit(adns_state ads,
+		const char *owner,
+		adns_rrtype type,
+		adns_queryflags flags,
+		void *context,
+		adns_query *query_r) {
+  qcontext ctx;
+  int id;
+  vbuf vb;
+
+  ctx.ext= context;
+  r= gettimeofday(&now,0); if (r) return errno;
+  id= 0;
+
+  adns__vbuf_init(&vb);
+
+  ol= strlen(owner);
+  if (ol<=1 || ol>DNS_MAXDOMAIN+1) { stat= adns_s_invaliddomain; goto xit; }
+				 
+  if (owner[ol-1]=='.' && owner[ol-2]!='\\') { flags &= ~adns_qf_search; ol--; }
+
+  stat= adns__mkquery(ads,&vb, &id, owner,ol, typei,flags);
+			
+ xit:
+  return adns__internal_submit(ads,query_r, type,&vb,id, flags,now, stat,&ctx);	
+}
+
+int adns_synchronous(adns_state ads,
+		     const char *owner,
+		     adns_rrtype type,
+		     adns_queryflags flags,
+		     adns_answer **answer_r) {
+  adns_query qu;
+  int r;
+  
+  r= adns_submit(ads,owner,type,flags,0,&qu);
+  if (r) return r;
+
   do {
-    ll= 0;
-    while (p!=pe && (c= *p++)!='.') {
-      if (c=='\\') {
-	if (!(flags & adns_qf_anyquote)) return adns_s_invaliddomain;
-	if (ctype_digit(p[0])) {
-	  if (ctype_digit(p[1]) && ctype_digit(p[2])) {
-	    c= (*p++ - '0')*100 + (*p++ - '0')*10 + (*p++ - '0');
-	    if (c >= 256) return adns_s_invaliddomain;
-	  } else {
-	    return adns_s_invaliddomain;
-	  }
-	} else if (!(c= *p++)) {
-	  return adns_s_invaliddomain;
-	}
-      }
-      if (!(flags & adns_qf_anyquote)) {
-	if (ctype_digit(c) || c == '-') {
-	  if (!ll) return adns_s_invaliddomain;
-	} else if (!ctype_alpha(c)) {
-	  return adns_s_invaliddomain;
-	}
-      }
-      if (ll == sizeof(label)) return adns_s_invaliddomain;
-      label[ll++]= c;
-    }
-    if (!ll) return adns_s_invaliddomain;
-    if (nlabs++ > 63) return adns_s_invaliddomain;
-    MKQUERY_ADDB(ll);
-    memcpy(rqp,label,ll); rqp+= ll;
-  } while (p!=pe);
-
-  MKQUERY_ADDB(0);
-  MKQUERY_ADDW(typei->type & adns__rrt_typemask); /* QTYPE */
-  MKQUERY_ADDW(DNS_CLASS_IN); /* QCLASS=IN */
-
-  vb->used= rqp - vb->buf;
-  assert(vb->used <= vb->avail);
-  
-  return adns_s_ok;
+    r= adns_wait(ads,&qu,answer_r,0);
+  } while (r==EINTR);
+  if (r) adns_cancel(ads,qu);
+  return r;
 }
 
-void adns__query_tcp(adns_state ads, adns_query qu, struct timeval now) {
-  /* Query must be in state tcpwait/timew; it will be moved to a new state
-   * if possible and no further processing can be done on it for now.
-   * (Resulting state is one of tcpwait/timew (if server not connected),
-   *  tcpsent/timew, child/childw or done/output.)
-   *
-   * adns__tcp_tryconnect should already have been called - _tcp
-   * will only use an existing connection (if there is one), which it
-   * may break.  If the conn list lost then the caller is responsible for any
-   * reestablishment and retry.
+void adns_cancel(adns_state ads, adns_query query) {
+  abort(); /* fixme */
+}
+
+void *adns__alloc_interim(adns_state ads, adns_query qu, size_t sz) {
+  allocnode *an;
+
+  assert(!qu->final_allocspace);
+  sz= MEM_ROUND(sz);
+  an= malloc(MEM_ROUND(MEM_ROUND(sizeof(*an)) + sz));
+  if (!an) {
+    adns__query_fail(ads,qu,adns_s_nolocalmem);
+    return 0;
+  }
+  qu->permalloclen += sz;
+  an->next= qu->allocations;
+  qu->allocations= an;
+  return (byte*)an + MEM_ROUND(sizeof(*an));
+}
+
+void *adns__alloc_final(adns_query qu, size_t sz) {
+  /* When we're in the _final stage, we _subtract_ from interim_alloc'd
+   * each allocation, and use final_allocspace to point to the next free
+   * bit.
    */
-  byte length[2];
-  struct iovec iov[2];
-  int wr, r;
+  void *rp;
 
-  if (ads->tcpstate != server_ok) return;
-
-  length[0]= (qu->query_dglen&0x0ff00U) >>8;
-  length[1]= (qu->query_dglen&0x0ff);
-  
-  if (!adns__vbuf_ensure(&ads->tcpsend,ads->tcpsend.used+qu->query_dglen+2)) return;
-
-  timevaladd(&now,TCPMS);
-  qu->timeout= now;
-  qu->state= query_tcpsent;
-  LIST_LINK_TAIL(ads->timew,qu);
-
-  if (ads->tcpsend.used) {
-    wr= 0;
-  } else {
-    iov[0].iov_base= length;
-    iov[0].iov_len= 2;
-    iov[1].iov_base= qu->query_dgram;
-    iov[1].iov_len= qu->query_dglen;
-    wr= writev(ads->tcpsocket,iov,2);
-    if (wr < 0) {
-      if (!(errno == EAGAIN || errno == EINTR || errno == ENOSPC ||
-	    errno == ENOBUFS || errno == ENOMEM)) {
-	adns__tcp_broken(ads,"write",strerror(errno));
-	return;
-      }
-      wr= 0;
-    }
-  }
-
-  if (wr<2) {
-    r= adns__vbuf_append(&ads->tcpsend,length,2-wr); assert(r);
-    wr= 0;
-  } else {
-    wr-= 2;
-  }
-  if (wr<qu->query_dglen) {
-    r= adns__vbuf_append(&ads->tcpsend,qu->query_dgram+wr,qu->query_dglen-wr); assert(r);
-  }
+  sz= MEM_ROUND(sz);
+  rp= qu->final_allocspace;
+  assert(rp);
+  qu->interim_allocd -= sz;
+  assert(qu->interim_allocd>=0);
+  qu->final_allocspace= (byte*)rp + sz;
+  return rp;
 }
 
-static void query_usetcp(adns_state ads, adns_query qu, struct timeval now) {
-  timevaladd(&now,TCPMS);
-  qu->timeout= now;
-  qu->state= query_tcpwait;
-  LIST_LINK_TAIL(ads->timew,qu);
-  adns__query_tcp(ads,qu,now);
-  adns__tcp_tryconnect(ads,now);
-}
-
-void adns__query_udp(adns_state ads, adns_query qu, struct timeval now) {
-  /* Query must be in state udp/NONE; it will be moved to a new state,
-   * and no further processing can be done on it for now.
-   * (Resulting state is one of udp/timew, tcpwait/timew (if server not connected),
-   *  tcpsent/timew, child/childw or done/output.)
-   */
-  struct sockaddr_in servaddr;
-  int serv, r;
-
-  assert(qu->state == query_udp);
-  if ((qu->flags & adns_qf_usevc) || (qu->query_dglen > DNS_MAXUDP)) {
-    query_usetcp(ads,qu,now);
-    return;
-  }
-
-  if (qu->udpretries >= UDPMAXRETRIES) {
-    adns__query_fail(ads,qu,adns_s_timeout);
-    return;
-  }
-
-  serv= qu->udpnextserver;
-  memset(&servaddr,0,sizeof(servaddr));
-  servaddr.sin_family= AF_INET;
-  servaddr.sin_addr= ads->servers[serv].addr;
-  servaddr.sin_port= htons(DNS_PORT);
-  
-  r= sendto(ads->udpsocket,qu->query_dgram,qu->query_dglen,0,&servaddr,sizeof(servaddr));
-  if (r<0 && errno == EMSGSIZE) { query_usetcp(ads,qu,now); return; }
-  if (r<0) adns__warn(ads,serv,0,"sendto failed: %s",strerror(errno));
-  
-  timevaladd(&now,UDPRETRYMS);
-  qu->timeout= now;
-  qu->udpsent |= (1<<serv);
-  qu->udpnextserver= (serv+1)%ads->nservers;
-  qu->udpretries++;
-  LIST_LINK_TAIL(ads->timew,qu);
+void adns__reset_cnameonly(adns_state ads, adns_query qu) {
+  assert(qu->final_allocspace);
+  qu->answer->nrrs= 0;
+  qu->answer->rrs= 0;
+  qu->interim_allocd= qu->answer->cname ? MEM_ROUND(strlen(qu->answer->cname)+1) : 0;
 }
 
 static void adns__query_done(adns_state ads, adns_query qu) {
@@ -205,15 +222,28 @@ static void adns__query_done(adns_state ads, adns_query qu) {
   LIST_LINK_TAIL(ads->output,qu);
 }
 
-void adns__reset_cnameonly(adns_state ads, adns_query qu) {
-  assert(qu->final_allocspace);
-  qu->answer->nrrs= 0;
-  qu->answer->rrs= 0;
-  qu->interim_allocd= qu->answer->cname ? MEM_ROUND(strlen(qu->answer->cname)+1) : 0;
-}
-
 void adns__query_fail(adns_state ads, adns_query qu, adns_status stat) {
   adns__reset_cnameonly(ads,qu);
   qu->answer->status= stat;
   adns__query_done(ads,qu);
 }
+
+void adns__makefinal_str(adns_query qu, char **strp) {
+  int l;
+  char *before, *after;
+
+  before= *strp;
+  l= strlen(before)+1;
+  after= adns__alloc_final(qu,l);
+  memcpy(after,before,l);
+  *strp= after;  
+}
+
+void adns__makefinal_block(adns__query qu, void **blpp, size_t sz) {
+  void *after;
+
+  after= adns__alloc_final(qu,sz);
+  memcpy(after,*blpp,sz);
+  *blpp= after;
+}
+

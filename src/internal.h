@@ -1,4 +1,26 @@
-/**/
+/*
+ * internal.h
+ * - declarations of private objects with external linkage (adns__*)
+ * - definitons of internal macros
+ * - comments regarding library data structures
+ */
+/*
+ *  This file is part of adns, which is Copyright (C) 1997, 1998 Ian Jackson
+ *  
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2, or (at your option)
+ *  any later version.
+ *  
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *  
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software Foundation,
+ *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
+ */
 
 #ifndef ADNS_INTERNAL_H_INCLUDED
 #define ADNS_INTERNAL_H_INCLUDED
@@ -200,6 +222,10 @@ struct adns__state {
 
 /* From setup.c: */
 
+int adns__setnonblock(adns_state ads, int fd); /* => errno value */
+
+/* From general.c: */
+
 void adns__vdiag(adns_state ads, const char *pfx, adns_initflags prevent,
 		 int serv, adns_query qu, const char *fmt, va_list al);
 
@@ -218,9 +244,46 @@ void adns__vbuf_appendq(vbuf *vb, const byte *data, int len);
 void adns__vbuf_init(vbuf *vb);
 void adns__vbuf_free(vbuf *vb);
 
-int adns__setnonblock(adns_state ads, int fd); /* => errno value */
+const char *adns__diag_domain(adns_state ads, int serv, adns_query qu, vbuf *vb,
+			      int flags, const byte *dgram, int dglen, int cbyte);
+/* Unpicks a domain in a datagram and returns a string suitable for
+ * printing it as.  Never fails - if an error occurs, it will
+ * return some kind of string describing the error.
+ *
+ * serv may be -1, qu may be 0.  vb must have been initialised,
+ * and will be left in an arbitrary consistent state.
+ *
+ * Returns either vb->buf, or a pointer to a string literal.  Do not modify
+ * vb before using the return value.
+ */
+  
+/* From transmit.c: */
 
-/* From submit.c: */
+adns_status adns__mkquery(adns_state ads, vbuf *vb,
+			  const char *owner, int ol, int *id_r,
+			  const typeinfo *typei, adns_queryflags flags);
+/* Assembles a query packet in vb, and returns id at *id_r. */
+
+void adns__query_tcp(adns_state ads, adns_query qu, struct timeval now);
+/* Query must be in state tcpwait/timew; it will be moved to a new state
+ * if possible and no further processing can be done on it for now.
+ * (Resulting state is one of tcpwait/timew (if server not connected),
+ *  tcpsent/timew, child/childw or done/output.)
+ *
+ * adns__tcp_tryconnect should already have been called - _tcp
+ * will only use an existing connection (if there is one), which it
+ * may break.  If the conn list lost then the caller is responsible for any
+ * reestablishment and retry.
+ */
+
+void adns__query_udp(adns_state ads, adns_query qu, struct timeval now);
+/* Query must be in state udp/NONE; it will be moved to a new state,
+ * and no further processing can be done on it for now.
+ * (Resulting state is one of udp/timew, tcpwait/timew (if server not connected),
+ *  tcpsent/timew, child/childw or done/output.)
+ */
+
+/* From query.c: */
 
 int adns__internal_submit(adns_state ads, adns_query *query_r,
 			  adns_rrtype type, vbuf *qumsg_vb, int id,
@@ -261,18 +324,6 @@ void *adns__alloc_final(adns_query qu, size_t sz);
 void adns__makefinal_block(adns_query qu, void **blpp, size_t sz);
 void adns__makefinal_str(adns_query qu, char **strp);
 
-/* From query.c: */
-
-void adns__query_udp(adns_state ads, adns_query qu, struct timeval now);
-void adns__query_tcp(adns_state ads, adns_query qu, struct timeval now);
-adns_status adns__mkquery(adns_state ads, vbuf *vb,
-			  const char *owner, int ol, int *id_r,
-			  const typeinfo *typei, adns_queryflags flags);
-/* Assembles a query packet in vb, and returns id at *id_r. */
-
-void adns__query_ok(adns_state ads, adns_query qu);
-void adns__query_fail(adns_state ads, adns_query qu, adns_status stat);
-
 void adns__reset_cnameonly(adns_state ads, adns_query qu);
 /* Resets all of the memory management stuff etc. to
  * take account of only the CNAME.  Used when we find an error somewhere
@@ -280,6 +331,9 @@ void adns__reset_cnameonly(adns_state ads, adns_query qu);
  * when we're halfway through RRs in a datagram and discover that we
  * need to retry the query.
  */
+
+void adns__query_done(adns_state ads, adns_query qu);
+void adns__query_fail(adns_state ads, adns_query qu, adns_status stat);
    
 /* From reply.c: */
 
@@ -382,7 +436,9 @@ int vbuf__append_quoted1035(vbuf *vb, const byte *buf, int len);
 
 void adns__tcp_broken(adns_state ads, const char *what, const char *why);
 void adns__tcp_tryconnect(adns_state ads, struct timeval now);
+
 void adns__autosys(adns_state ads, struct timeval now);
+/* Make all the system calls we want to if the application wants us to. */
 
 /* Useful static inline functions: */
 

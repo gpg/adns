@@ -1,4 +1,24 @@
-/**/
+/*
+ * parse.c
+ * - parsing assistance functions (mainly for domains inside datagrams)
+ */
+/*
+ *  This file is part of adns, which is Copyright (C) 1997, 1998 Ian Jackson
+ *  
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2, or (at your option)
+ *  any later version.
+ *  
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *  
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software Foundation,
+ *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
+ */
 
 #include "internal.h"
 
@@ -120,30 +140,6 @@ adns_status adns__parse_domain(adns_state ads, int serv, vbuf *vb, int flags,
   return adns_s_ok;
 }
 	
-const char *adns__diag_domain(adns_state ads, int serv, adns_query qu, vbuf *vb,
-			      int flags, const byte *dgram, int dglen, int cbyte) {
-  adns_status st;
-
-  st= adns__parse_domain(ads,serv,vb,qu->flags, dgram,dglen, &cbyte,dglen);
-  if (st == adns_s_nomemory) {
-    return "<cannot report domain... out of memory>";
-  }
-  if (st) {
-    vb->used= 0;
-    if (!(adns__vbuf_appendstr(vb,"<bad format... ") &&
-	  adns__vbuf_appendstr(vb,adns_strerror(st)) &&
-	  adns__vbuf_appendstr(vb,">") &&
-	  adns__vbuf_append(vb,"",1))) {
-      return "<cannot report bad format... out of memory>";
-    }
-  }
-  if (!vb.used) {
-    adns__vbuf_appendstr(vb,"<truncated ...>");
-    adns__vbuf_append(vb,"",1);
-  }
-  return vb->buf;
-}
-    
 adns_status adns__findrr(adns_state ads, int serv,
 			 const byte *dgram, int dglen, int *cbyte_io,
 			 int *type_r, int *class_r, int *rdlen_r, int *rdstart_r,

@@ -4,6 +4,23 @@
  *
  * $Id$
  */
+/*
+ *  This file is part of adns, which is Copyright (C) 1997, 1998 Ian Jackson
+ *  
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2, or (at your option)
+ *  any later version.
+ *  
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *  
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software Foundation,
+ *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
+ */
 
 #ifndef ADNS_H_INCLUDED
 #define ADNS_H_INCLUDED
@@ -220,6 +237,9 @@ int adns_wait(adns_state ads,
 void adns_cancel(adns_state ads, adns_query query);
 
 int adns_finish(adns_state);
+/* You may call this even if you have queries outstanding;
+ * they will be cancelled.
+ */
 
 int adns_callback(adns_state, int maxfd, const fd_set *readfds, const fd_set *writefds,
 		  const fd_set *exceptfds);
