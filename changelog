@@ -1,4 +1,4 @@
-adns (1.0); urgency=low
+adns (1.0); urgency=medium
 
   Bugfixes:
   * Treat 8-bit characters in email addrs as RFC822 `special' (=> quote).
