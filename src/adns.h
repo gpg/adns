@@ -89,7 +89,7 @@ typedef enum {
   
 } adns_rrtype;
 
-/* In queries without qtf_anyquote, all domains must have standard
+/* In queries without qtf_quoteok_*, all domains must have standard
  * legal syntax.  In queries _with_ qtf_anyquote, domains in the query
  * or response may contain any characters, quoted according to
  * RFC1035 5.1.  On input to adns, the char* is a pointer to the

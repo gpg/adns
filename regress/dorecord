@@ -1,0 +1,17 @@
+#!/bin/sh
+# usage: ./dorecord <casename> <initfile> <args>
+
+set -e
+casename="$1"; shift
+initfile="$1"; shift
+
+initstring="`cat \"init-$initfile.text\"`"
+
+exec 3>"case-$casename.sys"
+echo >&3 "$initfile"
+echo >&3 "$@"
+
+ADNS_TEST_OUT_FD=3
+export ADNS_TEST_OUT_FD
+
+./hrecord "/$initstring" "$@" 1>"case-$casename.out" 2>"case-$casename.err"

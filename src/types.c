@@ -790,8 +790,58 @@ static adns_status pa_hinfo(const parseinfo *pai, int cbyte, int max, void *data
 
 static adns_status pap_mailbox(const parseinfo *pai, int *cbyte_io, int max,
 			       char **mb_r) {
-  return pap_domain(pai, cbyte_io, max, mb_r, pdf_quoteok);
-  /* fixme: mailbox quoting */
+  int lablen, labstart, i, needquote, c, r, neednorm;
+  const unsigned char *p;
+  char *str;
+  findlabel_state fls;
+  adns_status st;
+  vbuf *vb;
+
+  vb= &pai->qu->vb;
+  vb->used= 0;
+  adns__findlabel_start(&fls, pai->ads,
+			-1, pai->qu,
+			pai->dgram, pai->dglen, max,
+			*cbyte_io, cbyte_io);
+  st= adns__findlabel_next(&fls,&lablen,&labstart);
+  if (!lablen) {
+    adns__vbuf_appendstr(vb,"<>");
+    goto x_ok;
+  }
+
+  neednorm= 1;
+  for (i=0, needquote=0, p= pai->dgram+labstart; i<lablen; i++) {
+    c= *p++;
+    if ((c&~128) < 32 || (c&~128) == 127) return adns_s_invaliddata;
+    if (c == '.' && !neednorm) neednorm= 1;
+    else if (strchr("()<>@,;:\\\".[]",c)) needquote++;
+    else neednorm= 0;
+  }
+
+  if (needquote || neednorm) {
+    r= adns__vbuf_ensure(vb, lablen+needquote+4); if (!r) R_NOMEM;
+    adns__vbuf_appendq(vb,"\"",1);
+    for (i=0, needquote=0, p= pai->dgram+labstart; i<lablen; i++, p++) {
+      c= *p;
+      if (strchr("()<>@,;:\\\".[]",c)) adns__vbuf_appendq(vb,"\\",1);
+      adns__vbuf_appendq(vb,p,1);
+    }
+    adns__vbuf_appendq(vb,"\"",1);
+  } else {
+    r= adns__vbuf_append(vb, pai->dgram+labstart, lablen); if (!r) R_NOMEM;
+  }
+
+  r= adns__vbuf_appendstr(vb,"@"); if (!r) R_NOMEM;
+
+  st= adns__parse_domain_more(&fls,pai->ads, pai->qu,vb,0, pai->dgram);
+  if (st) return st;
+
+ x_ok:
+  str= adns__alloc_interim(pai->qu, vb->used+1); if (!str) R_NOMEM;
+  memcpy(str,vb->buf,vb->used);
+  str[vb->used]= 0;
+  *mb_r= str;
+  return adns_s_ok;
 }
 
 /*

@@ -482,6 +482,15 @@ adns_status adns__parse_domain(adns_state ads, int serv, adns_query qu,
  * serv may be -1 and qu may be 0 - they are used for error reporting only.
  */
 
+adns_status adns__parse_domain_more(findlabel_state *fls, adns_state ads,
+				    adns_query qu, vbuf *vb, parsedomain_flags flags,
+				    const byte *dgram);
+/* Like adns__parse_domain, but you pass it a pre-initialised findlabel_state,
+ * for continuing an existing domain or some such of some kind.  Also, unlike
+ * _parse_domain, the domain data will be appended to vb, rather than replacing
+ * the existing contents.
+ */
+
 adns_status adns__findrr(adns_query qu, int serv,
 			 const byte *dgram, int dglen, int *cbyte_io,
 			 int *type_r, int *class_r, unsigned long *ttl_r,
