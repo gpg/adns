@@ -217,7 +217,10 @@ int adns_submit(adns_state ads,
   if (!ol) { stat= adns_s_querydomaininvalid; goto x_adnsfail; }
   if (ol>DNS_MAXDOMAIN+1) { stat= adns_s_querydomaintoolong; goto x_adnsfail; }
 				 
-  if (ol>=2 && owner[ol-1]=='.' && owner[ol-2]!='\\') { flags &= ~adns_qf_search; ol--; }
+  if (ol>=1 && owner[ol-1]=='.' && (ol<2 || owner[ol-2]!='\\')) {
+    flags &= ~adns_qf_search;
+    ol--;
+  }
 
   if (flags & adns_qf_search) {
     r= adns__vbuf_append(&qu->search_vb,owner,ol);

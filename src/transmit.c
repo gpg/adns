@@ -82,8 +82,7 @@ adns_status adns__mkquery(adns_state ads, vbuf *vb, int *id_r,
 
   p= owner; pe= owner+ol;
   nlabs= 0;
-  if (!*p) return adns_s_querydomaininvalid;
-  do {
+  while (p!=pe) {
     ll= 0;
     while (p!=pe && (c= *p++)!='.') {
       if (c=='\\') {
@@ -113,7 +112,7 @@ adns_status adns__mkquery(adns_state ads, vbuf *vb, int *id_r,
     if (nlabs++ > 63) return adns_s_querydomaintoolong;
     MKQUERY_ADDB(ll);
     memcpy(rqp,label,ll); rqp+= ll;
-  } while (p!=pe);
+  }
   MKQUERY_ADDB(0);
 
   MKQUERY_STOP(vb);
