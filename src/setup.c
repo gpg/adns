@@ -603,12 +603,6 @@ adns_query adns_forallqueries_next(adns_state ads, void **context_r) {
 }
 
 void adns__checkqueues(adns_state ads) {
-  int i;
-
-  i= 0;
   adns_forallqueries_begin(ads);
-  while (adns_forallqueries_next(ads,0)) {
-    i++;
-    assert(i<1000);
-  }
+  while (adns_forallqueries_next(ads,0));
 }
