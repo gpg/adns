@@ -111,15 +111,21 @@ int adns__vbuf_append(vbuf *vb, const byte *data, int len) {
 
   newlen= vb->used+len;
   if (vb->avail < newlen) {
+    if (newlen<20) newlen= 20;
     newlen <<= 1;
     nb= realloc(vb->buf,newlen);
-    if (!nb) { newlen >>= 1; nb= realloc(vb->buf,newlen); }
+    if (!nb) { newlen= vb->used+len; nb= realloc(vb->buf,newlen); }
     if (!nb) return 0;
     vb->buf= nb;
     vb->avail= newlen;
   }
   adns__vbuf_appendq(vb,data,len);
   return 1;
+}
+
+void adns__vbuf_free(vbuf *vb) {
+  free(vb->buf);
+  adns__vbuf_init(vb);
 }
 
 /* Additional diagnostic functions */

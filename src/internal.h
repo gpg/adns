@@ -317,6 +317,9 @@ void *adns__alloc_interim(adns_query qu, size_t sz);
  *
  * _alloc_interim can fail, in which case it will fail the query too,
  * so nothing more need be done with it.
+ *
+ * adns__alloc_interim(qu,0) will not return 0, but it will not
+ * necessarily return a distinct pointer each time.
  */
 
 void *adns__alloc_mine(adns_query qu, size_t sz);
@@ -326,7 +329,7 @@ void *adns__alloc_mine(adns_query qu, size_t sz);
  */
 
 void *adns__alloc_final(adns_query qu, size_t sz);
-/* Cannot fail.
+/* Cannot fail, and cannot return 0.
  */
 
 void adns__makefinal_block(adns_query qu, void **blpp, size_t sz);

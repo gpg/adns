@@ -73,12 +73,17 @@ int adns__internal_submit(adns_state ads, adns_query *query_r,
   
   *query_r= qu;
 
-  qu->query_dgram= malloc(qumsg_vb->used);
-  if (!qu->query_dgram) {
-    adns__query_fail(qu,adns_s_nolocalmem);
-    return adns_s_ok;
+  qu->query_dglen= qumsg_vb->used;
+  if (qumsg_vb->used) {
+    qu->query_dgram= malloc(qumsg_vb->used);
+    if (!qu->query_dgram) {
+      adns__query_fail(qu,adns_s_nolocalmem);
+      return adns_s_ok;
+    }
+    memcpy(qu->query_dgram,qumsg_vb->buf,qumsg_vb->used);
+  } else {
+    qu->query_dgram= 0;
   }
-  memcpy(qu->query_dgram,qumsg_vb->buf,qumsg_vb->used);
   qu->vb= *qumsg_vb;
   adns__vbuf_init(qumsg_vb);
   
@@ -156,6 +161,7 @@ void adns_cancel(adns_query query) {
 void *adns__alloc_interim(adns_query qu, size_t sz) {
   allocnode *an;
 
+  if (!sz) return qu; /* Any old pointer will do */
   assert(!qu->final_allocspace);
   sz= MEM_ROUND(sz);
   an= malloc(MEM_ROUND(MEM_ROUND(sizeof(*an)) + sz));
