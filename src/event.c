@@ -530,6 +530,10 @@ int adns_processany(adns_state ads) {
   r= gettimeofday(&now,0);
   if (!r) adns_processtimeouts(ads,&now);
 
+  /* We just use adns__fdevents to loop over the fd's trying them.
+   * This seems more sensible than calling select, since we're most
+   * likely just to want to do a read on one or two fds anyway.
+   */
   npollfds= adns__pollfds(ads,pollfds);
   adns__fdevents(ads,
 		 pollfds,npollfds,
