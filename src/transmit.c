@@ -115,9 +115,9 @@ adns_status adns__mkquery(adns_state ads, vbuf *vb, int *id_r,
       label[ll++]= c;
     }
     if (!ll) return adns_s_querydomaininvalid;
-    if (ll > 63) return adns_s_querydomaintoolong;
+    if (ll > DNS_MAXLABEL) return adns_s_querydomaintoolong;
     nbytes+= ll+1;
-    if (nbytes > 254) return adns_s_querydomaintoolong;
+    if (nbytes >= DNS_MAXDOMAIN) return adns_s_querydomaintoolong;
     MKQUERY_ADDB(ll);
     memcpy(rqp,label,ll); rqp+= ll;
   }

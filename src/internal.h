@@ -58,6 +58,7 @@ typedef unsigned char byte;
 
 #define DNS_PORT 53
 #define DNS_MAXUDP 512
+#define DNS_MAXLABEL 63
 #define DNS_MAXDOMAIN 255
 #define DNS_HDRSIZE 12
 #define DNS_IDOFFSET 0
