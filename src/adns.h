@@ -123,8 +123,9 @@ int adns_init(adns_state *newstate_r, adns_initflags flags);
 int adns_synchronous(adns_state ads,
 		     const char *owner,
 		     adns_rrtype type,
-		     int flags,
+		     adns_queryflags flags,
 		     adns_answer *answer);
+/* Will not return EINTR. */
 
 /* NB: if you set adns_if_noautosys then _submit and _check do not
  * make any system calls; you must use adns_callback (possibly after
@@ -134,7 +135,7 @@ int adns_synchronous(adns_state ads,
 int adns_submit(adns_state ads,
 		const char *owner,
 		adns_rrtype type,
-		int flags,
+		adns_queryflags flags,
 		void *context,
 		adns_query *query_r);
 
@@ -147,6 +148,7 @@ int adns_wait(adns_state ads,
 	      adns_query *query_io,
 	      adns_answer *answer,
 	      void *context_r);
+/* Might return EINTR - if so, try again */
 
 void adns_cancel(adns_state ads, adns_query query);
 

@@ -327,7 +327,7 @@ int adns_check(adns_state ads,
 int adns_synchronous(adns_state ads,
 		     const char *owner,
 		     adns_rrtype type,
-		     int flags,
+		     adns_queryflags flags,
 		     adns_answer *answer) {
   adns_query qu;
   int r;
@@ -335,7 +335,9 @@ int adns_synchronous(adns_state ads,
   r= adns_submit(ads,owner,type,flags,0,&qu);
   if (r) return r;
 
-  r= adns_wait(ads,&qu,answer,0);
+  do {
+    r= adns_wait(ads,&qu,answer,0);
+  } while (r==EINTR);
   if (r) adns_cancel(ads,qu);
   return r;
 }
@@ -343,7 +345,7 @@ int adns_synchronous(adns_state ads,
 int adns_submit(adns_state ads,
 		const char *owner,
 		adns_rrtype type,
-		int flags,
+		adns_queryflags flags,
 		void *context,
 		adns_query *query_r) {
   adns_query qu;
