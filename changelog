@@ -17,6 +17,7 @@ adns (0.9) unstable; urgency=high
   * Pass LDFLAGS from configure on to ld via settings.make.in.
   * make clean deletes *.so and *.so.* files.
   * New --disable-dynamic configure option for non-ELF systems.
+  * Use AC_PROG_INSTALL (=> perhaps install-sh), to avoid bad `install'.
 
   Minor improvements:
   * Do not print warning if sendto() gives EAGAIN.
