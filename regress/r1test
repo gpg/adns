@@ -50,7 +50,7 @@ set -e
 
 if [ "$rc" = 5 ]
 then
-	echo -n "SKIPPED-$casename "
+	printf "SKIPPED-$casename "
 	mrc=5
 	exit
 fi
@@ -82,5 +82,5 @@ then
 	exit
 fi
 
-echo -n "$casename "
+printf "$casename "
 mrc=0

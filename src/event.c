@@ -395,7 +395,8 @@ int adns_processreadable(adns_state ads, int fd, const struct timeval *now) {
       }
       if (udpaddrlen != sizeof(udpaddr)) {
 	adns__diag(ads,-1,0,"datagram received with wrong address length %d"
-		   " (expected %d)", udpaddrlen,sizeof(udpaddr));
+		   " (expected %lu)", udpaddrlen,
+		   (unsigned long)sizeof(udpaddr));
 	continue;
       }
       if (udpaddr.sin_family != AF_INET) {

@@ -4,7 +4,7 @@
  */
 /*
  *  This file is
- *    Copyright (C) 1997-1999 Ian Jackson <ian@davenant.greenend.org.uk>
+ *    Copyright (C) 1997-2000 Ian Jackson <ian@davenant.greenend.org.uk>
  *
  *  It is part of adns, which is
  *    Copyright (C) 1997-2000 Ian Jackson <ian@davenant.greenend.org.uk>
@@ -25,6 +25,9 @@
  *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
  */
 
+/* Define if inline functions a la GCC are available.  */
+#undef HAVE_INLINE
+
 /* Define if function attributes a la GCC 2.5 and higher are available.  */
 #undef HAVE_GNUC25_ATTRIB
 
@@ -43,6 +46,10 @@
 @BOTTOM@
 
 /* Use the definitions: */
+
+#ifndef HAVE_INLINE
+#define inline
+#endif
 
 #ifdef HAVE_POLL
 #include <sys/poll.h>
@@ -106,4 +113,8 @@ struct pollfd { int fd; short events; short revents; };
 
 #ifdef HAVEUSE_RPCTYPES_H
 #include <rpc/types.h>
+#endif
+
+#ifdef HAVE_SYS_SELECT_H
+#include <sys/select.h>
 #endif

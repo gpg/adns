@@ -4,7 +4,7 @@
  */
 /*
  *  This file is
- *    Copyright (C) 1997-1999 Ian Jackson <ian@davenant.greenend.org.uk>
+ *    Copyright (C) 1997-2000 Ian Jackson <ian@davenant.greenend.org.uk>
  *
  *  It is part of adns, which is
  *    Copyright (C) 1997-2000 Ian Jackson <ian@davenant.greenend.org.uk>
@@ -33,9 +33,8 @@
 #include <string.h>
 #include <errno.h>
 
-#include "adns.h"
-
 #include "config.h"
+#include "adns.h"
 
 #ifndef OUTPUTSTREAM
 # define OUTPUTSTREAM stdout
@@ -220,6 +219,8 @@ int main(int argc, char *const *argv) {
   mcs= malloc(tc ? sizeof(*mcs)*qc*tc : 1);
   if (!mcs) { perror("malloc mcs"); quitnow(3); }
 
+  setvbuf(stdout,0,_IOLBF,0);
+  
   if (initstring) {
     r= adns_init_strcfg(&ads,
 			(adns_if_debug|adns_if_noautosys|adns_if_checkc_freq)
@@ -232,8 +233,6 @@ int main(int argc, char *const *argv) {
   }
   if (r) failure_errno("init",r);
 
-  setvbuf(stdout,0,_IOLBF,0);
-  
   for (qi=0; qi<qc; qi++) {
     fdom_split(fdomlist[qi],&domain,&qflags,ownflags,sizeof(ownflags));
     if (!consistsof(ownflags,"a")) usageerr("unknown ownqueryflag");
