@@ -11,10 +11,10 @@ Typically there are two or three kinds of situation where people make
 this request: the first is where someone is developing a proprietary
 program and wishes to make use of adns but doesn't wish to make their
 program free software.  The second case is where a free software
-project is currently using an MIT-like licence and fear `GPL
-infection'.  The third case, which often overlaps with the second, is
-where another free software project currently using a GPL-incompatible
-licence, wishes to use adns.
+project is currently using an MIT-like licence or the LGPL and fear
+`GPL infection'.  The third case, which often overlaps with the
+second, is where another free software project currently using a
+GPL-incompatible licence, wishes to use adns.
 
 
 1. Proprietary applications of adns
@@ -47,39 +47,53 @@ should contact me to discuss it.
 Some free software projects prefer to avoid the GPL and other licences
 which force the software always to be free.  Instead they use
 something like the MIT X licence, which allows proprietary versions of
-their software.  I have to say that I don't understand why they do
-this, and think they are misguided, but that doesn't mean that they
-don't have a perfect right to.
+their software, or the in the case of some free libraries, the LGPL,
+which allows proprietary applications.  I have to say that I think
+these people are misguided, but that doesn't mean that they don't have
+a perfect right to.
 
 Some of these people think that merely writing to an interface
 provided by GPL'd software will cause their program to become GPL'd
 too, even if they don't distribute the GPL'd software.  I don't think
 this is the case.  I'm perfectly happy for non-GPL'd software to refer
-to adns in its source code or executables (eg, dynamic linking).
-However, if you distribute adns yourself then whether a program which
-uses it needs also to be GPL'd depends on the interpretation of the
-`work as a whole' and `mere aggregation' parts of the GPL.
+to adns in its source code.  However, I think that exectuables (or
+compiled libraries) which contain or are dynamically linked against
+adns must be GPL'd; likewise executable programs (whether compiled or
+in an interpreted language) which require utilities from adns to
+function properly must be GPL'd.
 
-Whether you are distributing a `work as a whole' might depend on many
-things, but they key one to me is what the appearance is to a user.
-If the user knows that they are getting a collection of software
-rather than a single product, then it's probably an aggregation which
-works together.  So, you can distribute both your (i) non-GPLd program
-source and/or binaries and (ii) adns source code or even binaries
-(provided the adns source is available as per the GPL), eg from your
-website, provided the user can tell that these are separate works and
-can tell which parts are which.
+So, you can distribute your non-GPL'd program source which needs adns
+to compile, but people who wish to distribute binaries must do so
+under the terms of the GNU GPL.  This may make sense for some
+GPL-avoiding free software projects; people can still make proprietary
+programs from your code, provided that they make some provision to
+replace adns with something whose copyright allows proprietary
+versions.
 
-But, if you package your program and adns together so that the user is
-no longer aware of adns as a separate work, then I think you are
-distributing a `work as a whole', and the whole work including adns
-and your software which depends on it must be GPL'd.  This is of
-course not a problem if your non-GPL licence is GPL-compatible (see
-the next section): it just means that _when the whole lot is shipped
-together as one work_ it is covered by the GPL.  People who wish to
-make proprietary works based on just your code can do so, provided
-they (or you) arrange for something to fill the hole left by the lack
-of adns.
+However, this doesn't make much sense for the authors of LGPL'd
+libraries.  All I can say to them is to ask which is more important:
+that their library be well-constructed and use all the best technology
+available as free software, or whether it is worth degrading quality
+of their library in order to allow proprietary programs to use it !
+
+To help the case of LGPL'd libraries for which adns is not a vital
+component - for example, a library which provides access to other
+libraries so that programs which use it need only use certain parts,
+I have release adns.h (just the public header file) under the LGPL as
+well as the GPL.  See the copyright notice in adns.h for details.
+Note that this will not help you if it adns is essential to the
+functioning of your library, because all programs using your library
+must link against both your library and adns and so must be GPL'd.
+
+
+For some information and views from the Free Software Foundation on
+free software licensing, visit:
+
+ Various licenses and comments about them
+  at http://www.fsf.org/philosophy/license-list.html
+
+ Why you shouldn't use the Library GPL for your next library
+  at http://www.fsf.org/philosophy/why-not-lgpl.html
 
 
 3. GPL-incompatible free software licences
@@ -99,137 +113,8 @@ contact me at <adns-maint@chiark.greenend.org.uk> with the full text
 of the GPL-incompatible licence.  However, I would prefer it if you
 could use a GPL-compatible licence for your project instead.
 
-There are a couple of common extra restrictions, and I make some
-specific extensions to my licence for adns below.
+--- Ian Jackson ...
 
-
-3.1. BSD advertising clause, endorsement restriction, etc.
-
-The most notable and common extra restriction found in free software
-licences is the `obnoxious BSD advertising clause' (see Richard
-Stallman's article on the subject, available from www.gnu.org) and the
-endorsement restriction.
-
-The problem with the advertising clause isn't that the sentence
-required, referring the the Regents of the UC Berkeley, is awkward.
-The problem is that if everyone contributing to a large project gets
-such a mention the number of sentences required becomes very large;
-however, it is unfair for some people to get credit and others not to.
-
-I disapprove of these clause, but I recognise that it may be difficult
-for some people to get them removed from particular programs.  The
-other clauses are also arguable.
-
-So, I hereby make an extension to my licence for adns (`the
-GPL'd Work' in the text below).
-
- The GNU GPL version 2, section 2b, and the later parts of section 2,
- require that certain works be licenced to all third parties under the
- terms of the GPL.
-
- As special relaxations of this requirement, described in detail
- below, the terms of this onward licence to third parties need not be
- (though they may be) exactly the terms of the GPLv2.
-
- These relaxations can apply when there is a work otherwise licenced
- under the GPLv2, as identified by authors of the work (the `Original
- Work').  They can also apply when there is a derived works of that
- work also licenced under the GPLv2, provided that the additional
- copyright holders also agree.  Such an Original Work or derivative
- work is called `the GPL'd work'.
-
- The relaxations only apply when the GPL'd Work is combined with
- another work (the Other Work) to make a `work as a whole' (the Whole
- Work), so that usually the Whole Work would need to be GPL'd, but
- where the Other Work's licence has provisions incompatible with the
- GPLv2, so that without the relaxation you would not be able to
- distribute the Whole Work at all (the `Extra Provisions').
-
- The relaxations only apply if all parts of the Whole Work which are
- the GPL'd Work or derived from the GPL'd Work can be easily separated
- out again from the Whole Work's source code, to form once more the
- GPL'd Work.  The resulting re-separated GPL'd Work must be similar or
- superior in completeness, functionality, etc. to the unmodified
- Original Work as distributed by the person who originally grants
- these licence extensions, and the re-separated GPL'd Work must be
- licenced to all third parties under terms identical to the GPL
- version 2 (either with or without these extensions, at their option).
-
- The relaxations only apply if in copyright licences which would
- appear to the reader to cover the Whole Work contain the following
- statement or an equivalent:
-   Different parts of this software may be covered by different
-   copying conditions.  See individual source code files or copyright
-   statements for details.
-
- Each relaxation below will state the kind of Extra Provisions in the
- Other Work's licence which may also be applied to the Whole Work, and
- what other conditions besides those above must be satisfied for the
- relaxation to apply.
-
- Relaxation I `Obnoxious advertising clause':
-
-  The Extra Provisions are those of the form:
-
-     All advertising materials mentioning features or use of this software
-     must display the following acknowledgement:
-         This product includes software developed by DEVELOPERS.
-
-  and re-wordings with similar effect, where DEVELOPERS is a person or
-  group associated with the development of the Other Work.
-
-  For the relaxation to apply, all advertising materials mentioning
-  features or use of the Whole Work must display a similar
-  acknowledgement for every natural person who contributed to the
-  Whole Work, even those whose names do not appear in the Extra
-  Provisions.  No acknowledgement is required for people who have
-  explictly stated that they do not wish such acknowledgements to be
-  displayed, or for people whose identity or proper form of
-  acknowledgement it is not reasonably possible to determine by
-  inspection of notices, acknowledgements, etc., in the source code
-  and attached licences and copyright notices in the Whole Work.
-
- Relaxation II `Endorsement restriction':
-
-  The Extra Provisions are ones which restrict the use of the
-  authors', copyright holders' and/or contributors' names for
-  endorsement or promotion of products.
-
-  For the relaxation to apply the endorsement restriction(s) must
-  benefit all of the natural persons and organisations with an
-  interest in the Whole Work, unless those people wish otherwise.
-
- Relaxation III `Liability limitation':
-
-  The Extra Provisions are ones which claim to exclude or limit in any
-  way the liability, for malfunctions, failures etc. of the Whole Work
-  or parts thereof, of any contributors, distributors, copyright
-  holders, authors, etc. of the software.  Provisions which seek to
-  deny warranties, even implied warranties, or which otherwise seek to
-  limit similar exposure(s) to risk(s), count.
-
-  For the relaxation to apply the extra protections of these licence
-  provisions must be extended to all of the authors and distributors
-  of the Whole Work.
-
- Relaxation IV `Pointless restatements':
-
-  The extra licence provisions are ones which require distributions of
-  the Whole Work to contain notices in source and/or binary
-  distributions, and/or in the documentation and/or other materials
-  provided with the distributions.
-
-  For the relaxation to apply the required notices must be simple
-  truths, or restatements of licence provisions which actually apply
-  to the Whole Work.
-
-  (The author of these GPL extensions believes that `pointless
-  restatement requirements' are compatible with the GPLv2, since they
-  seem to fall under the heading of an `appropriate copyright notice
-  and disclaimer of warranty', which is already required by the
-  GPLv2.  However, this relaxation is provided in case of doubt.)
-
---- Ian Jackson 10.5.1999
 
 Local variables:
 mode: text
