@@ -81,23 +81,5 @@ int main(int argc, const char *const *argv) {
       domain_do_arg(arg);
     }
   }
-
-  if (ov_pipe) {
-    
-      if (ov_pipe) usageerr("-f/--pipe not 
-	  
-	if (oip && ads) usageerr("global option %s must precede all query domains",arg);
-	if (!oip) oip= opt_findl(arg+2,perquery_options);
-	if (!oip) usageerr("unknown option %s",arg);
-	}
-
-	if (!oip && 
-	if (!oip) {
-  }
-  while (argv[1] && argv[1][0] == '-') {
-    if (argv[1][1] == '-') {
-      oip= findlong(
-  }
-  of_help(0,0);
   abort();
 }
