@@ -501,7 +501,6 @@ void adns__query_done(adns_query qu) {
   adns_answer *ans;
   adns_query parent;
 
-  assert(!qu->ads->bug_if_query_done_now);
   cancel_children(qu);
 
   qu->id= -1;
@@ -543,7 +542,6 @@ void adns__query_done(adns_query qu) {
 }
 
 void adns__query_fail(adns_query qu, adns_status stat) {
-  assert(!qu->ads->bug_if_query_done_now);
   adns__reset_preserved(qu);
   qu->answer->status= stat;
   adns__query_done(qu);

@@ -1,6 +1,4 @@
-uadns (0.8) BETA; urgency=medium
-
-  * bug_if_query_done feature for debugging (SHOULD BE TAKEN OUT FOR RELEASE) 
+adns (0.8) BETA; urgency=medium
 
   Bugfixes:
   * Race near adns_beforeselect which could cause infinite timeout fixed

@@ -674,9 +674,7 @@ int adns_wait(adns_state ads,
     if (r != EAGAIN) break;
     maxfd= 0; tvp= 0;
     FD_ZERO(&readfds); FD_ZERO(&writefds); FD_ZERO(&exceptfds);
-    ads->bug_if_query_done_now= 1;
     adns_beforeselect(ads,&maxfd,&readfds,&writefds,&exceptfds,&tvp,&tvbuf,0);
-    ads->bug_if_query_done_now= 0;
     assert(tvp);
     rsel= select(maxfd,&readfds,&writefds,&exceptfds,tvp);
     if (rsel==-1) {
