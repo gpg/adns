@@ -683,6 +683,9 @@ static inline int ctype_alpha(int c) {
   return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }
 static inline int ctype_822special(int c) { return strchr("()<>@,;:\\\".[]",c) != 0; }
+static inline int ctype_domainunquoted(int c) {
+  return ctype_alpha(c) || ctype_digit(c) || (strchr("-_/+",c) != 0);
+}
 
 static inline int errno_resources(int e) { return e==ENOMEM || e==ENOBUFS; }
 

@@ -198,7 +198,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
 	qu->cname_begin= rdstart;
 	qu->cname_dglen= dglen;
 	st= adns__parse_domain(ads,serv,qu, &qu->vb,
-			       qu->flags & adns_qf_quoteok_cname ? pdf_quoteok : 0,
+			       qu->flags & adns_qf_quotefail_cname ? 0 : pdf_quoteok,
 			       dgram,dglen, &rdstart,rdstart+rdlength);
 	if (!qu->vb.used) goto x_truncated;
 	if (st) { adns__query_fail(qu,st); return; }

@@ -90,7 +90,7 @@ typedef enum {
   adns_qf_search=          0x00000001, /* use the searchlist */
   adns_qf_usevc=           0x00000002, /* use a virtual circuit (TCP connection) */
   adns_qf_owner=           0x00000004, /* fill in the owner field in the answer */
-  adns_qf_quoteok_query=   0x00000010, /* allow quote-requiring chars in query domain */
+  adns_qf_quoteok_query=   0x00000010, /* allow special chars in query domain */
   adns_qf_quoteok_cname=   0x00000000, /* allow ... in CNAME we go via - now default */
   adns_qf_quoteok_anshost= 0x00000040, /* allow ... in things supposed to be hostnames */
   adns_qf_quotefail_cname= 0x00000080, /* refuse if quote-req chars in CNAME we go via */
@@ -142,11 +142,19 @@ typedef enum {
  * In queries _with_ qf_quoteok_*, domains in the query or response
  * may contain any characters, quoted according to RFC1035 5.1.  On
  * input to adns, the char* is a pointer to the interior of a "
- * delimited string, except that " may appear in it, and on output,
- * the char* is a pointer to a string which would be legal either
- * inside or outside " delimiters, and any characters not usually
- * legal in domain names will be quoted as \X (if the character is
- * 33-126 except \ and ") or \DDD.
+ * delimited string, except that " may appear in it unquoted.  On
+ * output, the char* is a pointer to a string which would be legal
+ * either inside or outside " delimiters; any character which isn't
+ * legal in a hostname (ie alphanumeric or hyphen) or one of _ / +
+ * (the three other punctuation characters commonly abused in domain
+ * names) will be quoted, as \X if it is a printing ASCII character or
+ * \DDD otherwise.
+ *
+ * (The characters which will be unquoted are the printing 7-bit ASCII
+ * characters except the punctuation characters " ( ) @ ; $ \
+
+ * I.e. unquoted characters are alphanumerics, and the following
+ * punctuation characters:  ! # % ^ & * - _ = + [ ] { } 
  *
  * If the query goes via a CNAME then the canonical name (ie, the
  * thing that the CNAME record refers to) is usually allowed to
