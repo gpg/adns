@@ -12,14 +12,55 @@ static int callb_checkfd(int maxfd, const fd_set *fds, int fd) {
          fd<maxfd && FD_ISSET(fd,fds);
 }
 
-static void tcpserver_broken(adns_state ads, const char *what, const char *why) {
-  assert(ads->tcpstate == server_connecting || ads->tcpstate == server_connected);
+void adns__tcp_broken(adns_state ads, const char *what, const char *why) {
+  int serv;
+  
+  assert(ads->tcpstate == server_connecting || ads->tcpstate == server_ok);
   warn("nameserver %s TCP connection lost: %s: %s",
        inet_ntoa(ads->servers[tcpserver].addr,what,why));
   close(ads->tcpsocket);
   ads->tcpstate= server_disconnected;
+  serv= ads->tcpserver;
   
-       
+  for (qu= ads->timew; qu; qu= nqu) {
+    nqu= qu->next;
+    if (qu->senttcpserver == -1) continue;
+    assert(qu->senttcpserver == serv);
+    DLIST_UNLINK(ads->timew,qu);
+    adns__query_fail(ads,qu,adns_s_connlost); /* wishlist: send to other servers ? */
+  }
+
+  ads->tcpbuf.used= 0;
+  ads->tcpserver= (serv+1)%ads->nservers;
+}
+
+void adns__tcp_tryconnect(adns_state ads) {
+  int r, fd, tries;
+  sockaddr_in addr;
+
+  for (tries=0; tries<ads->nservers; tries++) {
+    if (ads->tcpstate == server_connecting || ads->tcpstate == server_ok) return;
+    assert(ads->tcpstate == server_disconnected);
+    assert(!ads->tcpbuf.used);
+
+    proto= getprotobyname("tcp");
+    if (!proto) { diag(ads,"unable to find protocol number for TCP !",-1); return; }
+    fd= socket(AF_INET,SOCK_STREAM,proto->p_proto);
+    if (fd<0) { diag(ads,"cannot create TCP socket: %s",-1,strerror(errno)); return; }
+    if (!adns__setnonblock(fd)) return;
+    memset(&addr,0,sizeof(addr));
+    addr.sin_family= AF_INET;
+    addr.sin_port= htons(NSPORT);
+    addr.sin_addr= ads->servers[ads->tcpserver].addr;
+    r= connect(fd,&addr,sizeof(addr));
+    ads->tcpsocket= fd;
+    ads->tcpstate= server_connecting;
+    if (r==0) { ads->tcpstate= server_ok; return; }
+    if (errno == EWOULDBLOCK || errno == EINPROGRESS) return;
+    tcpserver_broken(ads,"connect",strerror(errno));
+  }
+}
+
 int adns_callback(adns_state ads, int maxfd,
 		  const fd_set *readfds, const fd_set *writefds,
 		  const fd_set *exceptfds) {
@@ -45,7 +86,7 @@ int adns_callback(adns_state ads, int maxfd,
 	} else if (r>0) {
 	  tcpserver_broken(ads,"connect/read","sent data before first request");
 	} else if (errno!=EINTR) {
-	  tcpserver_broken(ads,"connect",strerror(errno));
+	  tcpserver_broken(ads,"connect/read",strerror(errno));
 	}
       }
     }

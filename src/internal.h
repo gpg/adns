@@ -38,8 +38,8 @@ struct adns__query {
   adns_answer *answer;
   size_t ansalloc; ansused;
   int id, flags, udpretries; /* udpretries==-1 => _f_usevc or too big for UDP */
-  int nextudpserver;
-  unsigned long sentudp, senttcp; /* bitmaps indexed by server */
+  int nextudpserver, senttcpserver;
+  unsigned long sentudp; /* bitmap indexed by server */
   struct timeval timeout;
   void *context;
   unsigned char *querymsg;
@@ -67,7 +67,7 @@ struct adns__state {
   int nextid, udpsocket;
   adns_vbuf rqbuf, tcpsend, tcprecv;
   int nservers, tcpserver;
-  enum adns__tcpstate { server_disc, server_connecting, server_ok } tcpstate;
+  enum adns__tcpstate { server_disconnected, server_connecting, server_ok } tcpstate;
   int tcpsocket;
   struct timeval tcptimeout;
   struct server {
@@ -79,9 +79,9 @@ struct adns__state {
 
 void adns__vdiag(adns_state ads, adns_initflags prevent, const char *pfx,
 		 int serv, const char *fmt, va_list al);
-void adns__debug(adns_state ads, int serv, const char *fmt, ...) PRINTFFORMAT(2,3);
-void adns__warn(adns_state ads, int serv, const char *fmt, ...) PRINTFFORMAT(2,3);
-void adns__diag(adns_state ads, int serv, const char *fmt, ...) PRINTFFORMAT(2,3);
+void adns__debug(adns_state ads, int serv, const char *fmt, ...) PRINTFFORMAT(3,4);
+void adns__warn(adns_state ads, int serv, const char *fmt, ...) PRINTFFORMAT(3,4);
+void adns__diag(adns_state ads, int serv, const char *fmt, ...) PRINTFFORMAT(3,4);
 
 /* From submit.c: */
 
@@ -89,7 +89,11 @@ void adns__query_fail(adns_state ads, adns_query qu, adns_status stat);
 
 /* From query.c: */
 
-void adns__quproc_tosend(adns_state ads, adns_query qu, struct timeval now) {
+void adns__quproc_tosend(adns_state ads, adns_query qu, struct timeval now);
+
+/* From event.c: */
+void adns__tcp_broken(adns_state ads, const char *what, const char *why);
+void adns__tcp_tryconnect(adns_state ads);
 
 /* Useful static inline functions: */
 

@@ -64,6 +64,7 @@ typedef enum {
   adns_s_timeout,
   adns_s_unknownqtype,
   adns_s_nolocalmem,
+  adns_s_connlost,
   adns_s_max_tempfail= 99,
   adns_s_inconsistent, /* PTR gives domain whose A does not match */
   adns_s_badcname, /* CNAME found where actual record expected */

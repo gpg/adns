@@ -108,6 +108,8 @@ void adns__quproc_tosend(adns_state ads, adns_query qu, struct timeval now) {
 
   /* fixme: TCP queries preceded by length */
   for (;;) {
+    adns__tcp_tryconnect(ads);
+    /* fixme: make this work properly */
     serv= tcpserver_get(ads);
     if (serv<0) { r=0; break; }
     if (ads->opbufused) { r=0; break; }

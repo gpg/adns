@@ -230,13 +230,11 @@ int adns_init(adns_state *ads_r, adns_initflags flags) {
 
   proto= getprotobyname("udp"); if (!proto) { r= ENOPROTOOPT; goto x_free; }
   ads->udpsocket= socket(AF_INET,SOCK_DGRAM,proto->p_proto);
-  if (!ads->udpsocket) { r= errno; goto x_closeudp; }
+  if (ads->udpsocket<0) { r= errno; goto x_free; }
   
   *ads_r= ads;
   return 0;
 
- x_closeudp:
-  close(ads->udpsocket);
  x_free:
   free(ads);
   return r;
