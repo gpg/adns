@@ -345,12 +345,13 @@ int adns_init_strcfg(adns_state *newstate_r, adns_initflags flags,
 
 /* Configuration:
  *  adns_init reads /etc/resolv.conf, which is expected to be (broadly
- *  speaking) in the format expected by libresolv.  adns_init_strcfg
- *  is instead passed a string which is interpreted as if it were the
- *  contents of resolv.conf.  In general, configuration which is set
- *  later overrides any that is set earlier.
+ *  speaking) in the format expected by libresolv, and then
+ *  /etc/resolv-adns.conf if it exists.  adns_init_strcfg is instead
+ *  passed a string which is interpreted as if it were the contents of
+ *  resolv.conf or resolv-adns.conf.  In general, configuration which
+ *  is set later overrides any that is set earlier.
  *
- * Standard directives understood in resolv.conf:
+ * Standard directives understood in resolv[-adns].conf:
  * 
  *  nameserver <address>
  *   Must be followed by the IP address of a nameserver.  Several
@@ -383,7 +384,7 @@ int adns_init_strcfg(adns_state *newstate_r, adns_initflags flags,
  *   Each option consists of an option name, followed by optionally
  *   a colon and a value.  Options are listed below.
  *
- * Non-standard directives understood in resolv.conf:
+ * Non-standard directives understood in resolv[-adns].conf:
  *
  *  clearnameservers
  *   Clears the list of nameservers, so that further nameserver lines
@@ -392,7 +393,8 @@ int adns_init_strcfg(adns_state *newstate_r, adns_initflags flags,
  *  include <filename>
  *   The specified file will be read.
  *
- * Additionally, adns will ignore lines in resolv.conf which start with a #.
+ * Additionally, adns will ignore lines in resolv[-adns].conf which
+ * start with a #.
  *
  * Standard options understood:
  *
@@ -421,7 +423,7 @@ int adns_init_strcfg(adns_state *newstate_r, adns_initflags flags,
  * each case there is both a FOO and an ADNS_FOO; the latter is
  * interpreted later so that it can override the former.  Unless
  * otherwise stated, environment variables are interpreted after
- * resolv.conf is read, in the order they are listed here.
+ * resolv[-adns].conf are read, in the order they are listed here.
  *
  *  RES_CONF, ADNS_RES_CONF
  *   A filename, whose contets are in the format of resolv.conf.

@@ -22,6 +22,7 @@ adns (0.6) unstable; urgency=high
   * New fanftest test program from Tony Finch (ignored by `make install').
   * Declare flags parameters as enums again, not ints.
   * New adnsresfilter general-purpose number->name mapping filter program.
+  * Reads /etc/resolv-adns.conf if it exists.
 
  --
 

@@ -39,7 +39,7 @@
 
 #include "internal.h"
 
-static void readconfig(adns_state ads, const char *filename);
+static void readconfig(adns_state ads, const char *filename, int warnmissing);
 
 static void addserver(adns_state ads, struct in_addr addr) {
   int i;
@@ -264,7 +264,7 @@ static void ccf_include(adns_state ads, const char *fn, int lno, const char *buf
     configparseerr(ads,fn,lno,"`include' directive with no filename");
     return;
   }
-  readconfig(ads,buf);
+  readconfig(ads,buf,1);
 }
 
 static const struct configcommandinfo {
@@ -399,13 +399,14 @@ static const char *instrum_getenv(adns_state ads, const char *envvar) {
   return value;
 }
 
-static void readconfig(adns_state ads, const char *filename) {
+static void readconfig(adns_state ads, const char *filename, int warnmissing) {
   getline_ctx gl_ctx;
   
   gl_ctx.file= fopen(filename,"r");
   if (!gl_ctx.file) {
     if (errno == ENOENT) {
-      adns__debug(ads,-1,0,"configuration file `%s' does not exist",filename);
+      if (warnmissing)
+	adns__debug(ads,-1,0,"configuration file `%s' does not exist",filename);
       return;
     }
     saveerr(ads,errno);
@@ -434,7 +435,7 @@ static void readconfigenv(adns_state ads, const char *envvar) {
     return;
   }
   filename= instrum_getenv(ads,envvar);
-  if (filename) readconfig(ads,filename);
+  if (filename) readconfig(ads,filename,1);
 }
 
 static void readconfigenvtext(adns_state ads, const char *envvar) {
@@ -535,7 +536,8 @@ int adns_init(adns_state *ads_r, adns_initflags flags, FILE *diagfile) {
   ccf_options(ads,"RES_OPTIONS",-1,res_options);
   ccf_options(ads,"ADNS_RES_OPTIONS",-1,adns_res_options);
 
-  readconfig(ads,"/etc/resolv.conf");
+  readconfig(ads,"/etc/resolv.conf",1);
+  readconfig(ads,"/etc/resolv-adns.conf",0);
   readconfigenv(ads,"RES_CONF");
   readconfigenv(ads,"ADNS_RES_CONF");
 
