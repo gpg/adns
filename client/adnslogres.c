@@ -58,6 +58,7 @@ static const char * const cvsid =
 static const char *progname;
 
 #define msg(fmt, args...) fprintf(stderr, "%s: " fmt "\n", progname, ##args)
+#define guard_null(str) ((str) ? (str) : "")
 
 #define sensible_ctype(type,ch) (type((unsigned char)(ch)))
   /* isfoo() functions from ctype.h can't safely be fed char - blech ! */
@@ -133,7 +134,7 @@ static logline *readline(FILE *inf, adns_state adns, int opts) {
     strcpy(line->start, buf);
     str= ipaddr2domain(line->start, &line->addr, &line->rest);
     if (opts & OPT_DEBUG)
-      msg("submitting %.*s -> %s", line->rest-line->addr, line->addr, str);
+      msg("submitting %.*s -> %s", line->rest-line->addr, guard_null(line->addr), str);
     if (adns_submit(adns, str, adns_r_ptr,
 		    adns_qf_quoteok_cname|adns_qf_cname_loose,
 		    NULL, &line->query))
@@ -158,7 +159,7 @@ static void proclog(FILE *inf, FILE *outf, int opts) {
   while (head) {
     if (opts & OPT_DEBUG)
       msg("%d in queue; checking %.*s", len,
-	  head->rest-head->addr, head->addr);
+	  head->rest-head->addr, guard_null(head->addr));
     if (eof || len > MAXPENDING)
       if (opts & OPT_POLL)
 	err= adns_wait_poll(adns, &head->query, &answer, NULL);
