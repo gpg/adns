@@ -90,6 +90,8 @@ void adns__query_fail(adns_state ads, adns_query qu, adns_status stat);
 /* From query.c: */
 
 void adns__quproc_tosend(adns_state ads, adns_query qu, struct timeval now);
+adns_status adns__mkquery(adns_state ads, const char *owner, int ol, int id,
+			  adns_rrtype type, adns_queryflags flags, int *qml_r);
 
 /* From event.c: */
 void adns__tcp_broken(adns_state ads, const char *what, const char *why);

@@ -1,9 +1,9 @@
 /**/
 
-#include "adns-internal.h"
+#include "internal.h"
 
-static adns_status mkquery(adns_state ads, const char *owner, int ol, int id,
-			   adns_rrtype type, adns_queryflags flags, int *qml_r) {
+adns_status adns__mkquery(adns_state ads, const char *owner, int ol, int id,
+			  adns_rrtype type, adns_queryflags flags, int *qml_r) {
   int ll, c, nlabs, qbufreq;
   unsigned char label[255], *nqbuf;
   const char *p, *pe;
@@ -46,7 +46,7 @@ static adns_status mkquery(adns_state ads, const char *owner, int ol, int id,
 	}
       }
       if (!(flags & adns_f_anyquote)) {
-	if ((c >= '0' && c <= '9') || c == '-') {
+	if (ctype_digit(c) || c == '-') {
 	  if (!ll) return adns_s_invaliddomain;
 	} else if ((c < 'a' || c > 'z') && (c < 'A' && c > 'Z')) {
 	  return adns_s_invaliddomain;
@@ -70,77 +70,105 @@ static adns_status mkquery(adns_state ads, const char *owner, int ol, int id,
   return adns_s_ok;
 }
 
-void adns__quproc_tosend(adns_state ads, adns_query qu, struct timeval now) {
-  /* Query must be on the `tosend' queue, and guarantees to remove it.
-   * fixme: Do not send more than 512-byte udp datagrams
-   */
-  struct sockaddr_in servaddr;
-  int serv;
+static void quproc_tosend_tcp(adns_state ads, adns_query qu, struct timeval now) {
+  unsigned char length[2];
+  struct iovec iov[2];
 
-  if (qu->nextudpserver != -1) {
-    if (qu->udpretries >= UDPMAXRETRIES) {
-      DLIST_UNLINK(ads->tosend,qu);
-      query_fail(ads,qu,adns_s_notresponding);
-      return;
-    }
-    serv= qu->nextudpserver;
-    memset(&servaddr,0,sizeof(servaddr));
-    servaddr.sin_family= AF_INET;
-    servaddr.sin_addr= ads->servers[serv].addr;
-    servaddr.sin_port= htons(NSPORT);
-    r= sendto(ads->udpsocket,qu->querymsg,qu->querylen,0,&servaddr,sizeof(servaddr));
-    if (r<0 && errno == EMSGSIZE) {
-      qu->nextudpserver= -1;
-    } else {
-      if (r<0) {
-	warn("sendto %s failed: %s",inet_ntoa(servaddr.sin_addr),strerror(errno));
+  length[0]= (qu->querylen&0x0ff00U) >>8;
+  length[1]= (qu->querylen&0x0ff);
+  
+  adns__tcp_tryconnect(ads);
+  /* fixme: try sending queries as soon as server comes up */
+  /* fixme: use vbuf_ensure, and preallocate buffer space */
+  if (ads->tcpstate != server_ok) return;
+
+  DLIST_UNLINK(ads->tosend,qu);
+  timevaladd(&now,TCPMS);
+  qu->timeout= now;
+  qu->senttcpserver= ads->tcpserver;
+  DLIST_LINKTAIL(ads->timew,qu);
+
+  if (ads->opbufused) {
+    r= 0;
+  } else {
+    iov[0].iovbase= length;
+    iov[0].iov_len= 2;
+    iov[1].iovbase= qu->querymsg;
+    iov[1].iov_len= qu->querylen;
+    r= writev(ads->tcpsocket,iov,2);
+    if (r < 0) {
+      if (!(errno == EAGAIN || errno == EINTR || errno == ENOSPC ||
+	    errno == ENOBUFS || errno == ENOMEM)) {
+	adns__tcp_broken(ads,"write",strerror(errno));
+	return;
       }
-      DLIST_UNLINK(ads->tosend,qu);
-      timevaladd(&now,UDPRETRYMS);
-      qu->timeout= now;
-      qu->sentudp |= (1<<serv);
-      qu->nextudpserver= (serv+1)%ads->nservers;
-      qu->udpretries++;
-      DLIST_LINKTAIL(ads->timew,qu);
-      return;
+      r= 0;
     }
   }
-
-  /* fixme: TCP queries preceded by length */
-  for (;;) {
-    adns__tcp_tryconnect(ads);
-    /* fixme: make this work properly */
-    serv= tcpserver_get(ads);
-    if (serv<0) { r=0; break; }
-    if (ads->opbufused) { r=0; break; }
-    r= write(ads->tcpsocket,qu->querymsg,qu->querylen);
-    if (r >= 0) break;
-    if (errno == EAGAIN || errno == EINTR || errno == ENOSPC ||
-	errno == ENOBUFS || errno == ENOMEM) {
-      r= 0; break;
-    }
-    tcpserver_broken(serv);
-  }
-  if (r < qu->querylen) {
-    newopbufused= qu->opbufused + (qu->querylen-r);
+  
+  if (r < qu->querylen+2) {
+    newopbufused= qu->opbufused + qu->querylen + 2 - r;
     if (newopbufused > ads->opbufavail) {
       newopbufavail= ads->newopbufused<<1;
       newopbuf= realloc(newopbufavail);
       if (!newopbuf) {
-	DLIST_UNLINK(ads->tosend,qu);
+	DLIST_UNLINK(ads->timew,qu);
 	query_fail(ads,qu,adns_s_nolocalmem);
 	return;
       }
       ads->opbuf= newopbuf;
       ads->opbufavail= newopbufavail;
     }
+    if (r<2) {
+      memcpy(ads->opbuf+ads->opbufused,length+r,2-r);
+      ads->opbufused += (2-r);
+      r= 0;
+    } else {
+      r -= 2;
+    }
     memcpy(ads->opbuf+ads->opbufused,qu->querymsg+r,qu->querylen-r);
     ads->opbufused= newopbufused;
   }
+}
+
+void adns__quproc_tosend(adns_state ads, adns_query qu, struct timeval now) {
+  /* Query must be on the `tosend' queue, and we guarantee to remove it.
+   */
+  struct sockaddr_in servaddr;
+  int serv;
+
+  if (qu->nextudpserver == -1) { quproc_tosend_tcp(ads,qu,now); return; }
+  if (qu->querylen > UDPMAXDGRAM) {
+    qu->nextudpserver= -1;
+    quproc_tosend_tcp(ads,qu,now);
+    return;
+  }
+  
+  if (qu->udpretries >= UDPMAXRETRIES) {
+    DLIST_UNLINK(ads->tosend,qu);
+    query_fail(ads,qu,adns_s_notresponding);
+    return;
+  }
+
+  serv= qu->nextudpserver;
+  memset(&servaddr,0,sizeof(servaddr));
+  servaddr.sin_family= AF_INET;
+  servaddr.sin_addr= ads->servers[serv].addr;
+  servaddr.sin_port= htons(NSPORT);
+  
+  r= sendto(ads->udpsocket,qu->querymsg,qu->querylen,0,&servaddr,sizeof(servaddr));
+  if (r<0 && errno == EMSGSIZE) {
+    qu->nextudpserver= -1;
+    quproc_tosend_tcp(ads,qu,now); return;
+  }
+  if (r<0) warn("sendto %s failed: %s",inet_ntoa(servaddr.sin_addr),strerror(errno));
+  
   DLIST_UNLINK(ads->tosend,qu);
-  timevaladd(&now,TCPMS);
+  timevaladd(&now,UDPRETRYMS);
   qu->timeout= now;
-  qu->senttcp |= (1<<qu->nextserver);
+  qu->sentudp |= (1<<serv);
+  qu->nextudpserver= (serv+1)%ads->nservers;
+  qu->udpretries++;
   DLIST_LINKTAIL(ads->timew,qu);
 }
 

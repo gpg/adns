@@ -55,7 +55,7 @@ int adns_submit(adns_state ads,
     return failsubmit(ads,context,query_r,type,flags,id,adns_s_invaliddomain);
   if (owner[ol-1]=='.' && owner[ol-2]!='\\') { flags &= ~adns_f_search; ol--; }
 
-  stat= mkquery(ads,owner,ol,id,type,flags,&qml);
+  stat= adns__mkquery(ads,owner,ol,id,type,flags,&qml);
   if (stat) return failsubmit(ads,context,query_r,type,flags,id,stat);
 
   qu= allocquery(ads,owner,ol,qml,id,type,flags,context); if (!qu) return errno;

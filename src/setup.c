@@ -231,6 +231,8 @@ int adns_init(adns_state *ads_r, adns_initflags flags) {
   proto= getprotobyname("udp"); if (!proto) { r= ENOPROTOOPT; goto x_free; }
   ads->udpsocket= socket(AF_INET,SOCK_DGRAM,proto->p_proto);
   if (ads->udpsocket<0) { r= errno; goto x_free; }
+
+  /*fixme: nonblock */
   
   *ads_r= ads;
   return 0;
