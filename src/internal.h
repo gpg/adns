@@ -77,7 +77,12 @@ typedef struct {
 
 typedef union {
   void *ext;
-  adns_rr_hostaddr *hostaddr;
+  struct {
+    void (*callback)(adns_query parent, adns_query child);
+    union {
+      adns_rr_hostaddr *hostaddr;
+    } info;
+  } intern;
 } qcontext;
 
 typedef struct {
@@ -125,7 +130,7 @@ typedef struct {
 } typeinfo;
 
 typedef struct allocnode {
-  struct allocnode *next;
+  struct allocnode *next, *back;
 } allocnode;
 
 union maxalign {
@@ -143,7 +148,7 @@ struct adns__query {
   adns_query back, next, parent;
   struct { adns_query head, tail; } children;
   struct { adns_query back, next; } siblings;
-  struct allocnode *allocations;
+  struct { allocnode *head, *tail; } allocations;
   int interim_allocd;
   void *final_allocspace;
   
@@ -358,6 +363,16 @@ void *adns__alloc_interim(adns_query qu, size_t sz);
  * but it will not necessarily return a distinct pointer each time.
  */
 
+void adns__transfer_interim(adns_query from, adns_query to, void *block, size_t sz);
+/* Transfers an interim allocation from one query to another, so that
+ * the `to' query will have room for the data when we get to makefinal
+ * and so that the free will happen when the `to' query is freed
+ * rather than the `from' query.
+ *
+ * It is legal to call adns__transfer_interim with a null pointer; this
+ * has no effect.
+ */
+
 void *adns__alloc_mine(adns_query qu, size_t sz);
 /* Like _interim, but does not record the length for later
  * copying into the answer.  This just ensures that the memory
@@ -538,10 +553,10 @@ static inline int ctype_alpha(int c) {
 
 #define LIST_UNLINK_PART(list,node,part) \
   do { \
-    if ((node)->back) (node)->back->part next= (node)->part next; \
-      else                        (list).head= (node)->part next; \
-    if ((node)->next) (node)->next->part back= (node)->part back; \
-      else                        (list).tail= (node)->part back; \
+    if ((node)->part back) (node)->part back->part next= (node)->part next; \
+      else                                  (list).head= (node)->part next; \
+    if ((node)->part next) (node)->part next->part back= (node)->part back; \
+      else                                  (list).tail= (node)->part back; \
   } while(0)
 
 #define LIST_LINK_TAIL_PART(list,node,part) \

@@ -133,13 +133,13 @@ typedef struct {
     struct sockaddr sa;
     struct sockaddr_in inet;
   } addr;
-} adns_addr;
+} adns_rr_addr;
 
 typedef struct {
   char *host;
   adns_status astatus;
   int naddrs; /* temp fail => -1, perm fail => 0, s_ok => >0 */
-  adns_addr *addrs;
+  adns_rr_addr *addrs;
 } adns_rr_hostaddr;
 
 typedef struct {
@@ -176,7 +176,7 @@ typedef struct {
     unsigned char *bytes;
     char *(*str);                     /* ns_raw, cname, ptr, ptr_raw */
     adns_rr_intstr *(*manyistr);      /* txt (list of strings ends with i=-1, str=0) */
-    adns_addr *addr;                  /* addr */
+    adns_rr_addr *addr;               /* addr */
     struct in_addr *inaddr;           /* a */
     adns_rr_hostaddr *hostaddr;       /* ns */
     adns_rr_strpair *strpair;         /* hinfo ??fixme, rp, rp_raw */

@@ -46,7 +46,7 @@ int adns__internal_submit(adns_state ads, adns_query *query_r,
   qu->back= qu->next= qu->parent= 0;
   LIST_INIT(qu->children);
   qu->siblings.next= qu->siblings.back= 0;
-  qu->allocations= 0;
+  LIST_INIT(qu->allocations);
   qu->interim_allocd= 0;
   qu->final_allocspace= 0;
 
@@ -160,8 +160,7 @@ static void *alloc_common(adns_query qu, size_t sz) {
   assert(!qu->final_allocspace);
   an= malloc(MEM_ROUND(MEM_ROUND(sizeof(*an)) + sz));
   if (!an) return 0;
-  an->next= qu->allocations;
-  qu->allocations= an;
+  LIST_LINK_TAIL(qu->allocations,an);
   return (byte*)an + MEM_ROUND(sizeof(*an));
 }
 
@@ -173,6 +172,22 @@ void *adns__alloc_interim(adns_query qu, size_t sz) {
 
 void *adns__alloc_mine(adns_query qu, size_t sz) {
   return alloc_common(qu,MEM_ROUND(sz));
+}
+
+void adns__transfer_interim(adns_query from, adns_query to, void *block, size_t sz) {
+  allocnode *an;
+
+  if (!block) return;
+  an= (void*)((byte*)block - MEM_ROUND(sizeof(*an)));
+
+  assert(!to->final_allocspace);
+  assert(!from->final_allocspace);
+  
+  LIST_UNLINK(from->allocations,an);
+  LIST_LINK_TAIL(to->allocations,an);
+
+  from->interim_allocd -= sz;
+  to->interim_allocd += sz;
 }
 
 void *adns__alloc_final(adns_query qu, size_t sz) {
@@ -207,7 +222,7 @@ static void free_query_allocs(adns_query qu) {
     ncqu= cqu->siblings.next;
     adns_cancel(cqu);
   }
-  for (an= qu->allocations; an; an= ann) { ann= an->next; free(an); }
+  for (an= qu->allocations.head; an; an= ann) { ann= an->next; free(an); }
   adns__vbuf_free(&qu->vb);
 }
 
@@ -229,26 +244,16 @@ void adns_cancel(adns_query qu) {
   free(qu->answer);
   free(qu);
 }
-  
-void adns__query_done(adns_query qu) {
+
+static void makefinal_query(adns_query qu) {
   adns_answer *ans;
   int rrn;
 
   ans= qu->answer;
-  
+
   if (qu->interim_allocd) {
-    if (qu->answer->nrrs && qu->typei->diff_needswap) {
-      if (!adns__vbuf_ensure(&qu->vb,qu->typei->rrsz)) {
-	adns__query_fail(qu,adns_s_nolocalmem);
-	return;
-      }
-    }
     ans= realloc(qu->answer, MEM_ROUND(MEM_ROUND(sizeof(*ans)) + qu->interim_allocd));
-    if (!ans) {
-      qu->answer->cname= 0;
-      adns__query_fail(qu, adns_s_nolocalmem);
-      return;
-    }
+    if (!ans) goto x_nomem;
     qu->answer= ans;
   }
 
@@ -260,19 +265,45 @@ void adns__query_done(adns_query qu) {
 
     for (rrn=0; rrn<ans->nrrs; rrn++)
       qu->typei->makefinal(qu, ans->rrs.bytes + rrn*ans->rrsz);
+  }
+    
+  free_query_allocs(qu);
+  return;
+  
+ x_nomem:
+  qu->answer->status= adns_s_nolocalmem;
+  qu->answer->cname= 0;
+  adns__reset_cnameonly(qu);
+  free_query_allocs(qu);
+}
 
-    if (qu->typei->diff_needswap)
-      adns__isort(ans->rrs.bytes, ans->nrrs, ans->rrsz,
-		  qu->vb.buf, qu->typei->diff_needswap);
+void adns__query_done(adns_query qu) {
+  adns_answer *ans;
+  adns_query parent;
+
+  qu->id= -1;
+  ans= qu->answer;
+
+  if (ans->nrrs && qu->typei->diff_needswap) {
+    if (!adns__vbuf_ensure(&qu->vb,qu->typei->rrsz)) {
+      adns__query_fail(qu,adns_s_nolocalmem);
+      return;
+    }
+    adns__isort(ans->rrs.bytes, ans->nrrs, ans->rrsz,
+		qu->vb.buf, qu->typei->diff_needswap);
   }
 
-  free_query_allocs(qu);
-  
-  qu->id= -1;
-  LIST_LINK_TAIL(qu->ads->output,qu);
-
-  assert(!qu->parent);
-  /* fixme: do something with the answers to internally-generated queries. */
+  parent= qu->parent;
+  if (parent) {
+    LIST_UNLINK_PART(parent->children,qu,siblings.);
+    qu->context.intern.callback(parent,qu);
+    free_query_allocs(qu);
+    free(qu);
+    if (!parent->children.head) adns__query_done(parent);
+  } else {
+    makefinal_query(qu);
+    LIST_LINK_TAIL(qu->ads->output,qu);
+  }
 }
 
 void adns__query_fail(adns_query qu, adns_status stat) {

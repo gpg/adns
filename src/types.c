@@ -228,7 +228,7 @@ static adns_status cs_inaddr(vbuf *vb, const void *datap) {
  */
 
 static adns_status pa_addr(const parseinfo *pai, int cbyte, int max, void *datap) {
-  adns_addr *storeto= datap;
+  adns_rr_addr *storeto= datap;
   const byte *dgram= pai->dgram;
 
   if (max-cbyte != 4) return adns_s_invaliddata;
@@ -241,13 +241,13 @@ static adns_status pa_addr(const parseinfo *pai, int cbyte, int max, void *datap
 }
 
 static int di_addr(const void *datap_a, const void *datap_b) {
-  const adns_addr *ap= datap_a, *bp= datap_b;
+  const adns_rr_addr *ap= datap_a, *bp= datap_b;
 
   assert(ap->addr.sa.sa_family == AF_INET);
   return dip_inaddr(ap->addr.inet.sin_addr,bp->addr.inet.sin_addr);
 }
 
-static adns_status csp_addr(vbuf *vb, const adns_addr *rrp) {
+static adns_status csp_addr(vbuf *vb, const adns_rr_addr *rrp) {
   const char *ia;
   static char buf[30];
 
@@ -266,7 +266,7 @@ static adns_status csp_addr(vbuf *vb, const adns_addr *rrp) {
 }
 
 static adns_status cs_addr(vbuf *vb, const void *datap) {
-  const adns_addr *rrp= datap;
+  const adns_rr_addr *rrp= datap;
 
   return csp_addr(vb,rrp);
 }
@@ -312,7 +312,7 @@ static adns_status pa_host_raw(const parseinfo *pai, int cbyte, int max, void *d
 }
 
 /*
- * _hostaddr   (pap,pa,dip,di,mfp,mf,csp,cs +pap_findaddrs)
+ * _hostaddr   (pap,pa,dip,di,mfp,mf,csp,cs +icb_hostaddr, pap_findaddrs)
  */
 
 static adns_status pap_findaddrs(const parseinfo *pai, adns_rr_hostaddr *ha,
@@ -332,21 +332,32 @@ static adns_status pap_findaddrs(const parseinfo *pai, adns_rr_hostaddr *ha,
     if (naddrs == -1) {
       naddrs= 0;
     }
-    if (!adns__vbuf_ensure(&pai->qu->vb, (naddrs+1)*sizeof(adns_addr))) R_NOMEM;
-    st= pa_addr(pai, rdstart,rdstart+rdlen, pai->qu->vb.buf + naddrs*sizeof(adns_addr));
+    if (!adns__vbuf_ensure(&pai->qu->vb, (naddrs+1)*sizeof(adns_rr_addr))) R_NOMEM;
+    st= pa_addr(pai, rdstart,rdstart+rdlen,
+		pai->qu->vb.buf + naddrs*sizeof(adns_rr_addr));
     if (st) return st;
     naddrs++;
   }
   if (naddrs >= 0) {
-    ha->addrs= adns__alloc_interim(pai->qu, naddrs*sizeof(adns_addr));
+    ha->addrs= adns__alloc_interim(pai->qu, naddrs*sizeof(adns_rr_addr));
     if (!ha->addrs) R_NOMEM;
-    memcpy(ha->addrs, pai->qu->vb.buf, naddrs*sizeof(adns_addr));
+    memcpy(ha->addrs, pai->qu->vb.buf, naddrs*sizeof(adns_rr_addr));
     ha->naddrs= naddrs;
     ha->astatus= adns_s_ok;
 
-    adns__isort(ha->addrs, naddrs, sizeof(adns_addr), pai->qu->vb.buf, di_addr);
+    adns__isort(ha->addrs, naddrs, sizeof(adns_rr_addr), pai->qu->vb.buf, di_addr);
   }
   return adns_s_ok;
+}
+
+static void icb_hostaddr(adns_query parent, adns_query child) {
+  adns_rr_hostaddr *rrp= child->context.intern.info.hostaddr;
+  adns_answer *cans= child->answer;
+
+  rrp->astatus= cans->status;
+  rrp->naddrs= cans->nrrs;
+  rrp->addrs= cans->rrs.addr;
+  adns__transfer_interim(child, parent, rrp->addrs, rrp->naddrs*sizeof(adns_rr_addr));
 }
 
 static adns_status pap_hostaddr(const parseinfo *pai, int *cbyte_io,
@@ -381,8 +392,9 @@ static adns_status pap_hostaddr(const parseinfo *pai, int *cbyte_io,
 			    pai->dgram, pai->dglen, dmstart,
 			    adns_r_addr, adns_qf_quoteok_query);
   if (st) return st;
-  
-  ctx.hostaddr= rrp;
+
+  ctx.intern.callback= icb_hostaddr;
+  ctx.intern.info.hostaddr= rrp;
   st= adns__internal_submit(pai->ads, &nqu, adns__findtype(adns_r_addr),
 			    &pai->qu->vb, id,
 			    adns_qf_quoteok_query, pai->now, 0, &ctx);
