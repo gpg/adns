@@ -626,19 +626,24 @@ adns_status adns_rr_info(adns_rrtype type,
  * syntax is INET followed by the dotted quad (from inet_ntoa).
  * Currently only IPv4 is supported.
  *
+ * Text strings (as in adns_rr_txt) appear inside double quotes, and
+ * use \" and \\ to represent " and \, and \xHH to represent
+ * characters not in the range 32-126.
+ *
  * Hostname with addresses (adns_rr_hostaddr): this consists of the
- * hostname, as usual, followed by the adns_status value (as an
- * abbreviation) for the address lookup, followed by zero or more
+ * hostname, as usual, followed by the adns_status value, as an
+ * abbreviation, and then a descriptive string (encoded as if it were
+ * a piece of text), for the address lookup, followed by zero or more
  * addresses enclosed in ( and ).  If the result was a permanent
  * failure, then a single ?  appears instead of the ( ).  If the
  * result was a temporary failure then an empty pair of parentheses
  * appears (which a space in between).  For example, one of the NS
- * records for greenend.org.uk comes out like 
- *  ns.chiark.greenend.org.uk ok ( INET 195.224.76.132 )
+ * records for greenend.org.uk comes out like
+ *  ns.chiark.greenend.org.uk ok "OK" ( INET 195.224.76.132 )
  * an MX referring to a nonexistent host might come out like:
- *  50 sun2.nsfnet-relay.ac.uk nxdomain ( )
+ *  50 sun2.nsfnet-relay.ac.uk nxdomain "No such domain" ( )
  * and if nameserver information is not available you might get:
- *  dns2.spong.dyn.ml.org timeout ?
+ *  dns2.spong.dyn.ml.org timeout "DNS query timed out" ?
  */
 
 const char *adns_strerror(adns_status st);
