@@ -104,7 +104,7 @@ static const struct optioninfo perquery_options[]= {
   { ot_desconly, "asynchronous/pipe mode options:" },
   { ot_funcarg,          "Set <id>, default is decimal sequence starting 0",
     0, "asynch-id",        0,0, &of_asynch_id, "id" },
-  { ot_funcarg,          "Cancel the query with id <id>",
+  { ot_funcarg,          "Cancel the query with id <id> (no error if not found)",
     0, "cancel-id",        0,0, &of_cancel_id, "id" },
 
   { ot_end }

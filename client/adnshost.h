@@ -102,7 +102,6 @@ void of_cancel_id(const struct optioninfo *oi, const char *arg);
 void sysfail(const char *what, int errnoval) NONRETURNING;
 void usageerr(const char *what, ...) NONRETURNPRINTFFORMAT(1,2);
 void outerr(void) NONRETURNING;
-void setnonblock(int fd, int nonblock);
 
 void *xmalloc(size_t sz);
 char *xstrsave(const char *str);

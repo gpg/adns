@@ -33,20 +33,6 @@ struct outstanding_list outstanding;
 
 static unsigned long idcounter;
 
-#define STATUSTYPEMAX(v) { adns_s_max_##v, #v }
-static const struct statustypemax {
-  adns_status smax;
-  const char *abbrev;
-} statustypemaxes[]= {
-  { adns_s_ok, "ok" },
-  STATUSTYPEMAX(localfail),
-  STATUSTYPEMAX(remotefail),
-  STATUSTYPEMAX(tempfail),
-  STATUSTYPEMAX(misconfig),
-  STATUSTYPEMAX(misquery),
-  STATUSTYPEMAX(permfail),
-};
-
 void ensure_adns_init(void) {
   int r;
   
@@ -92,6 +78,12 @@ void query_do(const char *domain) {
   LIST_LINK_TAIL(outstanding,qun);
 }
 
+static void dequeue_query(struct query_node *qun) {
+  LIST_UNLINK(outstanding,qun);
+  free(qun->id);
+  free(qun);
+}
+
 static void print_withspace(const char *str) {
   if (printf("%s ", str) == EOF) outerr();
 }
@@ -122,25 +114,28 @@ static void print_owner_ttl(struct query_node *qun, adns_answer *answer) {
 }
 
 static void print_status(adns_status st, struct query_node *qun, adns_answer *answer) {
-  int stnmin, stnmax, stn;
-  const char *statusabbrev, *statusstring;
+  static const adns_status statuspoints[]= {
+    adns_s_ok,
+    adns_s_max_localfail, adns_s_max_remotefail, adns_s_max_tempfail,
+    adns_s_max_misconfig, adns_s_max_misquery
+  };
 
-  stnmin= 0;
-  stnmax= sizeof(statustypemaxes)/sizeof(statustypemaxes[0]);
-  while (stnmin < stnmax) {
-    stn= (stnmin+stnmax)>>1;
-    if (st > statustypemaxes[stn].smax) stnmin= stn+1; else stnmax= stn;
-  }
-  stn= stnmin;
-  assert(statustypemaxes[stn].smax >= st);
-  
-  if (rcode < stn) rcode= stn;
+  const adns_status *spp;
+  const char *statustypeabbrev, *statusabbrev, *statusstring;
+  int minrcode;
+
+  statustypeabbrev= adns_errtypeabbrev(st);
+  for (minrcode=0, spp=statuspoints;
+       spp < statuspoints + (sizeof(statuspoints)/sizeof(statuspoints[0]));
+       spp++)
+    if (st > *spp) minrcode++;
+  if (rcode < minrcode) rcode= minrcode;
 
   statusabbrev= adns_errabbrev(st);
   statusstring= adns_strerror(st);
   assert(!strchr(statusstring,'"'));
 
-  if (printf("%s %d %s ", statustypemaxes[stn].abbrev, st, statusabbrev)
+  if (printf("%s %d %s ", statustypeabbrev, st, statusabbrev)
       == EOF) outerr();
   print_owner_ttl(qun,answer);
   if (qun->pqfr.show_cname)
@@ -154,8 +149,6 @@ void query_done(struct query_node *qun, adns_answer *answer) {
   const char *rrp, *realowner, *typename;
   char *datastr;
 
-  if (ov_pipe) setnonblock(1,0);
-
   st= answer->status;
   nrrs= answer->nrrs;
   if (ov_asynch) {
@@ -165,7 +158,7 @@ void query_done(struct query_node *qun, adns_answer *answer) {
     if (st) {
       if (fputs("; failed ",stdout) == EOF) outerr();
       print_status(st,qun,answer);
-    } else if (answer->cname) {
+    } else if (qun->pqfr.show_cname && answer->cname) {
       print_owner_ttl(qun,answer);
       if (printf("CNAME %s\n",answer->cname) == EOF) outerr();
     }
@@ -191,10 +184,8 @@ void query_done(struct query_node *qun, adns_answer *answer) {
     }
   }
   if (fflush(stdout)) outerr();
-  LIST_UNLINK(outstanding,qun);
   free(answer);
-  free(qun->id);
-  free(qun);
+  dequeue_query(qun);
 }
 
 void of_asynch_id(const struct optioninfo *oi, const char *arg) {
@@ -203,6 +194,12 @@ void of_asynch_id(const struct optioninfo *oi, const char *arg) {
 }
 
 void of_cancel_id(const struct optioninfo *oi, const char *arg) {
-  assert(!"implemented");
-}
+  struct query_node *qun;
 
+  for (qun= outstanding.head;
+       qun && !strcmp(qun->id,arg);
+       qun= qun->next);
+  if (!qun) return;
+  adns_cancel(qun->qu);
+  dequeue_query(qun);
+}

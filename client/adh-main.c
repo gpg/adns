@@ -47,8 +47,8 @@ void outerr(void) {
   sysfail("write to stdout",errno);
 }
 
-static void domain_do_arg(const char *domain) {
-  if (ov_pipe) usageerr("-f/--pipe not consistent with domains on command line");
+static void domain_do(const char *domain) {
+  if (ov_pipe && !ads) usageerr("-f/--pipe not consistent with domains on command line");
   ensure_adns_init();
   query_do(domain);
 }
@@ -68,68 +68,153 @@ char *xstrsave(const char *str) {
   return p;
 }
 
-void of_type(const struct optioninfo *oi, const char *arg) { assert(!"implemented"); }
+void of_type(const struct optioninfo *oi, const char *arg) {
+  static const struct typename {
+    adns_rrtype type;
+    const char *desc;
+  } typenames[]= {
+    /* enhanced versions */
+    { adns_r_ns,     "ns"     },
+    { adns_r_soa,    "soa"    },
+    { adns_r_ptr,    "ptr"    },
+    { adns_r_mx,     "mx"     },
+    { adns_r_rp,     "rp"     },
+    { adns_r_addr,   "addr"   },
+    
+    /* types with only one version */
+    { adns_r_cname,  "cname"  },
+    { adns_r_hinfo,  "hinfo"  },
+    { adns_r_txt,    "txt"    },
+    
+    /* raw versions */
+    { adns_r_a,        "a"    },
+    { adns_r_ns_raw,   "ns-"  },
+    { adns_r_soa_raw,  "soa-" },
+    { adns_r_ptr_raw,  "ptr-" },
+    { adns_r_mx_raw,   "mx-"  },
+    { adns_r_rp_raw,   "rp-"  },
+
+    { adns_r_none, 0 }
+  };
+
+  const struct typename *tnp;
+
+  for (tnp=typenames;
+       tnp->type && strcmp(arg,tnp->desc);
+       tnp++);
+  if (!tnp->type) usageerr("unknown RR type %s",arg);
+  ov_type= tnp->type;
+}
 
 int rcode;
 
-void setnonblock(int fd, int nonblock) { }
+static void process_optarg(const char *arg,
+			   const char *const **argv_p,
+			   const char *value) {
+  const struct optioninfo *oip;
+  int invert;
 
-static void read_query(void) { assert(!"implemented"); }
+  if (arg[0] == '-' || arg[0] == '+') {
+    if (arg[0] == '-' && arg[1] == '-') {
+      if (!strncmp(arg,"--no-",5)) {
+	invert= 1;
+	oip= opt_findl(arg+5);
+      } else {
+	invert= 0;
+	oip= opt_findl(arg+2);
+      }
+      if (oip->type == ot_funcarg) {
+	arg= argv_p ? *++(*argv_p) : value;
+	if (!arg) usageerr("option --%s requires a value argument",oip->lopt);
+      } else {
+	if (value) usageerr("option --%s does not take a value",oip->lopt);
+	arg= 0;
+      }
+      opt_do(oip,arg,invert);
+    } else if (arg[0] == '-' && arg[1] == 0) {
+      arg= argv_p ? *++(*argv_p) : value;
+      if (!arg) usageerr("option `-' must be followed by a domain");
+      domain_do(arg);
+    } else { /* arg[1] != '-', != '\0' */
+      invert= (arg[0] == '+');
+      ++arg;
+      while (*arg) {
+	oip= opt_finds(&arg);
+	if (oip->type == ot_funcarg) {
+	  if (!*arg) {
+	    arg= argv_p ? *++(*argv_p) : value;
+	    if (!arg) usageerr("option -%s requires a value argument",oip->sopt);
+	  } else {
+	    if (value) usageerr("two values for option -%s given !",oip->sopt);
+	  }
+	  opt_do(oip,arg,invert);
+	  arg= "";
+	} else {
+	  if (value) usageerr("option -%s does not take a value",oip->sopt);
+	  opt_do(oip,0,invert);
+	}
+      }
+    }
+  } else { /* arg[0] != '-' */
+    domain_do(arg);
+  }
+}
+    
+static void read_stdin(void) {
+  static int used, avail;
+  static char *buf;
+
+  int anydone, r;
+  char *newline, *space;
+
+  anydone= 0;
+  while (!anydone || used) {
+    while (!(newline= memchr(buf,'\n',used))) {
+      if (used == avail) {
+	avail += 20; avail <<= 1;
+	buf= realloc(buf,avail);
+	if (!buf) sysfail("realloc stdin buffer",errno);
+      }
+      do {
+	r= read(0,buf+used,avail-used);
+      } while (r < 0 && errno == EINTR);
+      if (r == 0) {
+	if (used) {
+	  /* fake up final newline */
+	  buf[used++]= '\n';
+	  r= 1;
+	} else {
+	  ov_pipe= 0;
+	  return;
+	}
+      }
+      if (r < 0) sysfail("read stdin",errno);
+      used += r;
+    }
+    *newline++= 0;
+    space= strchr(buf,' ');
+    if (space) *space++= 0;
+    process_optarg(buf,0,space);
+    used -= (newline-buf);
+    memmove(buf,newline,used);
+    anydone= 1;
+  }
+}
 
 int main(int argc, const char *const *argv) {
-  const char *arg;
-  const struct optioninfo *oip;
   struct timeval *tv, tvbuf;
   adns_query qu;
   void *qun_v;
   adns_answer *answer;
-  int r, maxfd, invert;
+  int r, maxfd;
   fd_set readfds, writefds, exceptfds;
+  const char *arg;
   
-  while ((arg= *++argv)) {
-    if (arg[0] == '-' || arg[0] == '+') {
-      if (arg[0] == '-' && arg[1] == '-') {
-	if (!strncmp(arg,"--no-",5)) {
-	  invert= 1;
-	  oip= opt_findl(arg+5);
-	} else {
-	  invert= 0;
-	  oip= opt_findl(arg+2);
-	}
-	if (oip->type == ot_funcarg) {
-	  arg= *++argv;
-	  if (!arg) usageerr("option --%s requires a value argument",oip->lopt);
-	} else {
-	  arg= 0;
-	}
-	opt_do(oip,arg,invert);
-      } else if (arg[0] == '-' && arg[1] == 0) {
-	arg= *++argv;
-	if (!arg) usageerr("option `-' must be followed by a domain");
-	domain_do_arg(arg);
-      } else { /* arg[1] != '-', != '\0' */
-	invert= (arg[0] == '+');
-	++arg;
-	while (*arg) {
-	  oip= opt_finds(&arg);
-	  if (oip->type == ot_funcarg) {
-	    if (!*arg) {
-	      arg= *++argv;
-	      if (!arg) usageerr("option -%s requires a value argument",oip->sopt);
-	    }
-	    opt_do(oip,arg,invert);
-	    arg= "";
-	  } else {
-	    opt_do(oip,0,invert);
-	  }
-	}
-      }
-    } else { /* arg[0] != '-' */
-      domain_do_arg(arg);
-    }
-  }
+  while ((arg= *++argv)) process_optarg(arg,&argv,0);
 
   if (!ov_pipe && !ads) usageerr("no domains given, and -f/--pipe not used; try --help");
+
+  ensure_adns_init();
 
   for (;;) {
     for (;;) {
@@ -156,7 +241,7 @@ int main(int argc, const char *const *argv) {
       sysfail("select",errno);
     }
     adns_afterselect(ads, maxfd, &readfds,&writefds,&exceptfds, 0);
-    if (ov_pipe && FD_ISSET(0,&readfds)) read_query();
+    if (ov_pipe && FD_ISSET(0,&readfds)) read_stdin();
   }
 x_quit:
   if (fclose(stdout)) outerr();
