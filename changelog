@@ -1,4 +1,4 @@
-adns (0.4) unstable; urgency=low
+adns (0.4) unstable; urgency=high
 
   General important bugfixes:
   * make _qf_owner work if _qf_search not specified, and test it (oops!)
