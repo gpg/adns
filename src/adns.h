@@ -42,11 +42,14 @@ typedef enum {
 } adns_initflags;
 
 typedef enum {
-  adns_qf_search=     0x0001, /* use the searchlist */
-  adns_qf_usevc=      0x0002, /* use a virtual circuit (TCP connection) */
-  adns_qf_anyquote=   0x0004,
-  adns_qf_loosecname= 0x0008, /* allow refs to CNAMEs - without, get _s_cname */
-  adns_qf_nocname=    0x0010, /* don't follow CNAMEs, instead give _s_cname */
+  adns_qf_search=          0x000001, /* use the searchlist */
+  adns_qf_usevc=           0x000002, /* use a virtual circuit (TCP connection) */
+  adns_qf_quoteok_query=   0x000010, /* allow quote-requiring chars in query domain */
+  adns_qf_quoteok_cname=   0x000020, /* allow ... in CNAME we go via */
+  adns_qf_quoteok_anshost= 0x000040, /* allow ... in answers expected to be hostnames */
+  adns_qf_cname_loose=     0x000100, /* allow refs to CNAMEs - without, get _s_cname */
+  adns_qf_cname_forbid=    0x000200, /* don't follow CNAMEs, instead give _s_cname */
+  adns__qf_internalmask=   0x0ff000
 } adns_queryflags;
 
 typedef enum {
@@ -78,6 +81,8 @@ typedef enum {
   
   adns_r_rp_raw=            17,
   adns_r_rp=                    adns_r_rp_raw|adns__qtf_mail822,
+
+  adns_r_addr=                  adns_r_a|adns__qtf_deref
   
 } adns_rrtype;
 
@@ -122,10 +127,18 @@ typedef enum {
 } adns_status;
 
 typedef struct {
+  int len;
+  union {
+    struct sockaddr sa;
+    struct sockaddr_in inet;
+  } addr;
+} adns_addr;
+
+typedef struct {
   char *dm;
   adns_status astatus;
   int naddrs; /* temp fail => -1, perm fail => 0, s_ok => >0 */
-  struct in_addr *addrs;
+  adns_addr *addrs;
 } adns_rr_dmaddr;
 
 typedef struct {
@@ -162,6 +175,7 @@ typedef struct {
     unsigned char *bytes;
     char *(*str);                  /* ns_raw, cname, ptr, ptr_raw */
     adns_rr_intstr *(*manyistr);   /* txt (list of strings ends with i=-1, str=0) */
+    adns_addr *addr;               /* addr */
     struct in_addr *inaddr;        /* a */
     adns_rr_dmaddr *dmaddr;        /* ns */
     adns_rr_strpair *strpair;      /* hinfo ??fixme, rp, rp_raw */

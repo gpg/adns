@@ -46,7 +46,7 @@ void adns__vdiag(adns_state ads, const char *pfx, adns_initflags prevent,
     adns__vbuf_init(&vb);
     fprintf(stderr,"%sQNAME=%s, QTYPE=%s",
 	    bef,
-	    adns__diag_domain(qu->ads,-1,0, &vb,qu->flags,
+	    adns__diag_domain(qu->ads,-1,0, &vb,
 			      qu->query_dgram,qu->query_dglen,DNS_HDRSIZE),
 	    qu->typei ? qu->typei->rrtname : "<unknown>");
     if (qu->typei && qu->typei->fmtname)
@@ -138,11 +138,11 @@ void adns__vbuf_free(vbuf *vb) {
 
 /* Additional diagnostic functions */
 
-const char *adns__diag_domain(adns_state ads, int serv, adns_query qu, vbuf *vb,
-			      int flags, const byte *dgram, int dglen, int cbyte) {
+const char *adns__diag_domain(adns_state ads, int serv, adns_query qu,
+			      vbuf *vb, const byte *dgram, int dglen, int cbyte) {
   adns_status st;
 
-  st= adns__parse_domain(ads,serv,qu,vb, flags,dgram,dglen,&cbyte,dglen);
+  st= adns__parse_domain(ads,serv,qu,vb, pdf_quoteok, dgram,dglen,&cbyte,dglen);
   if (st == adns_s_nolocalmem) {
     return "<cannot report domain... out of memory>";
   }

@@ -93,8 +93,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
     if (ads->iflags & adns_if_debug) {
       adns__vbuf_init(&tempvb);
       adns__debug(ads,serv,0,"reply not found, id %02x, query owner %s",
-		  id, adns__diag_domain(ads,serv,0,&tempvb,adns_qf_anyquote,
-					dgram,dglen,DNS_HDRSIZE));
+		  id, adns__diag_domain(ads,serv,0,&tempvb,dgram,dglen,DNS_HDRSIZE));
       adns__vbuf_free(&tempvb);
     }
     return;
@@ -150,8 +149,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
     if (!ownermatched) {
       if (ads->iflags & adns_if_debug) {
 	adns__debug(ads,serv,qu,"ignoring RR with an unexpected owner %s",
-		    adns__diag_domain(ads,serv,qu, &qu->vb,qu->flags,
-				      dgram,dglen,rrstart));
+		    adns__diag_domain(ads,serv,qu, &qu->vb, dgram,dglen,rrstart));
       }
       continue;
     }
@@ -160,7 +158,8 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
       if (!qu->cname_dgram) { /* Ignore second and subsequent CNAMEs */
 	qu->cname_begin= rdstart;
 	qu->cname_dglen= dglen;
-	st= adns__parse_domain(ads,serv,qu, &qu->vb,qu->flags,
+	st= adns__parse_domain(ads,serv,qu, &qu->vb,
+			       qu->flags & adns_qf_quoteok_cname ? pdf_quoteok : 0,
 			       dgram,dglen, &rdstart,rdstart+rdlength);
 	if (!qu->vb.used) goto x_truncated;
 	if (st) { adns__query_fail(qu,st); return; }
@@ -180,8 +179,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
 	 */
       } else {
 	adns__debug(ads,serv,qu,"ignoring duplicate CNAME (%s, as well as %s)",
-		    adns__diag_domain(ads,serv,qu, &qu->vb,qu->flags,
-				      dgram,dglen,rdstart),
+		    adns__diag_domain(ads,serv,qu, &qu->vb, dgram,dglen,rdstart),
 		    qu->answer->cname);
       }
     } else if (rrtype == (qu->typei->type & adns__rrt_typemask)) {

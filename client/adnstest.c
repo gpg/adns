@@ -42,6 +42,7 @@ static const adns_rrtype defaulttypes[]= {
   adns_r_mx_raw,
   adns_r_rp_raw,
   adns_r_txt,
+  adns_r_addr,
   adns_r_none
 };
 

@@ -111,7 +111,7 @@ adns_status adns__findlabel_next(findlabel_state *fls,
 }
 
 adns_status adns__parse_domain(adns_state ads, int serv, adns_query qu,
-			       vbuf *vb, int flags,
+			       vbuf *vb, adns_queryflags flags,
 			       const byte *dgram, int dglen, int *cbyte_io, int max) {
   findlabel_state fls;
   
@@ -127,7 +127,7 @@ adns_status adns__parse_domain(adns_state ads, int serv, adns_query qu,
     if (!lablen) break;
     if (vb->used)
       if (!adns__vbuf_append(vb,".",1)) return adns_s_nolocalmem;
-    if (flags & adns_qf_anyquote) {
+    if (flags & pdf_quoteok) {
       if (!vbuf__append_quoted1035(vb,dgram+labstart,lablen))
 	return adns_s_nolocalmem;
     } else {

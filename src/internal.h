@@ -258,8 +258,8 @@ void adns__vbuf_appendq(vbuf *vb, const byte *data, int len);
 void adns__vbuf_init(vbuf *vb);
 void adns__vbuf_free(vbuf *vb);
 
-const char *adns__diag_domain(adns_state ads, int serv, adns_query qu, vbuf *vb,
-			      int flags, const byte *dgram, int dglen, int cbyte);
+const char *adns__diag_domain(adns_state ads, int serv, adns_query qu,
+			      vbuf *vb, const byte *dgram, int dglen, int cbyte);
 /* Unpicks a domain in a datagram and returns a string suitable for
  * printing it as.  Never fails - if an error occurs, it will
  * return some kind of string describing the error.
@@ -421,8 +421,12 @@ adns_status adns__findlabel_next(findlabel_state *fls, int *lablen_r, int *labst
  * Do not then call findlabel_next again.
  */
 
+typedef enum {
+  pdf_quoteok= 0x001
+} parsedomain_flags;
+
 adns_status adns__parse_domain(adns_state ads, int serv, adns_query qu,
-			       vbuf *vb, int flags,
+			       vbuf *vb, parsedomain_flags flags,
 			       const byte *dgram, int dglen, int *cbyte_io, int max);
 /* vb must already have been initialised; it will be reset if necessary.
  * If there is truncation, vb->used will be set to 0; otherwise

@@ -88,7 +88,7 @@ adns_status adns__mkquery(adns_state ads, vbuf *vb, int *id_r,
     ll= 0;
     while (p!=pe && (c= *p++)!='.') {
       if (c=='\\') {
-	if (!(flags & adns_qf_anyquote)) return adns_s_invalidquerydomain;
+	if (!(flags & adns_qf_quoteok_query)) return adns_s_invalidquerydomain;
 	if (ctype_digit(p[0])) {
 	  if (ctype_digit(p[1]) && ctype_digit(p[2])) {
 	    c= (*p++ - '0')*100 + (*p++ - '0')*10 + (*p++ - '0');
@@ -100,7 +100,7 @@ adns_status adns__mkquery(adns_state ads, vbuf *vb, int *id_r,
 	  return adns_s_invalidquerydomain;
 	}
       }
-      if (!(flags & adns_qf_anyquote)) {
+      if (!(flags & adns_qf_quoteok_query)) {
 	if (c == '-') {
 	  if (!ll) return adns_s_invalidquerydomain;
 	} else if (!ctype_alpha(c) && !ctype_digit(c)) {
