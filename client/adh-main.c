@@ -47,12 +47,6 @@ void outerr(void) {
   sysfail("write to stdout",errno);
 }
 
-static void domain_do(const char *domain) {
-  if (ov_pipe && !ads) usageerr("-f/--pipe not consistent with domains on command line");
-  ensure_adns_init();
-  query_do(domain);
-}
-
 void *xmalloc(size_t sz) {
   void *p;
 
@@ -134,7 +128,7 @@ static void process_optarg(const char *arg,
     } else if (arg[0] == '-' && arg[1] == 0) {
       arg= argv_p ? *++(*argv_p) : value;
       if (!arg) usageerr("option `-' must be followed by a domain");
-      domain_do(arg);
+      query_do(arg);
     } else { /* arg[1] != '-', != '\0' */
       invert= (arg[0] == '+');
       ++arg;
@@ -156,7 +150,7 @@ static void process_optarg(const char *arg,
       }
     }
   } else { /* arg[0] != '-' */
-    domain_do(arg);
+    query_do(arg);
   }
 }
     

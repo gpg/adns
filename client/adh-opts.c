@@ -65,7 +65,7 @@ static const struct optioninfo perquery_options[]= {
   { ot_funcarg,          "Query type (see below)",
     "t", "type",           0,0, &of_type, "type" },
   { ot_funcarg,          "Do reverse query (address -> name lookup)",
-    "i", "ptr",            0,0, &of_type, "addr" },
+    "i", "ptr",            0,0, &of_ptr, "addr" },
 
   { ot_desconly, "per-query binary options:" },
   { ot_flag,             "Use the search list",

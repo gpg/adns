@@ -47,11 +47,13 @@ void ensure_adns_init(void) {
   if (r) sysfail("adns_init",r);
 }
 
-void query_do(const char *domain) {
+static void prep_query(struct query_node **qun_r, int *quflags_r) {
   struct query_node *qun;
   char idbuf[20];
-  int r;
-
+  
+  if (ov_pipe && !ads) usageerr("-f/--pipe not consistent with domains on command line");
+  ensure_adns_init();
+  
   qun= malloc(sizeof(*qun));
   qun->pqfr= ov_pqfr;
   if (ov_id) {
@@ -61,16 +63,48 @@ void query_do(const char *domain) {
     idcounter &= 0x0fffffffflu;
     qun->id= xstrsave(idbuf);
   }
+
+  *quflags_r=
+    (ov_search ? adns_qf_search : 0) |
+    (ov_tcp ? adns_qf_usevc : 0) |
+    (ov_pqfr.show_owner ? adns_qf_owner : 0) |
+    (ov_qc_query ? adns_qf_quoteok_query : 0) |
+    (ov_qc_anshost ? adns_qf_quoteok_anshost : 0) |
+    (ov_qc_cname ? 0 : adns_qf_quoteok_cname) |
+    ov_cname,
+    
+  *qun_r= qun;
+}
   
+void of_ptr(const struct optioninfo *oi, const char *arg) {
+  struct query_node *qun;
+  int quflags, r;
+  struct sockaddr_in sa;
+
+  memset(&sa,0,sizeof(sa));
+  sa.sin_family= AF_INET;
+  if (!inet_aton(arg,&sa.sin_addr)) usageerr("invalid IP address %s",arg);
+
+  prep_query(&qun,&quflags);
+  r= adns_submit_reverse(ads,
+			 (struct sockaddr*)&sa,
+			 ov_type == adns_r_none ? adns_r_ptr : ov_type,
+			 quflags,
+			 qun,
+			 &qun->qu);
+  if (r) sysfail("adns_submit_reverse",r);
+
+  LIST_LINK_TAIL(outstanding,qun);
+}
+
+void query_do(const char *domain) {
+  struct query_node *qun;
+  int quflags, r;
+
+  prep_query(&qun,&quflags);
   r= adns_submit(ads, domain,
 		 ov_type == adns_r_none ? adns_r_addr : ov_type,
-		 (ov_search ? adns_qf_search : 0) |
-		 (ov_tcp ? adns_qf_usevc : 0) |
-		 (ov_pqfr.show_owner ? adns_qf_owner : 0) |
-		 (ov_qc_query ? adns_qf_quoteok_query : 0) |
-		 (ov_qc_anshost ? adns_qf_quoteok_anshost : 0) |
-		 (ov_qc_cname ? 0 : adns_qf_quoteok_cname) |
-		 ov_cname,
+		 quflags,
 		 qun,
 		 &qun->qu);
   if (r) sysfail("adns_submit",r);

@@ -36,6 +36,10 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
 #include "config.h"
 #include "adns.h"
 #include "dlist.h"
@@ -72,7 +76,7 @@ extern int ov_tcp, ov_cname;
 extern char *ov_id;
 extern struct perqueryflags_remember ov_pqfr;
 
-extern optfunc of_help, of_type, of_asynch_id, of_cancel_id;
+extern optfunc of_help, of_type, of_ptr, of_asynch_id, of_cancel_id;
 
 const struct optioninfo *opt_findl(const char *opt);
 const struct optioninfo *opt_finds(const char **optp);

@@ -258,6 +258,27 @@ int adns_submit(adns_state ads,
   return r;
 }
 
+int adns_submit_reverse(adns_state ads,
+			const struct sockaddr *addr,
+			adns_rrtype type,
+			adns_queryflags flags,
+			void *context,
+			adns_query *query_r) {
+  const unsigned char *iaddr;
+  char buf[30];
+
+  if (type != adns_r_ptr && type != adns_r_ptr_raw) return EINVAL;
+  flags &= ~adns_qf_search;
+
+  if (addr->sa_family != AF_INET) return ENOSYS;
+  iaddr= (const unsigned char*) &(((const struct sockaddr_in*)addr) -> sin_addr);
+
+  sprintf(buf, "%d.%d.%d.%d.in-addr.arpa",
+	  iaddr[3], iaddr[2], iaddr[1], iaddr[0]);
+
+  return adns_submit(ads,buf,type,flags,context,query_r);
+}
+
 int adns_synchronous(adns_state ads,
 		     const char *owner,
 		     adns_rrtype type,

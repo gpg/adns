@@ -496,7 +496,9 @@ int adns_submit_reverse(adns_state ads,
 			adns_queryflags flags,
 			void *context,
 			adns_query *query_r);
-/* type must be _r_ptr or _r_ptr_raw.  _qf_search is ignored. */
+/* type must be _r_ptr or _r_ptr_raw.  _qf_search is ignored.
+ * addr->sa_family must be AF_INET or you get ENOSYS.
+ */
 
 void adns_finish(adns_state ads);
 /* You may call this even if you have queries outstanding;
