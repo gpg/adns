@@ -11,6 +11,7 @@ adns (0.3) unstable; urgency=low
   * Event loop functions for poll(2), and some raw variants.
   * adnstest has ability to use poll(2), and user can set initflags.
   * checkall prints passed list as well as failed list, if any failed.
+  * You can iterate over outstanding queries (but only once at a time).
   
   Bugfixes:
   * Non-RFC822 mailbox `domain' formatting now works, and clarified.
