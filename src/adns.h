@@ -24,6 +24,9 @@
 
 #ifndef ADNS_H_INCLUDED
 #define ADNS_H_INCLUDED
+#ifdef __cplusplus
+extern "C" { /* I really dislike this - iwj. */
+#endif
 
 #include <stdio.h>
 
@@ -564,4 +567,7 @@ const char *adns_errabbrev(adns_status st);
  * not returned by the same adns library.
  */
 
+#ifdef __cplusplus
+} /* end of extern "C" */
+#endif
 #endif
