@@ -181,6 +181,8 @@ void Tvbpollfds(const struct pollfd *fds, int nfds) {
 void Tvberrno(int e) {
   const struct Terrno *te;
 
+  assert(e != EBADF);
+  assert(e != EFAULT);
   for (te= Terrnos; te->n && te->v != e; te++);
   if (te->n) Tvba(te->n);
   else Tvbf("E#%d",e);
