@@ -305,18 +305,21 @@ void adns_finish(adns_state ads);
  */
 
 
-struct adns_query adns_forallqueries_begin(adns_state ads, void **context_r);
-struct adns_query adns_forallqueries_next(adns_state ads, adns_query, void **context_r);
+void adns_forallqueries_begin(adns_state ads);
+struct adns_query adns_forallqueries_next(adns_state ads, void **context_r);
 /* Iterator functions, which you can use to loop over the outstanding
- * (submitted but not yet successfuly checked/waited) queries.  Each
- * function returns a query handle and a corresponding context pointer,
- * or returns 0 setting *context_r to 0 if there are no (more) queries.
- * There is no need to explicitly finish an iteration.  context_r may be 0.
+ * (submitted but not yet successfuly checked/waited) queries.
  *
- * IMPORTANT: you MUST NOT call ANY other adns function with the same
- * adns_state, or with a query in the same adns_state, while you are
- * doing one of these iterations.  After such a call the iterator
- * value has undefined meaning and must not be used.
+ * You can only have one iteration going at once.  You may call _begin
+ * at any time; after that, an iteration will be in progress.  You may
+ * only call _next when an iteration is in progress - anything else
+ * may coredump.  The iteration remains in progress until _next
+ * returns 0, indicating that all the queries have been walked over,
+ * or ANY other adns function is called with the same adns_state (or a
+ * query in the same adns_state).  There is no need to explicitly
+ * finish an iteration.
+ *
+ * context_r may be 0.
  */
 
 /*
