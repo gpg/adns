@@ -70,13 +70,21 @@ int main(int argc, char *const *argv) {
   adns_state ads;
   adns_query *qus, qu;
   adns_answer *ans;
-  const char *rrtn, *fmtn, *const *domlist;
+  const char *initstring, *rrtn, *fmtn;
+  const char *const *domlist;
   char *show, *cp;
   int len, i, qc, qi, tc, ti, ch;
   adns_status r, ri;
   const adns_rrtype *types;
   adns_rrtype *types_a;
 
+  if (argv[0] && argv[1] && argv[1][0] == '/') {
+    initstring= argv[1]+1;
+    argv++;
+  } else {
+    initstring= 0;
+  }
+  
   if (argv[0] && argv[1] && argv[1][0] == ':') {
     for (cp= argv[1]+1, tc=1; (ch= *cp); cp++)
       if (ch==',') tc++;
@@ -86,7 +94,7 @@ int main(int argc, char *const *argv) {
       types_a[ti]= strtoul(cp,&cp,10);
       if ((ch= *cp)) {
 	if (ch != ',') {
-	  fputs("usage: dtest [:<typenum>,...] [<domain> ...]\n",stderr);
+	  fputs("usage: dtest [/<initstring>] [:<typenum>,...] [<domain> ...]\n",stderr);
 	  exit(4);
 	}
 	cp++;
@@ -106,7 +114,11 @@ int main(int argc, char *const *argv) {
   qus= malloc(sizeof(qus)*qc*tc);
   if (!qus) { perror("malloc qus"); exit(3); }
 
-  r= adns_init(&ads,adns_if_debug|adns_if_noautosys,0);
+  if (initstring) {
+    r= adns_init_strcfg(&ads,adns_if_debug|adns_if_noautosys,stdout,initstring);
+  } else {
+    r= adns_init(&ads,adns_if_debug|adns_if_noautosys,0);
+  }
   if (r) failure("init",r);
 
   for (qi=0; qi<qc; qi++) {

@@ -1,0 +1,16 @@
+#!/bin/sh
+# usage: m1test <name> <initfile> <queryargs>
+
+set -e
+tcn="$1"
+initfile="$2"
+queryargs="$*"
+test -d ../testcases || cd testcases
+
+initstring="`cat $initfile.init`"
+
+exec >$tcn.log
+echo "$initfile"
+echo "$queryargs"
+
+H../hrecord "/$initstring" $queryargs

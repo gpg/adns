@@ -32,8 +32,18 @@ m4_include(hmacros.i4)
 
 #include "harness.h"
 
-static FILE *Tinputfile;
+static FILE *Tinputfile, *Treportfile;
 static vbuf vb2;
+
+static void Tensurereportfile(void) {
+  const char *fdstr;
+  int fd;
+
+  Treportfile= stderr;
+  fdstr= getenv("ADNS_TEST_REPORT_FD"); if (!fdstr) return;
+  fd= atoi(fdstr);
+  Treportfile= fdopen(fd,"a"); if (!Treportfile) Tfailed("fdopen ADNS_TEST_REPORT_FD");
+}
 
 static void Tensureinputfile(void) {
   const char *fdstr;
@@ -218,7 +228,9 @@ int H$1(hm_args_massage($3,void)) {
  m4_define(`hm_r_offset',`m4_len(` $1=')')
  if (!adns__vbuf_ensure(&vb2,1000)) Tnomem();
  fgets(vb2.buf,vb2.avail,Tinputfile); Pcheckinput();
-fprintf(stderr,"syscallr %s",vb2.buf);
+
+ Tensurereportfile();
+ fprintf(Treportfile,"syscallr %s",vb2.buf);
  vb2.avail= strlen(vb2.buf);
  if (vb.avail<=0 || vb2.buf[--vb2.avail]!=hm_squote\nhm_squote)
   Psyntax("badly formed line");

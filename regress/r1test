@@ -1,0 +1,12 @@
+#!/bin/sh
+# usage: r1test <testcasename>
+
+set -e
+tcn="$1"
+test -d ../testcases || cd testcases
+
+exec <$tcn.log
+read initfile
+read queryargs
+initstring="`cat $initfile.init`"
+../hplayback "/$initstring" $queryargs
