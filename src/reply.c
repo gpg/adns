@@ -157,7 +157,10 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
     }
     if (rrtype == adns_r_cname && /* fixme - implement adns_qf_nocname */
 	(qu->typei->type & adns__rrt_typemask) != adns_r_cname) {
-      if (!qu->cname_dgram) { /* Ignore second and subsequent CNAMEs */
+      if (qu->flags & adns_qf_cname_forbid) {
+	adns__query_fail(qu,adns_s_prohibitedcname);
+	return;
+      } else if (!qu->cname_dgram) { /* Ignore second and subsequent CNAMEs */
 	qu->cname_begin= rdstart;
 	qu->cname_dglen= dglen;
 	st= adns__parse_domain(ads,serv,qu, &qu->vb,

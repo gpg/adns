@@ -40,7 +40,7 @@ typedef unsigned char byte;
 
 #define MAXSERVERS 5
 #define MAXSORTLIST 15
-#define UDPMAXRETRIES /*15 fixme*/5
+#define UDPMAXRETRIES 15
 #define UDPRETRYMS 2000
 #define TCPMS 30000
 #define LOCALRESOURCEMS 20

@@ -432,6 +432,7 @@ static adns_status pap_hostaddr(const parseinfo *pai, int *cbyte_io,
   qcontext ctx;
   int id;
   adns_query nqu;
+  adns_queryflags nflags;
 
   dmstart= cbyte= *cbyte_io;
   st= pap_domain(pai, &cbyte, max, &rrp->host,
@@ -461,9 +462,12 @@ static adns_status pap_hostaddr(const parseinfo *pai, int *cbyte_io,
   ctx.ext= 0;
   ctx.callback= icb_hostaddr;
   ctx.info.hostaddr= rrp;
+  
+  nflags= adns_qf_quoteok_query;
+  if (!(pai->qu->flags & adns_qf_cname_loose)) nflags |= adns_qf_cname_forbid;
+  
   st= adns__internal_submit(pai->ads, &nqu, adns__findtype(adns_r_addr),
-			    &pai->qu->vb, id,
-			    adns_qf_quoteok_query, pai->now, 0, &ctx);
+			    &pai->qu->vb, id, nflags, pai->now, 0, &ctx);
   if (st) return st;
 
   nqu->parent= pai->qu;

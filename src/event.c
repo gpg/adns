@@ -76,7 +76,6 @@ void adns__tcp_tryconnect(adns_state ads, struct timeval now) {
   int r, fd, tries;
   struct sockaddr_in addr;
   struct protoent *proto;
-  /* fixme: single TCP timeout, not once per server */
 
   for (tries=0; tries<ads->nservers; tries++) {
     if (ads->tcpstate == server_connecting || ads->tcpstate == server_ok) return;

@@ -135,8 +135,6 @@ typedef enum {
   
   adns_s_max_misconfig= 199,
 
-  /* fixme: implement _s_cname */
-
   /* permanent problems with the query */
   adns_s_querydomainwrong,
   adns_s_querydomaininvalid,
