@@ -31,8 +31,10 @@ LIBOBJS=	types.o event.o query.o reply.o general.o setup.o transmit.o parse.o
 HARNLOBJS=	$(addsuffix _d.o, $(basename $(LIBOBJS)))
 ALLOBJS=	$(LIBOBJS) $(HARNLOBJS) dtest.o hrecord.o hplayback.o hcommon.o
 
-all:		dtest hrecord
+TARGETS=	dtest hrecord
 # hplayback
+
+all:		$(TARGETS)
 
 hrecord:	dtest.o hrecord.o hcommon.o $(HARNLOBJS)
 
@@ -47,7 +49,10 @@ dtest:		dtest.o $(LIBOBJS)
 	@mv -f $@-b.new $@; rm -f $@-a.new
 
 clean:
-		rm -f dtest *.o harness.h hrecord.c hcommon.c
+		rm -f *.o harness.h hrecord.c hcommon.c
+
+realclean:	clean
+		rm -f $(TARGETS) *~ ./#*# core *.orig *.rej
 
 hrecord.o hcommon.o:	adns.h internal.h harness.h
 $(HARNLOBJS):		adns.h internal.h

@@ -1,2 +1,5 @@
 dtest
 hrecord
+harness.h
+hcommon.c
+hrecord.c
