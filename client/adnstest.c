@@ -1,5 +1,5 @@
 /*
- * dtest.c
+ * adnstest.c
  * - simple test program, not part of the library
  */
 /*
