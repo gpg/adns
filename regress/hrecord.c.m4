@@ -108,12 +108,14 @@ int H$1(hm_args_massage($3,void)) {
   if (r==-1) { Tvberrno(e); goto x_error; }
   if (cmd == F_GETFL) {
     Tvbf(r & O_NONBLOCK ? "O_NONBLOCK|..." : "~O_NONBLOCK&...");
-  } else if (cmd == F_SETFL) {
-    Tmust("$1","return",!r);
   } else {
-    Tmust("cmd","F_GETFL/F_SETFL",0);
-  }
-  Tvba("OK");')
+    if (cmd == F_SETFL) {
+      Tmust("$1","return",!r);
+    } else {
+      Tmust("cmd","F_GETFL/F_SETFL",0);
+    }
+    Tvba("OK");
+  }')
  $2
 
  hm_create_nothing
