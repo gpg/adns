@@ -40,6 +40,10 @@ m4_include(hmacros.i4)
 static FILE *Tinputfile, *Treportfile;
 static vbuf vb2;
 
+extern void Tshutdown(void) {
+  adns__vbuf_free(&vb2);
+}
+
 static void Tensurereportfile(void) {
   const char *fdstr;
   int fd;

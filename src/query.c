@@ -91,7 +91,7 @@ static void query_submit(adns_state ads, adns_query qu,
 			 const typeinfo *typei, vbuf *qumsg_vb, int id,
 			 adns_queryflags flags, struct timeval now) {
   /* Fills in the query message in for a previously-allocated query,
-   * and submits it.  Cannot fail.
+   * and submits it.  Cannot fail.  Takes over the memory for qumsg_vb.
    */
 
   qu->vb= *qumsg_vb;
@@ -131,7 +131,7 @@ static void query_simple(adns_state ads, adns_query qu,
   int id;
   adns_status stat;
 
-  adns__vbuf_init(&vb);
+  vb= qu->vb;
   
   stat= adns__mkquery(ads,&vb,&id, owner,ol, typei,flags);
   if (stat) { adns__query_fail(qu,stat); return; }
@@ -390,6 +390,7 @@ static void free_query_allocs(adns_query qu) {
   for (an= qu->allocations.head; an; an= ann) { ann= an->next; free(an); }
   LIST_INIT(qu->allocations);
   adns__vbuf_free(&qu->vb);
+  adns__vbuf_free(&qu->search_vb);
   free(qu->query_dgram);
 }
 

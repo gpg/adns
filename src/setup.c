@@ -62,6 +62,11 @@ static void addserver(adns_state ads, struct in_addr addr) {
   ads->nservers++;
 }
 
+static void freesearchlist(adns_state ads) {
+  if (ads->nsearchlist) free(*ads->searchlist);
+  free(ads->searchlist);
+}
+
 static void saveerr(adns_state ads, int en) {
   if (!ads->configerrno) ads->configerrno= en;
 }
@@ -133,7 +138,7 @@ static void ccf_search(adns_state ads, const char *fn, int lno, const char *buf)
     *newchars++ = 0;
   }
 
-  free(ads->searchlist);
+  freesearchlist(ads);
   ads->nsearchlist= count;
   ads->searchlist= newptrs;
 }
@@ -591,6 +596,7 @@ void adns_finish(adns_state ads) {
   if (ads->tcpsocket >= 0) close(ads->tcpsocket);
   adns__vbuf_free(&ads->tcpsend);
   adns__vbuf_free(&ads->tcprecv);
+  freesearchlist(ads);
   free(ads);
 }
 

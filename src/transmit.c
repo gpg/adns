@@ -81,7 +81,7 @@ adns_status adns__mkquery(adns_state ads, vbuf *vb, int *id_r,
   const char *p, *pe;
   adns_status st;
 
-  st= mkquery_header(ads,vb,id_r,strlen(owner)+2); if (st) return st;
+  st= mkquery_header(ads,vb,id_r,ol+2); if (st) return st;
   
   MKQUERY_START(vb);
 
