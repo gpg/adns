@@ -1,6 +1,7 @@
 /*
- * adnshost.c
+ * adh-opts.c
  * - useful general-purpose resolver client program
+ *   option handling tables etc.
  */
 /*
  *  This file is
@@ -25,43 +26,11 @@
  *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <errno.h>
-
-#include "config.h"
-#include "adns.h"
-
-static void sysfail(const char *what, int errnoval) NONRETURNING;
-static void sysfail(const char *what, int errnoval) {
-  fprintf(stderr,"adnshost failed: %s: %s\n",what,strerror(errnoval));
-  exit(10);
-}
-
-struct optinfo;
-typedef void optfunc(const struct optinfo *oi, const char *arg);
-
-struct optinfo {
-  enum oi_type {
-    ot_end, ot_desconly,
-    ot_flag, ot_value, ot_func, ot_funcarg
-  } type;
-  const char *desc;
-  const char *sopt, *lopt;
-  int *storep, value;
-  optfunc *func;
-  const char *argdesc;
-};
-
-static int ov_env=1, ov_pipe=0, ov_asynch=0;
-static int ov_verbose= 0;
-static int ov_search=0, ov_qc_query=0, ov_qc_anshost=0, ov_qc_cname=1;
-static int ov_tcp=0, ov_show_owner=1, ov_show_type=1, ov_show_cname=1;
-static int ov_cname=0;
-enum ttlmode { tm_none, tm_rel, tm_abs };
-static int ov_ttl= tm_none;
-
-static optfunc of_help, of_type, of_asynch_id, of_cancel_id;
+int ov_env=1, ov_pipe=0, ov_asynch=0;
+int ov_verbose= 0;
+int ov_search=0, ov_qc_query=0, ov_qc_anshost=0, ov_qc_cname=1;
+struct perqueryflags_remember ov_pqfr = { 1,1,1, tm_none };
+int ov_tcp=0, ov_cname=0;
 
 static const struct optinfo global_options[]= {
   { ot_desconly, "global binary options:" },
@@ -104,19 +73,19 @@ static const struct optinfo perquery_options[]= {
   { ot_flag,             "Force use of a virtual circuit",
     "u", "tcp",            &ov_tcp, 1 },
   { ot_flag,             "Do not display owner name in output",
-    "Do", "show-owner",   &ov_show_owner, 0 },
+    "Do", "show-owner",   &ov_pqfr.show_owner, 0 },
   { ot_flag,             "Do not display RR type in output",
-    "Dt", "show-type",    &ov_show_type, 0 },
+    "Dt", "show-type",    &ov_pqfr.show_type, 0 },
   { ot_flag,             "Do not display CNAME target in output",
-    "Dc", "show-cname",    &ov_show_cname, 0 },
+    "Dc", "show-cname",    &ov_pqfr.show_cname, 0 },
   
   { ot_desconly, "per-query TTL mode (NB TTL is minimum across all info in reply):" },
   { ot_value,            "Show the TTL as a TTL",
-    "Tt", "ttl-ttl",       &ov_ttl, tm_rel },
+    "Tt", "ttl-ttl",       &ov_pqfr.ttl, tm_rel },
   { ot_value,            "Show the TTL as a time_t when the data might expire",
-    "Ta", "ttl-abs",       &ov_ttl, tm_abs },
+    "Ta", "ttl-abs",       &ov_pqfr.ttl, tm_abs },
   { ot_value,            "Do not show the TTL (default)",
-    "Tn", "no-ttl",        &ov_ttl, tm_none },
+    "Tn", "no-ttl",        &ov_pqfr.ttl, tm_none },
   
   { ot_desconly, "per-query CNAME handling mode:" },
   { ot_value,            "Call it an error if a CNAME is found",
@@ -126,11 +95,7 @@ static const struct optinfo perquery_options[]= {
   { ot_value,            "CNAME ok for query domain, but not in RRs (default)",
     "Cs", "cname-ok",      &ov_cname, 0 },
   
-  { ot_end }
-};
-
-static const struct optinfo asynch_options[]= {
-  { ot_desconly, "asynchronous mode `options':" },
+  { ot_desconly, "asynchronous/pipe mode options:" },
   { ot_funcarg,          "Set <id>, default is decimal sequence starting 0",
     "i", "asynch-id",      0,0, &of_asynch_id, "id" },
   { ot_funcarg,          "Cancel the query with id <id>",
@@ -140,8 +105,8 @@ static const struct optinfo asynch_options[]= {
 };
 
 static void printusage(void) {
-  static const struct optinfo *const alloptions[]= {
-    global_options, perquery_options, asynch_options, 0
+  static const struct optinfo *const all_optiontables[]= {
+    global_options, perquery_options, 0
   };
 
   const struct optinfo *const *oiap, *oip=0;
@@ -279,11 +244,3 @@ static void of_help(const struct optinfo *oi, const char *arg) {
   exit(0);
 }
 
-static void of_type(const struct optinfo *oi, const char *arg) { abort(); }
-static void of_asynch_id(const struct optinfo *oi, const char *arg) { abort(); }
-static void of_cancel_id(const struct optinfo *oi, const char *arg) { abort(); }
-
-int main(int argc, const char *const *argv) {
-  of_help(0,0);
-  abort();
-}

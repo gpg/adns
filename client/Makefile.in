@@ -32,6 +32,8 @@ include		$(srcdir)/../settings.make
 
 DIRCFLAGS=	-I$(srcdir)/../src
 
+ADH_OBJS=	adh-main.o adh-opts.o adh-query.o
+
 all:		$(TARGETS)
 
 install:	$(TARG_INSTALL)
@@ -40,6 +42,12 @@ install:	$(TARG_INSTALL)
 
 uninstall:
 		for f in $(TARGETS); do rm -f $(bin_dir)/$$f; done
+
+adnshost:	$(ADH_OBJS) $(srcdir)/../dynamic/$(SHLIBFILE)
+		$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
+
+adnshost_s:	$(ADH_OBJS) $(srcdir)/../src/libadns.a
+		$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
 
 %:		%.o $(srcdir)/../dynamic/$(SHLIBFILE)
 		$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
