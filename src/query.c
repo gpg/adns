@@ -423,6 +423,7 @@ static void free_query_allocs(adns_query qu) {
   adns__vbuf_free(&qu->vb);
   adns__vbuf_free(&qu->search_vb);
   free(qu->query_dgram);
+  qu->query_dgram= 0;
 }
 
 void adns_cancel(adns_query qu) {
