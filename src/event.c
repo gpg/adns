@@ -167,7 +167,79 @@ static void checktimeouts(adns_state ads, struct timeval now,
       inter_maxtoabs(tv_io,tvbuf,now,qu->timeout);
     }
   }
-}  
+}
+
+static void checkfds(adns_state ads, int *maxfd,
+		     fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
+		     int avail, struct pollfd *buf, int *count_r) {
+  int count;
+
+  count= 0;
+  inter_addfd(ads->udpsocket,maxfd,readfds);
+  poll_addfd(ads->udpsocket,avail,buf,&count,POLLIN);
+
+  switch (ads->tcpstate) {
+  case server_disconnected:
+    break;
+  case server_connecting:
+    inter_addfd(ads->tcpsocket,maxfd,writefds);
+    poll_addfd(ads->tcpsocket,avail,buf,&count,POLLOUT);
+    break;
+  case server_ok:
+    inter_addfd(ads->tcpsocket,maxfd,readfds);
+    inter_addfd(ads->tcpsocket,maxfd,exceptfds);
+    if (ads->tcpsend.used) inter_addfd(ads->tcpsocket,maxfd,writefds);
+    poll_addfd(ads->tcpsocket,avail,buf,&count,
+	       ads->tcpsend.used ? POLLIN|POLLOUT : POLLIN);
+    break;
+  default:
+    abort();
+  }
+}
+
+struct pollfd *adns_pollfds(adns_state ads, struct pollfd *buf,
+			    int *len_io, int *timeout_io) {
+  struct timeval now, tvbuf, *tvp;
+  int timeout;
+  
+  r= gettimeofday(&now,0);
+  if (r) return 0;
+
+  timeout= *timeout_io;
+  if (timeout < 0) {
+    tvtop= 0;
+  } else {
+    tvbuf.tv_sec= now.tv_sec + (timeout/1000);
+    tvbuf.tv_usec= now.tv_usec + (timeout%1000)*1000;
+    if (tvbuf.tv_sec >= 1000000) {
+      tvbuf.tv_sec += 1;
+      tvbuf.tv_usec -= 1000000;
+    }
+    tvp= &tvbuf;
+  }
+  checktimouts(ads,now,&tvp,&tvbuf);
+
+  if (tvp) {
+    assert(tvbuf.tv_sec<INT_MAX/1000);
+    *timeout_io= (tvp->tv_sec - now.tv_sec)*1000 + (tvp->tv_usec - now.tv_usec)/1000;
+  } else {
+    *timeout_io= -1;
+  }
+
+  avail= *len_io;
+  if (avail == -1) {
+    buf= ads->pollfdsbuf;
+    avail= 2;
+    if (!buf) {
+      buf= ads->pollfdsbuf= malloc(sizeof(struct pollfd)*avail);
+      if (!buf) return 0;
+    }
+  }
+  checkfds(ads, 0,0,0,0, avail,buf,len_io);
+  if (*len_io > avail) { errno= ENOSPC; return 0; }
+
+  return buf;
+}
  
 void adns_interest(adns_state ads, int *maxfd,
 		   fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
@@ -187,23 +259,8 @@ void adns_interest(adns_state ads, int *maxfd,
   } else {
     checktimeouts(ads,now,tv_io,tvbuf);
   }
-  
-  inter_addfd(maxfd,readfds,ads->udpsocket);
 
-  switch (ads->tcpstate) {
-  case server_disconnected:
-    break;
-  case server_connecting:
-    inter_addfd(maxfd,writefds,ads->tcpsocket);
-    break;
-  case server_ok:
-    inter_addfd(maxfd,readfds,ads->tcpsocket);
-    inter_addfd(maxfd,exceptfds,ads->tcpsocket);
-    if (ads->tcpsend.used) inter_addfd(maxfd,writefds,ads->tcpsocket);
-    break;
-  default:
-    abort();
-  }
+  checkfds(ads, maxfd,readfds,writefds,exceptfds, 0,0,0);
 }
 
 /* Callback procedures - these do the real work of reception and timeout, etc. */

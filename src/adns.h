@@ -303,6 +303,35 @@ void adns_interest(adns_state, int *maxfd_io, fd_set *readfds_io,
  * readfds, writefds, exceptfds and maxfd may not be 0.
  */
 
+struct pollfd *adns_pollfds(adns_state, struct pollfd *buf, int *len_io, int *timeout);
+/* Like adns_interest, but for use with poll(2).  The return value
+ * will be a pointer to an array of struct pollfd, one for each of
+ * adns's fds, and *len_io will be set to the number of file
+ * descriptors.
+ *
+ * Each descriptor's entry will have a revents==0, and events will be
+ * a combination of one or more of POLLIN, POLLOUT and POLLERR.
+ *
+ * *timeout will be adjusted to ensure that it is no more than the
+ * desired timeout (with the usual rule for poll that <0 stands for
+ * infinity).  *timeout may be 0 in which case no timeout information
+ * will be returned.
+ *
+ * If *len_io is nonnegative then adns_pollfds will write to buffer
+ * provided by the caller in buf.  If it is too small then *len_io
+ * will be updated to say how large it would have needed to be and
+ * adns_pollfds will fail with ENOSPC.
+ *
+ * If *len_io is -1 then buf should be 0, and adns_pollfds will use some
+ * memory belonging to the adns_state, which may be overwritten on subsequent
+ * calls.
+ *
+ * When you come out of poll(2), you should probably call adns_callback
+ * with maxfd==-1.
+ *
+ * On systems without poll(2) this function will return ENOSYS.
+ */
+
 /* Example expected/legal calling sequences:
  *  adns_init
  *  adns_submit 1

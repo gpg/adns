@@ -249,6 +249,7 @@ struct adns__state {
   int nservers, nsortlist, tcpserver;
   enum adns__tcpstate { server_disconnected, server_connecting, server_ok } tcpstate;
   struct timeval tcptimeout;
+  struct pollfd *pollfdsbuf; /* fixme: init and cleanup */
   struct server {
     struct in_addr addr;
   } servers[MAXSERVERS];
