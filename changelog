@@ -5,7 +5,7 @@ adns (0.10) unstable; urgency=low
   * Actually compile shared libraries by default !
 
   General Improvements:
-  * adnshost has --config option for overriding configuration.
+  * adnshost and adnslogres have options for overriding configuration.
   * Improvements to adnslogres (incl. new -c option) from Tony Finch.
   * Regression tests now include `adnshost' invocations.
   * Test cancellation both before and after query completion.

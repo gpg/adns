@@ -59,6 +59,7 @@ static const char * const cvsid =
 #define OPT_POLL 2
 
 static const char *progname;
+static const char *config_text;
 
 #define guard_null(str) ((str) ? (str) : "")
 
@@ -163,8 +164,14 @@ static void proclog(FILE *inf, FILE *outf, int maxpending, int opts) {
   adns_state adns;
   adns_answer *answer;
   logline *head, *tail, *line;
+  adns_initflags initflags;
 
-  errno= adns_init(&adns, (opts & OPT_DEBUG) ? adns_if_debug : 0, 0);
+  initflags= (opts & OPT_DEBUG) ? adns_if_debug : 0;
+  if (config_text) {
+    errno= adns_init_strcfg(&adns, initflags, stderr, config_text);
+  } else {
+    errno= adns_init(&adns, initflags, 0);
+  }
   if (errno) aargh("adns_init");
   head= tail= readline(inf, adns, opts);
   len= 1; eof= 0;
@@ -203,7 +210,8 @@ static void proclog(FILE *inf, FILE *outf, int maxpending, int opts) {
 }
 
 static void usage(void) {
-  fprintf(stderr, "usage: %s [-d] [-p] [-c concurrency] [logfile]\n", progname);
+  fprintf(stderr, "usage: %s [-d] [-p] [-c concurrency] [-C config] [logfile]\n",
+	  progname);
   exit(1);
 }
 
@@ -220,7 +228,7 @@ int main(int argc, char *argv[]) {
 
   maxpending= DEFMAXPENDING;
   opts= 0;
-  while ((c= getopt(argc, argv, "c:dp")) != -1)
+  while ((c= getopt(argc, argv, "c:C:dp")) != -1)
     switch (c) {
     case 'c':
       maxpending= atoi(optarg);
@@ -228,6 +236,9 @@ int main(int argc, char *argv[]) {
        fprintf(stderr, "%s: unfeasible concurrency %d\n", progname, maxpending);
        exit(1);
       }
+      break;
+    case 'C':
+      config_text= optarg;
       break;
     case 'd':
       opts|= OPT_DEBUG;
