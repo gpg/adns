@@ -3,6 +3,7 @@ adns (0.6) unstable; urgency=high
   Bugfixes:
   * Do not fail assertion if _qf_owner, _qf_search, domain ends in `.'.
   * Avoid infinite timeouts, causing lockup, when they should be zero !
+  * TCP handling revamped (avoids recursive-invocation problems).
   * Dynamic library building works properly.
   * adnshost prints somewhat better messages about some wrong usages.
   * Include stdlib.h in adnshost.h.

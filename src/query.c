@@ -68,9 +68,9 @@ static adns_query query_alloc(adns_state ads, const typeinfo *typei,
 
   qu->id= 0;
   qu->flags= flags;
-  qu->udpretries= 0;
+  qu->retries= 0;
   qu->udpnextserver= 0;
-  qu->udpsent= qu->tcpfailed= 0;
+  qu->udpsent= 0;
   timerclear(&qu->timeout);
   qu->expires= now.tv_sec + MAXTTLBELIEVE;
 
@@ -399,10 +399,13 @@ void adns_cancel(adns_query qu) {
   adns__consistency(ads,qu,cc_entex);
   if (qu->parent) LIST_UNLINK_PART(qu->parent->children,qu,siblings.);
   switch (qu->state) {
-  case query_tosend: case query_tcpwait: case query_tcpsent:
-    LIST_UNLINK(ads->timew,qu);
+  case query_tosend:
+    LIST_UNLINK(ads->udpw,qu);
     break;
-  case query_child:
+  case query_tcpw:
+    LIST_UNLINK(ads->tcpw,qu);
+    break;
+  case query_childw:
     LIST_UNLINK(ads->childw,qu);
     break;
   case query_done:
