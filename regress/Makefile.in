@@ -20,6 +20,7 @@ srcdir=		@srcdir@
 VPATH=		@srcdir@
 
 TARGETS=	hplayback hrecord
+AUTOCSRCS=	harness.h hrecord.c hplayback.c hcommon.c
 include		$(srcdir)/../settings.make
 include		$(srcdir)/../src/adns.make
 
@@ -33,7 +34,6 @@ HCPPFLAGS:= $(foreach F,			\
 
 HARNLOBJS=	$(addsuffix _d.o, $(basename $(LIBOBJS)))
 ALLOBJS=	$(HARNLOBJS) dtest.o hrecord.o hplayback.o hcommon.o
-AUTOCSRCS=	harness.h hrecord.c hplayback.c hcommon.c
 
 .PRECIOUS:	$(AUTOCSRCS)
 
