@@ -6,6 +6,7 @@ adns (1.1); urgency=medium
   * Don't use <sys/select.h> any more, it was a mistake made in pre-1.0
     (and there doesn't seem to be much explanation why).
   * Understand and sort of check OpenBSD `lookup' resolv.conf directive.
+  * Always #include <sys/types.h> before <sys/socket.h> (for FreeBSD 4.6).
 
  --
 
