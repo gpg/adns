@@ -23,6 +23,7 @@ union adns__align {
 };
 
 struct adns__query {
+  /* FIXME: make sure this is all init'd properly */
   adns_query back, next;
   adns_query parent;
   struct { adns_query head, tail; } children;
@@ -47,18 +48,21 @@ struct adns__query {
    */
 };
 
+struct adns__vbuf {
+  size_t used, avail;
+  unsigned char *buf;
+};
+
 struct adns__state {
+  /* FIXME: make sure this is all init'd properly */
   adns_initflags iflags;
   struct { adns_query head, tail; } tosend, timew, childw, output;
   int nextid, udpsocket;
-  int qbufavail, tcpbufavail, tcpbufused, tcpbufdone;
-  unsigned char *qbuf, *tcpbuf;
+  adns_vbuf rqbuf, tcpsend, tcprecv;
   int nservers, tcpserver;
-  enum { server_disc, server_connecting, server_ok } tcpstate;
+  enum adns__tcpstate { server_disc, server_connecting, server_ok } tcpstate;
   int tcpsocket;
   struct timeval tcptimeout;
-  int opbufavail, opbufused;
-  unsigned char *opbuf;
   struct server {
     struct in_addr addr;
   } servers[MAXSERVERS];

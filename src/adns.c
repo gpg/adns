@@ -301,11 +301,124 @@ void adns_cancel(adns_state ads, adns_query query) {
   abort(); /* FIXME */
 }
 
+static int callb_checkfd(int maxfd, const fd_set *fds, int fd) {
+  return maxfd<0 || !fds ? 1 :
+         fd<maxfd && FD_ISSET(fd,fds);
+}
+
 int adns_callback(adns_state ads, int maxfd,
 		  const fd_set *readfds, const fd_set *writefds,
 		  const fd_set *exceptfds) {
+  int skip, dgramlen, count;
+  enum adns__tcpstate oldtcpstate;
+
+  count= 0;
+  oldtcpstate= ads->tcpstate;
+  
+  if (ads->tcpstate == server_connecting) {
+    if (callb_checkfd(maxfd,writefds,ads->tcpsocket)) {
+      count++;
+      assert(ads->tcprecv.used==0);
+      vbuf_ensure(&ads->tcprecv,1);
+      if (ads->tcprecv.buf) {
+	r= read(ads->tcpsocket,&ads->tcprecv.buf,1);
+	if (r==0 || (r<0 && (errno==EAGAIN || errno==EWOULDBLOCK))) {
+	  diag("nameserver %s TCP connection made",
+	       inet_ntoa(ads->servers[ads->tcpserver].addr));
+	  ads->tcpstate= server_connected;
+	} else if (r>0) {
+	  tcpserver_broken(ads,"connect/read","sent data before first request");
+	} else if (errno!=EINTR) {
+	  tcpserver_broken(ads,"connect",strerror(errno));
+	}
+      }
+    }
+  }
+  if (ads->tcpstate == server_connected) {
+    if (oldtcpstate == server_connected)
+      count+= callb_checkfd(maxfd,readfds,ads->tcpsocket) +
+	      callb_checkfd(maxfd,exceptfds,ads->tcpsocket) +
+	(ads->tcpsend.used && callb_checkfd(maxfd,writefds,ads->tcpsocket));
+    if (oldtcpstate != server_connected || callb_checkfd(maxfd,readfds,ads->tcpsocket)) {
+      skip= 0;
+      for (;;) {
+	if (ads->tcprecv.used<skip+2) {
+	  want= 2;
+	} else {
+	  dgramlen= (ads->tcprecv.buf[skip]<<8) | ads->tcprecv.buf[skip+1];
+	  if (ads->tcprecv.used<skip+2+dgramlen) {
+	    want= 2+dgramlen;
+	  } else {
+	    procdgram(ads,ads->tcprecv.buf+skip+2,dgramlen,-1);
+	    skip+= 2+dgramlen; continue;
+	  }
+	}
+	Ads->tcprecv.used -= skip;
+	memmove(ads->tcprecv.buf,ads->tcprecv.buf+skip,ads->tcprecv.used);
+	vbuf_ensure(&ads->tcprecv,want);
+	if (ads->tcprecv.used >= ads->tcprecv.avail) break;
+	r= read(ads->tcpsocket,
+		ads->tcprecv.buf+ads->tcprecv.used,
+		ads->tcprecv.avail-ads->tcprecv.used);
+	if (r>0) {
+	  ads->tcprecv.used+= r;
+	} else {
+	  if (r<0) {
+	    if (errno==EAGAIN || errno==EWOULDBLOCK || errno==ENOMEM) break;
+	    if (errno==EINTR) continue;
+	  }
+	  tcpserver_broken(ads->tcpserver,"read",r?strerror(errno):"closed");
+	  break;
+	}
+      }
+    } else if (callb_checkfd(maxfd,exceptfds,ads->tcpsocket)) {
+      tcpserver_broken(ads->tcpserver,"select","exceptional condition detected");
+    } else if (ads->tcpsend.used && callb_checkfd(maxfd,writefds,ads->tcpsocket)) {
+      r= write(ads->tcpsocket,ads->tcpsend.buf,ads->tcpsend.used);
+      if (r<0) {
+	if (errno!=EAGAIN && errno!=EWOULDBLOCK && errno!=ENOMEM && errno!=EINTR) {
+	  tcpserver_broken(ads->tcpserver,"write",strerror(errno));
+	}
+      } else if (r>0) {
+	ads->tcpsend.used -= r;
+	memmove(ads->tcpsend.buf,ads->tcpsend.buf+r,ads->tcpsend.used);
+      }
+    }
+  }
+
+  if (
+    break;
+	
+      
+	}
+	  
+  tcpserver_broken(
+		
+	    if (ads-
+	  used= 0;
+	  for (;;) {
+	  vbuf_ensure(&ads->tcprecv,2);
+	  vbuf_ensure(&ads->tcprecv,
+	  if (ads->tcprecv.avail<2) break;
+      if (ads->tcprecv.used
+      
+      if (ads->tcprecv.used<2 && ads->tcprecv.avail
+      if (ads->tcprecv.used<2 && ads->tcprecv.avail
+      r= read(ads->tcpsocket,
+      if (adns->tcprecv.used<2) {
+	if (
+	  
+  if (ads->tcpstate != server_disc) {
+    
+      
+    }
+  if (maxfd<0 || !readfds || (FD_ISSET
+      ads->
+      
   abort(); /* FIXME */
 }
+	  diag("nameserver #%d (%s) TCP connection died: %s",
+	       inet_ntoa(ads->servers[tcpserver].addr),
 
 static void inter_maxto(struct timeval **tv_io, struct timeval *tvbuf,
 			struct timeval maxto) {
@@ -348,6 +461,11 @@ static inline void timevaladd(struct timeval *tv_io, long ms) {
   *tv_io= tmp;
 }    
 
+static void inter_addfd(int *maxfd, fd_set *fds, int fd) {
+  if (fd>=*maxfd) *maxfd= fd+1;
+  FD_SET(fd,fds);
+}
+
 void adns_interest(adns_state ads, int *maxfd,
 		   fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
 		   struct timeval **tv_io, struct timeval *tvbuf) {
@@ -377,19 +495,12 @@ void adns_interest(adns_state ads, int *maxfd,
     quproc_tosend(ads,qu,now);
   }
 
-  for (qu= ads->timew; qu; qu= qu->next) {
-    if (qu->sentudp) {
-      inter_addfd(maxfd,readfds,ads->udpsocket);
-      break;
-    }
-  }
+  inter_addfd(maxfd,readfds,ads->udpsocket);
   switch (ads->tcpstate) {
   case server_disc:
     break;
   case server_connecting:
-    inter_addfd(maxfd,readfds,ads->tcpsocket);
     inter_addfd(maxfd,writefds,ads->tcpsocket);
-    inter_addfd(maxfd,exceptfds,ads->tcpsocket);
     break;
   case server_connected:
     inter_addfd(maxfd,readfds,ads->tcpsocket);
