@@ -21,15 +21,27 @@ WARNS=	-Wall -Wmissing-prototypes -Wwrite-strings -Wstrict-prototypes \
 	-Wcast-qual -Wpointer-arith
 WERROR=-Werror
 
+HCPPFLAGS= \
+ -Dsocket=Hsocket -Dfcntl=Hfcntl -Dgettimeofday=Hgettimeofday \
+ -Dsendto=Hsendto -Drecvfrom=Hrecvfrom -Dselect=Hselect -Dconnect=Hconnect \
+ -Dread=Hread -Dwrite=Hwrite -Dclose=Hclose
+
 LIBOBJS=	types.o event.o query.o reply.o general.o setup.o transmit.o parse.o
-ALLOBJS=	$(LIBOBJS) dtest.o
+HARNLOBJS=	$(addsuffix _d.o, $(basename $(LIBOBJS)))
+ALLOBJS=	$(LIBOBJS) $(HARNLOBJS) dtest.o harness.o
 
 all:		dtest
 
-dtest:		$(ALLOBJS)
+harness:	harness.o $(HARNLOBJS)
+
+dtest:		dtest.o $(LIBOBJS)
+
+%_d.o:		%.c
+		$(CC) $(HCPPFLAGS) -c -g -o $@ $<
 
 clean:
 		rm -f dtest *.o
 
+$(HARNLOBJS):	adns.h internal.h
 $(LIBOBJS):	adns.h internal.h
 dtest.o:	adns.h
