@@ -61,11 +61,19 @@ typedef union {
 typedef struct {
   adns_rrtype type;
   int rrsz;
-  adns_status (*get_fn)(adns_state ads, adns_query qu, int serv,
-			const byte *dgram, int dglen,
-			int *cbyte_io, int max,
-			int nsstart, int arcount, int *arstart_io,
-			int roff, int *rcount_io);
+  adns_status (*parse)(adns_state ads, adns_query qu, int serv, vbuf *vb,
+		       const byte *dgram, int dglen, int cbyte, int max,
+		       void *store_r);
+  /* Parse one RR, in dgram of length dglen, starting at cbyte and
+   * extending until at most max.
+   *
+   * The RR should be stored at *store_r, of length qu->typei->rrsz.
+   *
+   * If there is an overrun which might indicate truncation, it should set
+   * *rdstart to -1; otherwise it may set it to anything else positive.
+   *
+   * This function may use vb (which has been initialised) however it likes.
+   */
 } typeinfo;
 
 struct adns__query {
@@ -76,21 +84,28 @@ struct adns__query {
   struct { adns_query back, next; } siblings;
   
   const typeinfo *typei;
+  
+#error make sure all this is init'd properly
+#error make sure all this is freed properly
+  byte *querymsg;
+  int querylen;
+  
   vbuf ansbuf; /* Used for answer RRs */
-  char *cname;
+  char *cname_str; 
+  byte *cname_dgram;
+  int cname_dglen, cname_begin;
+  
   int id, flags, udpretries;
   int udpnextserver;
   unsigned long udpsent, tcpfailed; /* bitmap indexed by server */
   struct timeval timeout;
-  byte *querymsg;
-  int querylen;
   qcontext context;
   char owner[1];
   /* After the owner name and nul comes the query message, pointed to by querymsg */
 
   /* Possible states:
    *
-   *  state   Queue   child  id   answer    nextudpserver  sentudp     failedtcp
+   *  state   Queue   child  id   ansbuf    nextudpserver  sentudp     failedtcp
    *
    *  udp     NONE    null   >=0  null      0              zero        zero
    *  udp     timew   null   >=0  null      any            nonzero     zero
@@ -159,11 +174,16 @@ struct adns__state {
 
 void adns__vdiag(adns_state ads, const char *pfx, adns_initflags prevent,
 		 int serv, const char *fmt, va_list al);
-void adns__debug(adns_state ads, int serv, const char *fmt, ...) PRINTFFORMAT(3,4);
-void adns__warn(adns_state ads, int serv, const char *fmt, ...) PRINTFFORMAT(3,4);
-void adns__diag(adns_state ads, int serv, const char *fmt, ...) PRINTFFORMAT(3,4);
+
+void adns__debug(adns_state ads, int serv, adns_query qu,
+		 const char *fmt, ...) PRINTFFORMAT(3,4);
+void adns__warn(adns_state ads, int serv, adns_query qu,
+		const char *fmt, ...) PRINTFFORMAT(3,4);
+void adns__diag(adns_state ads, int serv, adns_query qu,
+		const char *fmt, ...) PRINTFFORMAT(3,4);
 
 int adns__vbuf_ensure(vbuf *vb, int want);
+int adns__vbuf_appendstr(vbuf *vb, const char *data);
 int adns__vbuf_append(vbuf *vb, const byte *data, int len);
 /* 1=>success, 0=>realloc failed */
 void adns__vbuf_appendq(vbuf *vb, const byte *data, int len);

@@ -305,3 +305,9 @@ int adns_init(adns_state *ads_r, adns_initflags flags, FILE *diagfile) {
 int adns_finish(adns_state ads) {
   abort(); /* fixme */
 }
+
+const char *adns_strerror(adns_status st) {
+  static char buf[100];
+  snprintf(buf,sizeof(buf),"code %d",st);
+  return buf;
+}

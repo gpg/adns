@@ -85,7 +85,7 @@ adns_status adns__findlabel_next(findlabel_state fls,
   return adns_s_serverfaulty;
 }
 
-adns_status adns__parse_domain(adns_state ads, int serv, vbuf *vb,
+adns_status adns__parse_domain(adns_state ads, int serv, vbuf *vb, int flags,
 			       const byte *dgram, int dglen,
 			       int *cbyte_io, int max) {
   findlabel_state fls;
@@ -102,7 +102,7 @@ adns_status adns__parse_domain(adns_state ads, int serv, vbuf *vb,
     if (!lablen) break;
     if (vb->used)
       if (!adns__vbuf_append(&qu->ans,".",1)) return adns_s_nolocalmem;
-    if (qu->flags & adns_qf_anyquote) {
+    if (flags & adns_qf_anyquote) {
       if (!vbuf__append_quoted1035(&qu->ans,dgram+labstart,lablen))
 	return adns_s_nolocalmem;
     } else {
@@ -118,6 +118,25 @@ adns_status adns__parse_domain(adns_state ads, int serv, vbuf *vb,
   }
   if (!adns__vbuf_append(&qu->ans,"",1)) return adns_s_nolocalmem;
   return adns_s_ok;
+}
+	
+const char *adns__diag_domain(adns_state ads, int serv, vbuf *vb, int flags,
+			      const byte *dgram, int dglen, int cbyte) {
+  adns_status st;
+
+  st= adns__parse_domain(ads,serv,vb,qu->flags, dgram,dglen, &cbyte,dglen);
+  if (st) {
+    vb->used= 0;
+    adns__vbuf_appendstr(vb,"<bad format... ");
+    adns__vbuf_appendstr(vb,adns_strerror(st));
+    adns__vbuf_appendstr(vb,">");
+    adns__vbuf_append(vb,"",1);
+  }
+  if (!vb.used) {
+    adns__vbuf_appendstr(vb,"<truncated ...>");
+    adns__vbuf_append(vb,"",1);
+  }
+  return vb->buf;
 }
     
 adns_status adns__findrr(adns_state ads, int serv,

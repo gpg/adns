@@ -265,4 +265,6 @@ void adns_interest(adns_state, int *maxfd_io, fd_set *readfds_io,
  *  }
  */
 
+const char *adns_strerror(adns_status st);
+
 #endif
