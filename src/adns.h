@@ -336,6 +336,12 @@ int adns_wait(adns_state ads,
 	      adns_answer **answer_r,
 	      void **context_r);
 
+/* same as adns_wait but uses poll(2) internally */
+int adns_wait_poll(adns_state ads,
+		   adns_query *query_io,
+		   adns_answer **answer_r,
+		   void **context_r);
+
 void adns_cancel(adns_query query);
 
 /* The adns_query you get back from _submit is valid (ie, can be

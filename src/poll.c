@@ -21,6 +21,7 @@
  */
 
 #include <limits.h>
+#include <string.h>
 
 #include "internal.h"
 
@@ -87,6 +88,39 @@ void adns_afterpoll(adns_state ads, const struct pollfd *fds, int nfds,
     adns__fdevents(ads, fds,nfds, 0,0,0,0, *now,0);
   }
   adns__consistency(ads,0,cc_entex);
+}
+
+int adns_wait_poll(adns_state ads,
+		   adns_query *query_io,
+		   adns_answer **answer_r,
+		   void **context_r) {
+  int r, nfds, to;
+  struct pollfd fds[MAX_POLLFDS];
+  
+  adns__consistency(ads,0,cc_entex);
+
+  for (;;) {
+    r= adns__internal_check(ads,query_io,answer_r,context_r);
+    if (r != EWOULDBLOCK) goto xit;
+    nfds= MAX_POLLFDS; to= -1;
+    adns_beforepoll(ads,fds,&nfds,&to,0);
+    r= poll(fds,nfds,to);
+    if (r == -1) {
+      if (errno == EINTR) {
+	if (ads->iflags & adns_if_eintr) { r= EINTR; goto xit; }
+      } else {
+	adns__diag(ads,-1,0,"poll failed in wait: %s",strerror(errno));
+	adns_globalsystemfailure(ads);
+      }
+    } else {
+      assert(r >= 0);
+      adns_afterpoll(ads,fds,nfds,0);
+    }
+  }
+
+ xit:
+  adns__consistency(ads,0,cc_entex);
+  return r;
 }
 
 #endif

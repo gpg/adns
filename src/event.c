@@ -540,10 +540,10 @@ void adns__autosys(adns_state ads, struct timeval now) {
   adns_processany(ads);
 }
 
-static int internal_check(adns_state ads,
-			  adns_query *query_io,
-			  adns_answer **answer,
-			  void **context_r) {
+int adns__internal_check(adns_state ads,
+			 adns_query *query_io,
+			 adns_answer **answer,
+			 void **context_r) {
   adns_query qu;
 
   qu= *query_io;
@@ -571,7 +571,7 @@ int adns_wait(adns_state ads,
   
   adns__consistency(ads,*query_io,cc_entex);
   for (;;) {
-    r= internal_check(ads,query_io,answer_r,context_r);
+    r= adns__internal_check(ads,query_io,answer_r,context_r);
     if (r != EWOULDBLOCK) break;
     maxfd= 0; tvp= 0;
     FD_ZERO(&readfds); FD_ZERO(&writefds); FD_ZERO(&exceptfds);
@@ -604,7 +604,7 @@ int adns_check(adns_state ads,
   r= gettimeofday(&now,0);
   if (!r) adns__autosys(ads,now);
 
-  r= internal_check(ads,query_io,answer_r,context_r);
+  r= adns__internal_check(ads,query_io,answer_r,context_r);
   adns__consistency(ads,0,cc_entex);
   return r;
 }

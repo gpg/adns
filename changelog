@@ -5,6 +5,7 @@ adns (0.5) unstable; urgency=medium
     Thanks to Tony Finch for the program and the performance figure.
   * New adnshost utility - currently only a usage message :-).
   * New internal consistency checking with assert if right options set.
+  * New adns_wait_poll function like adns_wait but uses poll, not select.
 
   Incompatible changes:
   * RRs with mailboxes never rejected due to strange chars if _raw.

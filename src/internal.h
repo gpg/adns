@@ -639,6 +639,10 @@ void adns__fdevents(adns_state ads,
 		    int maxfd, const fd_set *readfds,
 		    const fd_set *writefds, const fd_set *exceptfds,
 		    struct timeval now, int *r_r);
+int adns__internal_check(adns_state ads,
+			 adns_query *query_io,
+			 adns_answer **answer,
+			 void **context_r);
 
 /* From check.c: */
 

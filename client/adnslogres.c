@@ -31,6 +31,7 @@ static const char * const cvsid =
 #include <sys/types.h>
 #include <sys/time.h>
 
+#include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -45,6 +46,10 @@ static const char * const cvsid =
 /* maximum length of a line */
 #define MAXLINE 1024
 
+/* option flags */
+#define OPT_DEBUG 1
+#define OPT_POLL 2
+
 static const char *progname;
 
 static void aargh(const char *msg) {
@@ -56,19 +61,25 @@ static void aargh(const char *msg) {
 /*
  * Parse the IP address and convert to a reverse domain name.
  */
-static void ipaddr2domain(char *start, char **addr, char **rest, char **domain) {
+static char *ipaddr2domain(char *start, char **addr, char **rest) {
   static char buf[30]; /* "123.123.123.123.in-addr.arpa.\0" */
   char *ptrs[5];
   int i;
 
-  for (ptrs[0]= start; !isdigit(*ptrs[0]); ptrs[0]++)
-    if (!*ptrs[0])
-      goto invalid;
+  ptrs[0]= start;
+retry:
+  while (!isdigit(*ptrs[0]))
+    if (!*ptrs[0]++) {
+      strcpy(buf, "invalid.");
+      *addr= *rest= NULL;
+      return buf;
+    }
   for (i= 1; i < 5; i ++) {
     ptrs[i]= strchr(ptrs[i-1], (i == 4) ? ' ' : '.');
-    if (!ptrs[i] || ptrs[i]-ptrs[i-1] > 3)
-      goto invalid;
-    else
+    if (!ptrs[i] || ptrs[i]-ptrs[i-1] > 3) {
+      ptrs[0]++;
+      goto retry;
+    } else
       ptrs[i]++;
   }
   sprintf(buf, "%.*s.%.*s.%.*s.%.*s.in-addr.arpa.",
@@ -78,13 +89,7 @@ static void ipaddr2domain(char *start, char **addr, char **rest, char **domain) 
 	  ptrs[1]-ptrs[0]-1, ptrs[0]);
   *addr= ptrs[0];
   *rest= ptrs[4]-1;
-  *domain= buf;
-  return;
-invalid:
-  strcpy(buf, "invalid.");
-  *addr= *rest= NULL;
-  *domain= buf;
-  return;
+  return buf;
 }
 
 static void printline(char *start, char *addr, char *rest, char *domain) {
@@ -101,7 +106,7 @@ typedef struct logline {
   adns_query query;
 } logline;
 
-static logline *readline(adns_state adns) {
+static logline *readline(adns_state adns, int opts) {
   static char buf[MAXLINE];
   char *str;
   logline *line;
@@ -113,7 +118,9 @@ static logline *readline(adns_state adns) {
     line->next= NULL;
     line->start= str+sizeof(logline);
     strcpy(line->start, buf);
-    ipaddr2domain(line->start, &line->addr, &line->rest, &str);
+    str = ipaddr2domain(line->start, &line->addr, &line->rest);
+    if (opts & OPT_DEBUG)
+	fprintf(stderr, "%s: adns_submit %s\n", progname, str);
     if (adns_submit(adns, str, adns_r_ptr,
 		    adns_qf_quoteok_cname|adns_qf_cname_loose,
 		    NULL, &line->query))
@@ -125,19 +132,22 @@ static logline *readline(adns_state adns) {
   return NULL;
 }
 	
-static void proclog(void) {
+static void proclog(int opts) {
   int eof, err, len;
   adns_state adns;
   adns_answer *answer;
   logline *head, *tail, *line;
 
-  errno= adns_init(&adns, 0, 0);
+  errno= adns_init(&adns, (opts & OPT_DEBUG) ? adns_if_debug : 0, 0);
   if (errno) aargh("adns_init");
-  head= tail= readline(adns);
+  head= tail= readline(adns, opts);
   len= 1; eof= 0;
   while (head) {
     if (eof || len > MAXPENDING)
-      err= adns_wait(adns, &head->query, &answer, NULL);
+      if (opts & OPT_POLL)
+	err= adns_wait_poll(adns, &head->query, &answer, NULL);
+      else
+	err= adns_wait(adns, &head->query, &answer, NULL);
     else
       err= adns_check(adns, &head->query, &answer, NULL);
     if (err != EWOULDBLOCK) {
@@ -148,7 +158,7 @@ static void proclog(void) {
 	len--;
     }
     if (!eof) {
-      line= readline(adns);
+      line= readline(adns, opts);
       if (!line)
 	eof= 1;
       else {
@@ -165,8 +175,29 @@ static void proclog(void) {
 }
 
 int main(int argc, char *argv[]) {
+  int c, opts;
+
   progname= *argv;
-  proclog();
+  opts= 0;
+
+  while ((c= getopt(argc, argv, "dp")) != -1) {
+    switch (c) {
+    case 'd':
+      opts |= OPT_DEBUG;
+      break;
+    case 'p':
+      opts |= OPT_POLL;
+      break;
+    default:
+      fprintf(stderr, "usage: %s [-d] < logfile\n", progname);
+      exit(1);
+    }
+    argc-= optind;
+    argv+= optind;
+  }
+
+  proclog(opts);
+
   if (fclose(stdout)) aargh("finish writing output");
   return 0;
 }

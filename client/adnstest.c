@@ -279,23 +279,7 @@ int main(int argc, char *const *argv) {
     }
 
     if (strchr(owninitflags,'p')) {
-      for (;;) {
-	r= adns_check(ads,&qu,&ans,&mcr);
-	if (r != EWOULDBLOCK) break;
-	for (;;) {
-	  npollfds= npollfdsavail;
-	  timeout= -1;
-	  r= adns_beforepoll(ads, pollfds, &npollfds, &timeout, 0);
-	  if (r != ERANGE) break;
-	  pollfds= realloc(pollfds,sizeof(*pollfds)*npollfds);
-	  if (!pollfds) failure_errno("realloc pollfds",errno);
-	  npollfdsavail= npollfds;
-	}
-	if (r) failure_errno("beforepoll",r);
-	r= poll(pollfds,npollfds,timeout);
-	if (r == -1) failure_errno("poll",errno);
-	adns_afterpoll(ads,pollfds, r?npollfds:0, 0);
-      }
+      r= adns_wait_poll(ads,&qu,&ans,&mcr);
     } else {
       r= adns_wait(ads,&qu,&ans,&mcr);
     }
