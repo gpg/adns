@@ -1,4 +1,4 @@
-# src/Makefile - library main Makefile
+# src/adns.make - library definitions, including list of object files
 # 
 #  This file is part of adns, which is Copyright (C) 1997, 1998 Ian Jackson
 #  
@@ -16,17 +16,4 @@
 #  along with this program; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
 
-TARGETS=	libadns.a
-
-include ../settings.make
-include adns.make
-
-install:
-
-ALLOBJS=	$(LIBOBJS)
-
-libadns.a:	$(LIBOBJS)
-		rm -f $@
-		$(AR) cqsv $@ $(LIBOBJS)
-
-$(LIBOBJS):	adns.h internal.h
+LIBOBJS=	types.o event.o query.o reply.o general.o setup.o transmit.o parse.o

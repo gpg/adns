@@ -2,11 +2,38 @@
 # usage: r1test <testcasename>
 
 set -e
-tcn="$1"
-test -d ../testcases || cd testcases
+case="case-$1"
 
-exec <$tcn.log
+exec <"$case.sys"
 read initfile
 read queryargs
-initstring="`cat $initfile.init`"
-../hplayback "/$initstring" $queryargs
+
+initstring="`cat init-$initfile.text`"
+
+set +e
+ADNS_TEST_REPORT_FD=3 3>>"$case.report-o" >"$case.stdout-o" 2>"$case.stderr-o" \
+ ./hplayback "/$initstring" $queryargs
+rc=$?
+set -e
+
+if test $rc != 0
+then
+	egrep . -- "$case.report-o" "$case.stdout-o" "$case.stderr-o"
+	echo >&2 "FAILED $case - EXIT STATUS $rc"
+	exit 2
+fi
+
+for part in stdout stderr
+do
+	if diff -- "$case.$part" "$case.$part-o"
+	then
+		:
+	else
+		echo >&2 "FAILED $case - WRONG OUTPUT"
+		exit 2
+	fi
+done
+
+echo -n " $case "
+
+exit 0

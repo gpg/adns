@@ -1,4 +1,4 @@
-# src/Makefile - library main Makefile
+# dynamic/Makefile - dynamic library Makefile
 # 
 #  This file is part of adns, which is Copyright (C) 1997, 1998 Ian Jackson
 #  
@@ -16,17 +16,22 @@
 #  along with this program; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
 
-TARGETS=	libadns.a
+TARGETS=	$(LIBFILE)
 
 include ../settings.make
-include adns.make
+include ../src/adns.make
+
+ALLOBJS=	$(addsuffix _p.o, $(basename $(LIBOBJS)))
 
 install:
+		$(INSTALL_LIB) $(LIBFILE) $(lib_dir)
+		$(INSTALL_HDR) ../src/adns.h $(include_dir)
 
-ALLOBJS=	$(LIBOBJS)
-
-libadns.a:	$(LIBOBJS)
+$(LIBFILE):	$(ALLOBJS)
 		rm -f $@
-		$(AR) cqsv $@ $(LIBOBJS)
+		$(CC) -shared -Wxl,soname=libadns.so.$(MAJOR) -o $@ $(ALLOBJS) -lc
 
-$(LIBOBJS):	adns.h internal.h
+%_p.o:		../src/%.c ../src/adns.h ../src/internal.h
+		$(CC) -fpic -I../src -c -o $@ $<
+
+$(LIBOBJS):	

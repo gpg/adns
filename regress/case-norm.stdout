@@ -1,0 +1,4 @@
+adns debug: using nameserver 172.18.45.6
+chiark.greenend.org.uk type 1 A(-) submitted
+chiark.greenend.org.uk type A(-): OK; nrrs=1; cname=$
+ 195.224.76.132

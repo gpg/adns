@@ -2,15 +2,22 @@
 # usage: m1test <name> <initfile> <queryargs>
 
 set -e
-tcn="$1"
-initfile="$2"
+case="case-$1"; shift
+initfile="$1"; shift
 queryargs="$*"
-test -d ../testcases || cd testcases
 
-initstring="`cat $initfile.init`"
+initstring="`cat init-$initfile.text`"
 
-exec >$tcn.log
-echo "$initfile"
-echo "$queryargs"
+echo "$initfile" >"$case.sys"
+echo "$queryargs" >>"$case.sys"
 
-H../hrecord "/$initstring" $queryargs
+echo running "hrecord /... $queryargs"
+set +e
+ADNS_TEST_OUT_FD=3 3>>"$case.sys" >"$case.stdout" 2>"$case.stderr" </dev/null \
+ ./hrecord "/$initstring" $queryargs
+rc=$?
+set -e
+
+egrep . -- "$case.stderr" "$case.stdout"
+echo "exit status: $rc"
+exit $rc

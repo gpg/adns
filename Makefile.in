@@ -1,4 +1,4 @@
-# src/Makefile - library main Makefile
+# adnsMakefile - top-level Makefile
 # 
 #  This file is part of adns, which is Copyright (C) 1997, 1998 Ian Jackson
 #  
@@ -16,17 +16,19 @@
 #  along with this program; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
 
-TARGETS=	libadns.a
+SUBDIRS= src dynamic client regress
 
-include ../settings.make
-include adns.make
+all:
+	set -e; for d in $(SUBDIRS); do $(MAKE) -C $$d all; done
+
+check:	all
+	$(MAKE) -C regress check
 
 install:
+	set -e; for d in $(SUBDIRS); do $(MAKE) -C $$d install; done
 
-ALLOBJS=	$(LIBOBJS)
+clean:
+	set -e; for d in $(SUBDIRS); do $(MAKE) -C $$d clean; done
 
-libadns.a:	$(LIBOBJS)
-		rm -f $@
-		$(AR) cqsv $@ $(LIBOBJS)
-
-$(LIBOBJS):	adns.h internal.h
+distclean:
+	set -e; for d in $(SUBDIRS); do $(MAKE) -C $$d distclean; done

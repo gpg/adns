@@ -1,7 +1,7 @@
-dtest
 harness.h
 hcommon.c
 hrecord
 hrecord.c
 hplayback
 hplayback.c
+case-*.*-o
