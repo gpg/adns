@@ -1,5 +1,8 @@
 INSTALLATION INSTRUCTIONS for ADNS
 
+1. Read the security note below.
+
+2. Standard GNU package build process:
    $ ./configure
    $ make
    # make install
@@ -27,6 +30,27 @@ algorithm, like the glibc version does.  Simple binary trees may
 perform badly.
 
 You will probably find that GNU Make is required.
+
+
+SECURITY AND PERFORMANCE - AN IMPORTANT NOTE
+
+adns is not a full-service resolver.  It does no caching of responses
+at all, and has no defence against bad nameservers or fake packets
+which appear to come from your real nameservers.  It relies on the
+full-service resolvers listed in resolv.conf to handle these tasks.
+
+For secure and reasonable operation you MUST run a full-service
+nameserver on the same system as your adns applications, or on the
+same local, fully trusted network.  You MUST only list such
+nameservers in the adns configuration (eg resolv.conf).
+
+You MUST use a firewall or other means to block packets which appear
+to come from these nameservers, but which were actually sent by other,
+untrusted, entities.
+
+Furthermore, adns is not DNSSEC-aware in this version; it doesn't
+understand even how to ask a DNSSEC-aware nameserver to perform the
+DNSSEC cryptographic signature checking.
 
 
 COPYRIGHT

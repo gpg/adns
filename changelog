@@ -3,6 +3,7 @@ adns (0.8) BETA; urgency=low
   * Spurious `server failure on unidentifiable query' warning suppressed.
   * install-sh (from autoconf 2.12 Debian r13) included.
   * adnslogres: cast chars to unsigned char before using ctype.h macros.
+  * Security/performance note added, about local nameservers and DNSSEC.
 
  --
 
