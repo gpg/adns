@@ -280,14 +280,14 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
     if (cname_here) goto x_restartquery;
 
     /* Bloody hell, I thought we asked for recursion ? */
-    if (flg_rd) {
-      adns__diag(ads,serv,qu,"server thinks we didn't ask for recursive lookup");
-    }
     if (!flg_ra) {
       adns__diag(ads,serv,qu,"server is not willing to do recursive lookups for us");
       adns__query_fail(qu,adns_s_norecurse);
     } else {
-      adns__diag(ads,serv,qu,"server claims to do recursion, but gave us a referral");
+      if (!flg_rd)
+	adns__diag(ads,serv,qu,"server thinks we didn't ask for recursive lookup");
+      else
+	adns__diag(ads,serv,qu,"server claims to do recursion, but gave us a referral");
       adns__query_fail(qu,adns_s_invalidresponse);
     }
     return;

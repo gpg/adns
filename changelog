@@ -10,6 +10,7 @@ uadns (0.8) BETA; urgency=low
     act is zero.  This might possibly cause an infinite delay (ie, lockup)
     if things go badly wrong *and* a really unlikely race happens.
   * Test suite `lines of syscall left' value is correct; !0 is failure.
+  * If we get a referral, don't also always complain falsely about RD==0.
 
   Portability fixes:
   * install-sh (from autoconf 2.12 Debian r13) included.
