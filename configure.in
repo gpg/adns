@@ -31,6 +31,15 @@ AC_CHECK_FUNCS(poll)
 ADNS_C_GETFUNC(socket,socket)
 ADNS_C_GETFUNC(inet_ntoa,nsl)
 
+PROGS_IF_TSEARCH=adnsresfilter
+AC_SUBST(PROGS_HAVE_TSEARCH)
+AC_CHECK_FUNC(tsearch,[
+ PROGS_HAVE_TSEARCH=$PROGS_IF_TSEARCH
+],[
+ PROGS_HAVE_TSEARCH='';
+ AC_MSG_WARN([tsearch missing - not building client program(s) $PROGS_IF_TSEARCH])
+])
+
 AC_MSG_CHECKING(for INADDR_LOOPBACK)
 AC_CACHE_VAL(adns_cv_decl_inaddrloopback,[
  AC_TRY_COMPILE([
