@@ -136,7 +136,7 @@ typedef struct {
 } adns_addr;
 
 typedef struct {
-  char *dm;
+  char *host;
   adns_status astatus;
   int naddrs; /* temp fail => -1, perm fail => 0, s_ok => >0 */
   adns_addr *addrs;
@@ -148,7 +148,7 @@ typedef struct {
 
 typedef struct {
   int i;
-  adns_rr_hostaddr hostaddr;
+  adns_rr_hostaddr ha;
 } adns_rr_inthostaddr;
 
 typedef struct {

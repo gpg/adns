@@ -81,9 +81,11 @@ typedef union {
 } qcontext;
 
 typedef struct {
+  adns_state ads;
   adns_query qu;
+  int serv;
   const byte *dgram;
-  int serv, dglen, max, nsstart;
+  int dglen, nsstart, nscount, arcount;
 } parseinfo;
 
 typedef struct {
@@ -103,7 +105,7 @@ typedef struct {
    * and will not be null-terminated by convstring.
    */
 
-  adns_status (*parse)(const struct parseinfo *pai, int cbyte, void *store_r);
+  adns_status (*parse)(const parseinfo *pai, int cbyte, int max, void *store_r);
   /* Parse one RR, in dgram of length dglen, starting at cbyte and
    * extending until at most max.
    *
@@ -478,11 +480,11 @@ adns_status adns__findrr(adns_query qu, int serv,
  * If an error is returned then *type_r will be undefined too.
  */
 
-static adns_status findrr_anychk(adns_query qu, int serv,
-				 const byte *dgram, int dglen, int *cbyte_io,
-				 int *type_r, int *class_r, int *rdlen_r, int *rdstart_r,
-				 const byte *eo_dgram, int eo_dglen, int eo_cbyte,
-				 int *eo_matched_r);
+adns_status adns__findrr_anychk(adns_query qu, int serv,
+				const byte *dgram, int dglen, int *cbyte_io,
+				int *type_r, int *class_r, int *rdlen_r, int *rdstart_r,
+				const byte *eo_dgram, int eo_dglen, int eo_cbyte,
+				int *eo_matched_r);
 /* Like adns__findrr_checked, except that the datagram and
  * owner to compare with can be specified explicitly.
  *

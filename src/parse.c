@@ -146,11 +146,11 @@ adns_status adns__parse_domain(adns_state ads, int serv, adns_query qu,
   return adns_s_ok;
 }
 	
-static adns_status findrr_anychk(adns_query qu, int serv,
-				 const byte *dgram, int dglen, int *cbyte_io,
-				 int *type_r, int *class_r, int *rdlen_r, int *rdstart_r,
-				 const byte *eo_dgram, int eo_dglen, int eo_cbyte,
-				 int *eo_matched_r) {
+adns_status adns__findrr_anychk(adns_query qu, int serv,
+				const byte *dgram, int dglen, int *cbyte_io,
+				int *type_r, int *class_r, int *rdlen_r, int *rdstart_r,
+				const byte *eo_dgram, int eo_dglen, int eo_cbyte,
+				int *eo_matched_r) {
   findlabel_state fls, eo_fls;
   int cbyte;
   
@@ -209,21 +209,21 @@ adns_status adns__findrr(adns_query qu, int serv,
 			 int *type_r, int *class_r, int *rdlen_r, int *rdstart_r,
 			 int *ownermatchedquery_r) {
   if (!ownermatchedquery_r) {
-    return findrr_anychk(qu,serv,
-			 dgram,dglen,cbyte_io,
-			 type_r,class_r,rdlen_r,rdstart_r,
-			 0,0,0, 0);
+    return adns__findrr_anychk(qu,serv,
+			       dgram,dglen,cbyte_io,
+			       type_r,class_r,rdlen_r,rdstart_r,
+			       0,0,0, 0);
   } else if (!qu->cname_dgram) {
-    return findrr_anychk(qu,serv,
-			 dgram,dglen,cbyte_io,
-			 type_r,class_r,rdlen_r,rdstart_r,
-			 qu->query_dgram,qu->query_dglen,DNS_HDRSIZE,
-			 ownermatchedquery_r);
+    return adns__findrr_anychk(qu,serv,
+			       dgram,dglen,cbyte_io,
+			       type_r,class_r,rdlen_r,rdstart_r,
+			       qu->query_dgram,qu->query_dglen,DNS_HDRSIZE,
+			       ownermatchedquery_r);
   } else {
-    return findrr_anychk(qu,serv,
-			 dgram,dglen,cbyte_io,
-			 type_r,class_r,rdlen_r,rdstart_r,
-			 qu->cname_dgram,qu->cname_dglen,qu->cname_begin,
-			 ownermatchedquery_r);
+    return adns__findrr_anychk(qu,serv,
+			       dgram,dglen,cbyte_io,
+			       type_r,class_r,rdlen_r,rdstart_r,
+			       qu->cname_dgram,qu->cname_dglen,qu->cname_begin,
+			       ownermatchedquery_r);
   }
 }

@@ -211,16 +211,16 @@ static void free_query_allocs(adns_query qu) {
   adns__vbuf_free(&qu->vb);
 }
 
-void adns_cancel(adns_query query) {
+void adns_cancel(adns_query qu) {
   switch (qu->state) {
   case query_udp: case query_tcpwait: case query_tcpsent:
-    LIST_UNLINK(ads->timew,qu);
+    LIST_UNLINK(qu->ads->timew,qu);
     break;
   case query_child:
-    LIST_UNLINK(ads->childw,qu);
+    LIST_UNLINK(qu->ads->childw,qu);
     break;
   case query_done:
-    LIST_UNLINK(ads->output,qu);
+    LIST_UNLINK(qu->ads->output,qu);
     break;
   default:
     abort();

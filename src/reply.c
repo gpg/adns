@@ -39,6 +39,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
   adns_status st;
   vbuf tempvb;
   byte *newquery, *rrsdata;
+  parseinfo pai;
   
   if (dglen<DNS_HDRSIZE) {
     adns__diag(ads,serv,0,"received datagram too short for message header (%d)",dglen);
@@ -258,9 +259,17 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
   typei= qu->typei;
   cbyte= anstart;
   rrsdata= qu->answer->rrs.bytes;
-  
-  nrrs= 0;
-  for (rri=0; rri<ancount; rri++) {
+
+  pai.ads= qu->ads;
+  pai.qu= qu;
+  pai.serv= serv;
+  pai.dgram= dgram;
+  pai.dglen= dglen;
+  pai.nsstart= nsstart;
+  pai.nscount= nscount;
+  pai.arcount= arcount;
+
+  for (rri=0, nrrs=0; rri<ancount; rri++) {
     st= adns__findrr(qu,serv, dgram,dglen,&cbyte,
 		     &rrtype,&rrclass,&rdlength,&rdstart,
 		     &ownermatched);
@@ -269,8 +278,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
 	rrtype != (qu->typei->type & adns__rrt_typemask) ||
 	!ownermatched)
       continue;
-    st= typei->parse(qu,serv, dgram,dglen, rdstart,rdstart+rdlength,
-		     nsstart,&arstart, rrsdata+nrrs*typei->rrsz);
+    st= typei->parse(&pai, rdstart,rdstart+rdlength, rrsdata+nrrs*typei->rrsz);
     if (st) { adns__query_fail(qu,st); return; }
     if (rdstart==-1) goto x_truncated;
     nrrs++;
