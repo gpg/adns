@@ -1,8 +1,14 @@
 adns (0.3) unstable; urgency=low
 
+  Incompatible changes:
+  * Low adns_status values (below adns_s_max_tempfail) renumbered to make
+    room for future locally-induced and locally-detected errors.
+  * Event loop functions for use by select(2) renamed and tidied up.
+  
   Features / improvements:
   * New adns_errabbrev() for getting status abbreviation strings.
   * regress/checkall prints summary list of failed tests, if any.
+  * Event loop functions for poll(2), and some raw variants.
   
   Bugfixes:
   * Non-RFC822 mailbox `domain' formatting now works, and clarified.

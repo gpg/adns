@@ -32,6 +32,7 @@ typedef unsigned char byte;
 #include <assert.h>
 #include <unistd.h>
 #include <signal.h>
+#include <errno.h>
 
 #include <sys/time.h>
 
@@ -44,7 +45,6 @@ typedef unsigned char byte;
 #define UDPMAXRETRIES 15
 #define UDPRETRYMS 2000
 #define TCPMS 30000
-#define LOCALRESOURCEMS 20
 #define MAXTTLBELIEVE (7*86400) /* any TTL > 7 days is capped */
 
 #define DNS_PORT 53
@@ -55,6 +55,8 @@ typedef unsigned char byte;
 #define DNS_CLASS_IN 1
 
 #define DNS_INADDR_ARPA "in-addr", "arpa"
+
+#define MAX_POLLFDS  ADNS_POLLFDS_RECOMMENDED
 
 typedef enum {
   rcode_noerror,
@@ -269,6 +271,7 @@ struct adns__state {
   struct timeval tcptimeout;
   struct sigaction stdsigpipe;
   sigset_t stdsigmask;
+  struct pollfd pollfds_buf[MAX_POLLFDS];
   struct server {
     struct in_addr addr;
   } servers[MAXSERVERS];
@@ -598,10 +601,23 @@ int vbuf__append_quoted1035(vbuf *vb, const byte *buf, int len);
 /* From event.c: */
 
 void adns__tcp_broken(adns_state ads, const char *what, const char *why);
+void adns__tcp_closenext(adns_state ads);
 void adns__tcp_tryconnect(adns_state ads, struct timeval now);
 
 void adns__autosys(adns_state ads, struct timeval now);
 /* Make all the system calls we want to if the application wants us to. */
+
+void adns__must_gettimeofday(adns_state ads, const struct timeval **now_io,
+			     struct timeval *tv_buf);
+void adns__timeouts(adns_state ads, int act,
+		    struct timeval **tv_io, struct timeval *tvbuf,
+		    struct timeval now);
+int adns__pollfds(adns_state ads, struct pollfd pollfds_buf[MAX_POLLFDS]);
+void adns__fdevents(adns_state ads,
+		    const struct pollfd *pollfds, int npollfds,
+		    int maxfd, const fd_set *readfds,
+		    const fd_set *writefds, const fd_set *exceptfds,
+		    struct timeval now, int *r_r);
 
 /* Useful static inline functions: */
 
@@ -620,6 +636,8 @@ static inline int ctype_digit(int c) { return c>='0' && c<='9'; }
 static inline int ctype_alpha(int c) {
   return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }
+
+static inline int errno_resources(int e) { return e==ENOMEM || e==ENOBUFS; }
 
 /* Useful macros */
 
