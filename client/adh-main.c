@@ -43,9 +43,14 @@ void usageerr(const char *fmt, ...) {
   exit(11);
 }
 
+void outerr(void) {
+  sysfail("write to stdout",errno);
+}
+
 static void domain_do_arg(const char *domain) {
   if (ov_pipe) usageerr("-f/--pipe not consistent with domains on command line");
-  domain_do(domain);
+  ensure_adns_init();
+  query_do(domain);
 }
 
 void *xmalloc(size_t sz) {
@@ -65,9 +70,21 @@ char *xstrsave(const char *str) {
 
 void of_type(const struct optioninfo *oi, const char *arg) { abort(); }
 
+int rcode;
+
+void setnonblock(int fd, int nonblock) { }
+
+static void read_query(void) { abort(); }
+
 int main(int argc, const char *const *argv) {
   const char *arg;
   const struct optioninfo *oip;
+  struct timeval *tv, tvbuf;
+  adns_query qu;
+  void *qun_v;
+  adns_answer *answer;
+  int r, maxfd;
+  fd_set readfds, writefds, exceptfds;
   
   while ((arg= *++argv)) {
     if (arg[0] == '-') {
@@ -104,6 +121,37 @@ int main(int argc, const char *const *argv) {
       domain_do_arg(arg);
     }
   }
+
   if (!ov_pipe && !ads) usageerr("no domains given, and -f/--pipe not used; try --help");
-  abort();
+
+  for (;;) {
+    for (;;) {
+      qu= ov_asynch ? 0 : outstanding.head ? outstanding.head->qu : 0;
+      r= adns_check(ads,&qu,&answer,&qun_v);
+      if (r == EAGAIN) break;
+      if (r == ESRCH) { if (!ov_pipe) goto x_quit; else break; }
+      assert(!r);
+      query_done(qun_v,answer);
+    }
+    maxfd= 0;
+    FD_ZERO(&readfds);
+    FD_ZERO(&writefds);
+    FD_ZERO(&exceptfds);
+    if (ov_pipe) {
+      maxfd= 1;
+      FD_SET(0,&readfds);
+    }
+    tv= 0;
+    adns_beforeselect(ads, &maxfd, &readfds,&writefds,&exceptfds, &tv,&tvbuf,0);
+    r= select(maxfd, &readfds,&writefds,&exceptfds, tv);
+    if (r == -1) {
+      if (errno == EINTR) continue;
+      sysfail("select",errno);
+    }
+    adns_afterselect(ads, maxfd, &readfds,&writefds,&exceptfds, 0);
+    if (ov_pipe && FD_ISSET(0,&readfds)) read_query();
+  }
+x_quit:
+  if (fclose(stdout)) outerr();
+  exit(rcode);
 }

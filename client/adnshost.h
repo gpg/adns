@@ -33,6 +33,7 @@
 #include <errno.h>
 #include <signal.h>
 #include <stdarg.h>
+#include <stdlib.h>
 #include <assert.h>
 
 #include "config.h"
@@ -79,9 +80,19 @@ void opt_do(const struct optioninfo *oip, const char *arg);
 
 /* declarations related to query processing */
 
-extern adns_state ads;
+struct query_node {
+  struct query_node *next, *back;
+  struct perqueryflags_remember pqfr;
+  char *id;
+  adns_query qu;
+};
 
-void domain_do(const char *domain);
+extern adns_state ads;
+extern struct outstanding_list { struct query_node *head, *tail; } outstanding;
+
+void ensure_adns_init(void);
+void query_do(const char *domain);
+void query_done(struct query_node *qun, adns_answer *answer);
 
 void of_asynch_id(const struct optioninfo *oi, const char *arg);
 void of_cancel_id(const struct optioninfo *oi, const char *arg);
@@ -90,8 +101,12 @@ void of_cancel_id(const struct optioninfo *oi, const char *arg);
 
 void sysfail(const char *what, int errnoval) NONRETURNING;
 void usageerr(const char *what, ...) NONRETURNPRINTFFORMAT(1,2);
+void outerr(void) NONRETURNING;
+void setnonblock(int fd, int nonblock);
 
 void *xmalloc(size_t sz);
 char *xstrsave(const char *str);
+
+extern int rcode;
 
 #endif
