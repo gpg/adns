@@ -47,7 +47,7 @@ adns (0.5) unstable; urgency=high
   * Do not use $^ in make rules (should help with non-GNU make).
   * Declare flags parameters as ints not enums because C++ is crap.
 
- --
+ -- Ian Jackson <ian@davenant.greenend.org.uk>  Wed, 13 Oct 1999 02:24:35 +0100
 
 adns (0.4) unstable; urgency=high
 
