@@ -27,13 +27,24 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/poll.h>
+
+#include "adns.h"
+
+#include "config.h"
 
 #ifndef OUTPUTSTREAM
 # define OUTPUTSTREAM stdout
 #endif
 
-#include "adns.h"
+#ifndef HAVE_POLL
+#undef poll
+int poll(struct pollfd *ufds, int nfds, int timeout) {
+  fputs("poll(2) not supported on this system\n",stderr);
+  exit(3);
+}
+#define adns_beforepoll(a,b,c,d,e) 0
+#define adns_afterpoll(a,b,c,d) 0
+#endif
 
 static void failure_status(const char *what, adns_status st) {
   fprintf(stderr,"adns failure: %s: %s\n",what,adns_strerror(st));
