@@ -123,6 +123,12 @@ int adns__vbuf_append(vbuf *vb, const byte *data, int len) {
   return 1;
 }
 
+int adns__vbuf_appendstr(vbuf *vb, const char *data) {
+  int l;
+  l= strlen(data)+1;
+  return adns__vbuf_append(vb,data,l);
+}
+
 void adns__vbuf_free(vbuf *vb) {
   free(vb->buf);
   adns__vbuf_init(vb);

@@ -21,7 +21,7 @@ WARNS=	-Wall -Wmissing-prototypes -Wwrite-strings -Wstrict-prototypes \
 	-Wcast-qual -Wpointer-arith
 WERROR=-Werror
 
-LIBOBJS=	event.o query.o setup.o transmit.o general.o reply.o parse.o
+LIBOBJS=	event.o query.o setup.o transmit.o general.o reply.o parse.o types.o
 ALLOBJS=	$(LIBOBJS) dtest.o
 
 all:		dtest

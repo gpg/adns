@@ -22,7 +22,7 @@
 
 #include "internal.h"
 
-static adns_status rp_inaddr(adns_state ads, adns_query qu, int serv,
+static adns_status rp_inaddr(adns_query qu, int serv,
 			     const byte *dgram, int dglen, int cbyte, int max,
 			     void *store_r) {
   struct in_addr *dr= store_r;
@@ -32,10 +32,10 @@ static adns_status rp_inaddr(adns_state ads, adns_query qu, int serv,
   return adns_s_ok;
 }
 
-static adns_status rmf_null(adns_state ads, adns_query qu, void *data) { }
+static void rmf_null(adns_query qu, void *data) { }
 
-#define TYPE_SF(size,func,free)    size, rp_#func, rmf_#free
-#define TYPE_SN(size,func)         size, rp_#func, rmf_null
+#define TYPE_SF(size,func,free)    size, rp_##func, rmf_##free
+#define TYPE_SN(size,func)         size, rp_##func, rmf_null
 #define TYPESZ_M(member)           (sizeof(((adns_answer*)0)->rrs.member))
 #define TYPE_MF(member,parse)      TYPE_SF(TYPESZ_M(member),parse,member)
 #define TYPE_MN(member,parse)      TYPE_SN(TYPESZ_M(member),parse)
@@ -72,8 +72,8 @@ static const typeinfo typeinfos[] = {
 #endif
 };
 
-const typeinfo adns__findtype(adns_rrtype type) {
-  const typeinfo *begin, *end;
+const typeinfo *adns__findtype(adns_rrtype type) {
+  const typeinfo *begin, *end, *mid;
 
   begin= typeinfos;  end= typeinfos+(sizeof(typeinfos)/sizeof(typeinfo));
 

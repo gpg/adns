@@ -158,21 +158,29 @@ void adns_cancel(adns_query query) {
   abort(); /* fixme */
 }
 
-void *adns__alloc_interim(adns_query qu, size_t sz) {
+static void *alloc_common(adns_query qu, size_t sz) {
   allocnode *an;
 
   if (!sz) return qu; /* Any old pointer will do */
   assert(!qu->final_allocspace);
-  sz= MEM_ROUND(sz);
   an= malloc(MEM_ROUND(MEM_ROUND(sizeof(*an)) + sz));
   if (!an) {
     adns__query_fail(qu,adns_s_nolocalmem);
     return 0;
   }
-  qu->interim_allocd += sz;
   an->next= qu->allocations;
   qu->allocations= an;
   return (byte*)an + MEM_ROUND(sizeof(*an));
+}
+
+void *adns__alloc_interim(adns_query qu, size_t sz) {
+  sz= MEM_ROUND(sz);
+  qu->interim_allocd += sz;
+  return alloc_common(qu,sz);
+}
+
+void *adns__alloc_mine(adns_query qu, size_t sz) {
+  return alloc_common(qu,MEM_ROUND(sz));
 }
 
 void *adns__alloc_final(adns_query qu, size_t sz) {
