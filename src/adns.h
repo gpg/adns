@@ -1,11 +1,5 @@
 /*
- * Copyright (C)1998 Ian Jackson.
- * This version provided for review and comment only.
- *
- * $Id$
- */
-/*
- *  This file is part of adns, which is Copyright (C) 1997, 1998 Ian Jackson
+ *  This file is part of adns, which is Copyright (C) 1997-1999 Ian Jackson
  *  
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,7 +13,9 @@
  *  
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software Foundation,
- *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
+ *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ *
+ *  $Id$
  */
 
 #ifndef ADNS_H_INCLUDED
@@ -268,6 +264,10 @@ int adns_wait(adns_state ads,
 	      adns_query *query_io,
 	      adns_answer **answer_r,
 	      void **context_r);
+/* fixme: merge _check and _wait into one func with flags wait and `remove'(?) */
+/* fixme: include TTL in answer somehow */
+/* fixme: multithreading/locking */
+/* fixme: easy way to get lists of fd's */
 
 void adns_cancel(adns_query query);
 

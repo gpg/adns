@@ -2,7 +2,7 @@ m4_dnl hrecord.c.m4
 m4_dnl (part of complex test harness, not of the library)
 m4_dnl - recording routines
 
-m4_dnl  This file is part of adns, which is Copyright (C) 1997, 1998 Ian Jackson
+m4_dnl  This file is part of adns, which is Copyright (C) 1997-1999 Ian Jackson
 m4_dnl  
 m4_dnl  This program is free software; you can redistribute it and/or modify
 m4_dnl  it under the terms of the GNU General Public License as published by

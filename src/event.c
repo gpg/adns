@@ -5,7 +5,7 @@
  * - user-visible check/wait and event-loop-related functions
  */
 /*
- *  This file is part of adns, which is Copyright (C) 1997, 1998 Ian Jackson
+ *  This file is part of adns, which is Copyright (C) 1997-1999 Ian Jackson
  *  
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
