@@ -10,7 +10,7 @@ adns (0.2) experimental; urgency=low
   * Look for inet_aton and inet_ntoa (in -lnsl and -lsocket).
 
   Portability fixes to regression test:
-  * Regression test doesn't rely on value of O_NONBLOCK.
+  * Regression test doesn't rely on value of O_NONBLOCK and other flags.
 
   Other changes:
   * Added COPYING (copy of the GPL).
