@@ -22,6 +22,7 @@ adns (0.10) unstable; urgency=low
   * Cast a sizeof(...) in src/event.c to unsigned long before printing.
   * #include <sys/select.h> if it exists.
   * Regression tests work better if some syscalls are already macros.
+  * Add pre-generated versions of m4-generated files in regress/.
 
   Portability cleanups:
   * Add list of tested platforms in INSTALL file.
