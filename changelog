@@ -3,7 +3,7 @@ adns (0.6) unstable; urgency=high
   Core library bugfixes:
   * Do not fail assertion if _qf_owner, _qf_search, domain ends in `.'.
   * Avoid infinite timeouts, causing lockup, when they should be zero !
-  * TCP handling revamped (avoids recursive-invocation problems).
+  * TCP handling revamped (avoids undefined behaviour due to reentrancy).
   * Many memory leaks fixed.
 
   Test and client program bug and portability fixes:
@@ -13,6 +13,8 @@ adns (0.6) unstable; urgency=high
   * adnslogres: parsing and error checking improved (Tony Finch).
   * Regression tests can cope with zero-length reads.
   * Regression tests check for memory leaks.
+  * adnstest copes with empty query type list.
+  * adnstest uninitialised memory bug fixed.
 
   General improvements
   * New adns_if_logpid option (functionality suggested by Tony Finch).
