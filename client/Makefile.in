@@ -25,8 +25,10 @@ srcdir=		@srcdir@
 VPATH=		@srcdir@
 
 PROGRAMS=	adnstest adnslogres adnshost fanftest
+PROGRAMS_LOCAL=	fanftest
+
 TARG_INSTALL=	$(PROGRAMS)
-TARG_LOCAL=	$(addsuffix _s, $(PROGRAMS))
+TARG_LOCAL=	$(addsuffix _s, $(PROGRAMS) $(PROGRAMS_LOCAL))
 TARGETS=	$(TARG_LOCAL) $(TARG_INSTALL)
 include		$(srcdir)/../settings.make
 
