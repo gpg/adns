@@ -156,12 +156,11 @@ void adns__search_next(adns_state ads, adns_query qu, struct timeval now) {
     }
   }
 
+  qu->search_vb.used= qu->search_origlen;
   if (nextentry) {
     if (!adns__vbuf_append(&qu->search_vb,".",1) ||
 	!adns__vbuf_appendstr(&qu->search_vb,nextentry)) {
       stat= adns_s_nomemory; goto x_fail;
-    } else {
-      qu->search_vb.used= qu->search_origlen;
     }
   }
 
@@ -198,6 +197,8 @@ int adns_submit(adns_state ads,
   qu->ctx.callback= 0;
   memset(&qu->ctx.info,0,sizeof(qu->ctx.info));
 
+  *query_r= qu;
+
   ol= strlen(owner);
   if (!ol) { stat= adns_s_querydomaininvalid; goto x_adnsfail; }
   if (ol>DNS_MAXDOMAIN+1) { stat= adns_s_querydomaintoolong; goto x_adnsfail; }
@@ -210,14 +211,11 @@ int adns_submit(adns_state ads,
 
     for (ndots=0, p=owner; (p= strchr(p,'.')); p++, ndots++);
     qu->search_doneabs= (ndots >= ads->searchndots) ? -1 : 0;
-
     qu->search_origlen= ol;
-
     adns__search_next(ads,qu,now);
-    return 0;
+  } else {
+    query_simple(ads,qu, owner,ol, typei,flags, now);
   }
-
-  query_simple(ads,qu, owner,ol, typei,flags, now);
   return 0;
 
  x_adnsfail:
