@@ -34,7 +34,7 @@ int main(void) {
   r= adns_init(&ads,adns_if_debug|adns_if_noautosys,0);
   if (r) { perror("init"); exit(2); }
 
-  r= adns_submit(ads,"anarres.greenend.org.uk",adns_r_a,0,0,&qu);
+  r= adns_submit(ads,"anarres.relativity.greenend.org.uk",adns_r_a,0,0,&qu);
   if (r) { perror("submit"); exit(2); }
 
   r= adns_wait(ads,&qu,&ans,0);
