@@ -41,6 +41,7 @@
 #include "adns.h"
 #include "dlist.h"
 #include "tvarith.h"
+#include "client.h"
 
 #ifdef ADNS_REGRESS_TEST
 # include "hredirect.h"
@@ -92,8 +93,7 @@ static int nonblock(int fd, int isnonblock) {
   return 0;
 }
 
-static void quit(int exitstatus) NONRETURNING;
-static void quit(int exitstatus) {
+void quitnow(int exitstatus) {
   nonblock(0,0);
   nonblock(1,0);
   exit(exitstatus);
@@ -102,7 +102,7 @@ static void quit(int exitstatus) {
 static void sysfail(const char *what) NONRETURNING;
 static void sysfail(const char *what) {
   fprintf(stderr,"adnsresfilter: system call failed: %s: %s\n",what,strerror(errno));
-  quit(2);
+  quitnow(2);
 }
 
 static void *xmalloc(size_t sz) {
@@ -116,7 +116,7 @@ static void outputerr(void) { sysfail("write to stdout"); }
 
 static void usage(void) {
   if (printf("usage: adnsresfilter [<options ...>]\n"
-	     "       adnsresfilter  -h|--help\n"
+	     "       adnsresfilter  -h|--help | --version\n"
 	     "options: -t<milliseconds>|--timeout <milliseconds>\n"
 	     "         -w|--wait        (always wait for queries to time out or fail)\n"
 	     "         -b|--brackets    (require [...] around IP addresses)\n"
@@ -134,13 +134,13 @@ static void usageerr(const char *why) NONRETURNING;
 static void usageerr(const char *why) {
   fprintf(stderr,"adnsresfilter: bad usage: %s\n",why);
   usage();
-  quit(1);
+  quitnow(1);
 }
 
 static void adnsfail(const char *what, int e) NONRETURNING;
 static void adnsfail(const char *what, int e) {
   fprintf(stderr,"adnsresfilter: adns call failed: %s: %s\n",what,strerror(e));
-  quit(2);
+  quitnow(2);
 }
 
 static void settimeout(const char *arg) {
@@ -174,7 +174,9 @@ static void parseargs(const char *const *argv) {
       } else if (!strcmp(arg,"--debug")) {
 	initflags |= adns_if_debug;
       } else if (!strcmp(arg,"--help")) {
-	usage(); quit(0);
+	usage(); quitnow(0);
+      } else if (!strcmp(arg,"--version")) {
+	VERSION_PRINT_QUIT("adnsresfilter"); quitnow(0);
       } else {
 	usageerr("unknown long option");
       }
@@ -202,7 +204,7 @@ static void parseargs(const char *const *argv) {
 	  break;
 	case 'h':
 	  usage();
-	  quit(0);
+	  quitnow(0);
 	default:
 	  usageerr("unknown short option");
 	}

@@ -64,6 +64,8 @@ static const struct optioninfo global_options[]= {
   { ot_desconly, "other global options:" },
   { ot_funcarg,          "Configuration to use instead of /etc/resolv.conf",
     0, "config",           0,0, of_config, "<config-text>" },
+  { ot_func,             "Print version number",
+    0, "version",          0,0, of_version },
   { ot_func,             "Print usage information",
     0, "help",             0,0, of_help },
 
@@ -267,6 +269,10 @@ static void printusage(void) {
 	"Default is addr, or ptr for -i/--ptr queries\n",
 	stdout);
   if (ferror(stdout)) sysfail("write usage message",errno);
+}
+
+void of_version(const struct optioninfo *oi, const char *arg, const char *arg2) {
+  VERSION_PRINT_QUIT("adnshost");
 }
 
 void of_help(const struct optioninfo *oi, const char *arg, const char *arg2) {

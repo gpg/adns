@@ -46,6 +46,7 @@ static const char * const cvsid =
 
 #include "config.h"
 #include "adns.h"
+#include "client.h"
 
 #ifdef ADNS_REGRESS_TEST
 # include "hredirect.h"
@@ -219,8 +220,13 @@ static void proclog(FILE *inf, FILE *outf, int maxpending, int opts) {
 }
 
 static void printhelp(FILE *file) {
-  fprintf(file, "usage: %s [-d] [-p] [-c concurrency] [-C config] [logfile]\n",
-	  progname);
+  fputs("usage: adnslogres [<options>] [<logfile>]\n"
+	"       adnslogres --version|--help\n"
+	"options: -c <concurrency>  set max number of outstanding queries\n"
+	"         -p                use poll(2) instead of select(2)\n"
+	"         -d                turn on debugging\n"
+	"         -C <config>       use instead of contents of resolv.conf\n",
+	stdout);
 }
 
 static void usage(void) {
@@ -233,8 +239,14 @@ int main(int argc, char *argv[]) {
   extern char *optarg;
   FILE *inf;
 
-  if (argv[1] && !strcmp(argv[1],"--help")) {
-    printhelp(stdout);
+  if (argv[1] && !strncmp(argv[1],"--",2)) {
+    if (!strcmp(argv[1],"--help")) {
+      printhelp(stdout);
+    } else if (!strcmp(argv[1],"--version")) {
+      fputs(VERSION_MESSAGE("adnslogres"),stdout);
+    } else {
+      usage();
+    }
     if (ferror(stdout) || fclose(stdout)) { perror("stdout"); exit(1); }
     exit(0);
   }

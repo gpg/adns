@@ -10,7 +10,7 @@ adns (1.0); urgency=medium
   * adnshost, adnslogres, adnsresfilter have options for config override. 
   * adnsresfilter has --debug option.
   * Improvements to adnslogres (incl. new -c option) from Tony Finch.
-  * adnslogres has --help option.
+  * adnslogres has --help option, all utilities support --version.
   * Documentation improved somewhat, including new GPL-vs-LGPL file.
 
   Changes for non-BETA release:

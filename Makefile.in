@@ -21,7 +21,10 @@
 #  along with this program; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
 
+# Remember to change ADNS_VERSION_STRING in client/client.h too, and
+# possibly library soname (MAJOR and MINOR in settings.make.in).
 DISTVERSION=	pre-1.0-1
+
 srcdir=		@srcdir@
 VPATH=		@srcdir@
 
