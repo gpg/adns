@@ -19,12 +19,16 @@
 srcdir=		@srcdir@
 VPATH=		@srcdir@
 
-TARGETS=	adnstest
+TARG_LOCAL=	adnstest_s
+TARG_INSTALL=	adnstest
+TARGETS=	$(TARG_LOCAL) $(TARG_INSTALL)
 include		$(srcdir)/../settings.make
 
 DIRCFLAGS=	-I$(srcdir)/../src
 
-install:	$(TARGETS)
+all:		$(TARGETS)
+
+install:	$(TARG_INSTALL)
 		set -xe; for f in $(TARGETS); \
 			do $(INSTALL_PROGRAM) $$f $(bin_dir)/$$f; done
 
@@ -32,3 +36,6 @@ uninstall:
 		for f in $(TARGETS); do rm -f $(bin_dir)/$$f; done
 
 adnstest:	adnstest.o $(srcdir)/../dynamic/$(SHLIBFILE)
+
+adnstest_s:	adnstest.o $(srcdir)/../src/libadns.a
+		$(CC) $(LDFLAGS) $^ -o $@ $(LIBS)

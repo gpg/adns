@@ -67,14 +67,23 @@ static void dumptype(adns_status ri, const char *rrtn, const char *fmtn) {
 	  ri ? " " : "", ri ? adns_strerror(ri) : "");
 }
 
+static void fdom_split(const char *fdom, const char **dom_r, int *qf_r) {
+  int qf;
+  char *ep;
+
+  qf= strtoul(fdom,&ep,0);
+  if (*ep != '/') { *dom_r= fdom; *qf_r= 0; }
+  else { *dom_r= ep+1; *qf_r= qf; }
+}
+
 int main(int argc, char *const *argv) {
   adns_state ads;
   adns_query *qus, qu;
   adns_answer *ans;
   const char *initstring, *rrtn, *fmtn;
-  const char *const *domlist;
+  const char *const *fdomlist, *domain;
   char *show, *cp;
-  int len, i, qc, qi, tc, ti, ch;
+  int len, i, qc, qi, tc, ti, ch, qflags;
   adns_status r, ri;
   const adns_rrtype *types;
   struct timeval now;
@@ -108,10 +117,10 @@ int main(int argc, char *const *argv) {
     types= defaulttypes;
   }
   
-  if (argv[0] && argv[1]) domlist= (const char *const*)argv+1;
-  else domlist= defaultargv;
+  if (argv[0] && argv[1]) fdomlist= (const char *const*)argv+1;
+  else fdomlist= defaultargv;
 
-  for (qc=0; qc[domlist]; qc++);
+  for (qc=0; fdomlist[qc]; qc++);
   for (tc=0; types[tc] != adns_r_none; tc++);
   qus= malloc(sizeof(qus)*qc*tc);
   if (!qus) { perror("malloc qus"); exit(3); }
@@ -124,9 +133,10 @@ int main(int argc, char *const *argv) {
   if (r) failure("init",r);
 
   for (qi=0; qi<qc; qi++) {
+    fdom_split(fdomlist[qi],&domain,&qflags);
     for (ti=0; ti<tc; ti++) {
-      fprintf(stdout,"%s type %d",domlist[qi],types[ti]);
-      r= adns_submit(ads,domlist[qi],types[ti],0,0,&qus[qi*tc+ti]);
+      fprintf(stdout,"%s type %d flags %d",domain,types[ti],qflags);
+      r= adns_submit(ads,domain,types[ti],qflags,0,&qus[qi*tc+ti]);
       if (r == adns_s_unknownrrtype) {
 	fprintf(stdout," not implemented\n");
 	qus[qi*tc+ti]= 0;
@@ -142,19 +152,22 @@ int main(int argc, char *const *argv) {
   }
 
   for (qi=0; qi<qc; qi++) {
+    fdom_split(fdomlist[qi],&domain,&qflags);
+      
     for (ti=0; ti<tc; ti++) {
       qu= qus[qi*tc+ti];
       if (!qu) continue;
+      
       r= adns_wait(ads,&qu,&ans,0);
       if (r) failure("wait",r);
 
       if (gettimeofday(&now,0)) { perror("gettimeofday"); exit(3); }
       
       ri= adns_rr_info(ans->type, &rrtn,&fmtn,&len, 0,0);
-      fprintf(stdout, "%s type ", domlist[qi]);
+      fprintf(stdout, "%s type ",domain);
       dumptype(ri,rrtn,fmtn);
-      fprintf(stdout, ": %s; nrrs=%d; cname=%s; ttl=%ld\n",
-	      adns_strerror(ans->status),
+      fprintf(stdout, " flags %d: %s; nrrs=%d; cname=%s; ttl=%ld\n",
+	      qflags, adns_strerror(ans->status),
 	      ans->nrrs, ans->cname ? ans->cname : "$",
 	      (long)ans->expires - (long)now.tv_sec);
       if (ans->nrrs) {
