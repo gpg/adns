@@ -24,7 +24,7 @@
 srcdir=		@srcdir@
 VPATH=		@srcdir@
 
-PROGRAMS=	adnstest adnslogres adnshost
+PROGRAMS=	adnstest adnslogres adnshost fanftest
 TARG_INSTALL=	$(PROGRAMS)
 TARG_LOCAL=	$(addsuffix _s, $(PROGRAMS))
 TARGETS=	$(TARG_LOCAL) $(TARG_INSTALL)

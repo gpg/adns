@@ -4,6 +4,12 @@ adns (0.6) unstable; urgency=medium
   * Do not fail assertion if _qf_owner, _qf_search, domain ends in `.'.
   * Dynamic library building works properly.
   * adnshost prints somewhat better messages about some wrong usages.
+  * Include stdlib.h in adnshost.h.
+  * IP address parsing fixed in adnslogres (thanks Tony Finch).
+  * adnslogres has improved error checking (thanks Tony Finch).
+
+  General improvements
+  * New fanftest test program from Tony Finch.
 
  --
 
