@@ -1,6 +1,7 @@
 adns (0.10) unstable; urgency=low
 
   Bugfixes:
+  * Fix incorrect `compressed datagram contains loop' error.
   * Actually compile shared libraries by default !
 
   General Improvements:
