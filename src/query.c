@@ -346,7 +346,6 @@ static void cancel_children(adns_query qu) {
     ncqu= cqu->siblings.next;
     adns_cancel(cqu);
   }
-  LIST_INIT(qu->children);
 }
 
 void adns__reset_preserved(adns_query qu) {
@@ -371,6 +370,7 @@ void adns_cancel(adns_query qu) {
 
   ads= qu->ads;
   adns__consistency(ads,qu,cc_entex);
+  if (qu->parent) LIST_UNLINK_PART(qu->parent->children,qu,siblings.);
   switch (qu->state) {
   case query_tosend: case query_tcpwait: case query_tcpsent:
     LIST_UNLINK(ads->timew,qu);
@@ -474,8 +474,8 @@ void adns__query_done(adns_query qu) {
   } else {
     makefinal_query(qu);
     LIST_LINK_TAIL(qu->ads->output,qu);
+    qu->state= query_done;
   }
-  qu->state= query_done;
 }
 
 void adns__query_fail(adns_query qu, adns_status stat) {
