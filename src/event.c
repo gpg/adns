@@ -304,6 +304,7 @@ int adns__pollfds(adns_state ads, struct pollfd pollfds_buf[MAX_POLLFDS]) {
 
   switch (ads->tcpstate) {
   case server_disconnected:
+  case server_broken:
     return 1;
   case server_connecting:
     pollfds_buf[1].events= POLLOUT;
@@ -541,7 +542,7 @@ void adns_beforeselect(adns_state ads, int *maxfd_io, fd_set *readfds_io,
     /* The caller is planning to sleep. */
     adns__must_gettimeofday(ads,&now,&tv_nowbuf);
     if (!now) { inter_immed(tv_mod,tv_tobuf); goto xit; }
-    adns__timeouts(ads, 1, tv_mod,tv_tobuf, *now);
+    adns__timeouts(ads, 0, tv_mod,tv_tobuf, *now);
   }
 
   npollfds= adns__pollfds(ads,pollfds);

@@ -3,6 +3,8 @@ uadns (0.8) BETA; urgency=low
   * bug_if_query_done feature for debugging (SHOULD BE TAKEN OUT FOR RELEASE) 
 
   Bugfixes:
+  * Race near adns_beforeselect which could cause infinite timeout fixed
+    (it's now less agressive, and will more often return a zero timeout.)
   * Spurious `server failure on unidentifiable query' warning suppressed.
   * adnslogres: cast chars to unsigned char before using ctype.h macros.
   * In _beforeselect, global failure now means zero timeout, and in

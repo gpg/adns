@@ -663,9 +663,10 @@ void adns_beforeselect(adns_state ads, int *maxfd, fd_set *readfds,
  * for adns_firsttimeout.  readfds, writefds, exceptfds and maxfd_io may
  * not be 0.
  *
- * If now is not 0 then this will never actually do any I/O, or
- * change the fds that adns is using or the timeouts it wants.  In any
- * case it won't block.
+ * If now is not 0 then this will never actually do any I/O, or change
+ * the fds that adns is using or the timeouts it wants.  In any case
+ * it won't block, and it will set the timeout to zero if a query
+ * finishes in _beforeselect.
  */
 
 void adns_afterselect(adns_state ads, int maxfd, const fd_set *readfds,
