@@ -9,6 +9,9 @@ adns (0.10) unstable; urgency=low
   * adnshost, adnslogres, adnsresfilter have options for config override. 
   * adnsresfilter has --debug option.
   * Improvements to adnslogres (incl. new -c option) from Tony Finch.
+  * adnslogres has --help option.
+  * Documentation improved somewhat.
+  * Do not install adnstest test utility.
 
   Regression test improvements:
   * Tests now include adnshost, adnslogres and adnsresfilter.

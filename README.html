@@ -1,13 +1,10 @@
 <html><head><title>adns - advanced, alternative, asynchronous resolver</title>
 <!--
-  Note to GNU webmasters and others who might edit this page: This
-  file is maintained in GNU CVS, and also served on the author's own
-  system, under the URL http://www.chiark.greenend.org.uk/adns/
-  Please ensure that all links continine to be correct both for
-  www.gnu.org and chiark.
+  Note: this file is maintained in Ian Jackson's private CVS.
 
-  If you check in a change, please inform
-  webmaster@chiark.greenend.org.uk.
+  It is served on the GNU site and also from my own system, under the
+  URL http://www.chiark.greenend.org.uk/adns/ Please ensure that all
+  links continine to be correct both for www.gnu.org and chiark.
 
   $Id$
   -->   
@@ -21,9 +18,10 @@ library and utilities.</strong>
 
 <p>
 
-adns is a resolver library for C (and C++) programs.  In contrast with
-the existing interfaces, gethostbyname et al and libresolv, it has the
-following features:
+adns is a resolver library for C (and C++) programs, and a collection
+of useful DNS resolver utilities.  In contrast with the existing
+interfaces, gethostbyname et al and libresolv, it has the following
+features:
 
 <ul>
 
@@ -53,15 +51,17 @@ the various causes of failure properly.
 environment variables.
 
 <li>Flexibility.  For example, the application can tell adns to:
-ignore environment variables (for setuid programs), disable sanity
-checks eg to return arbitrary data, override or ignore resolv.conf in
-favour of supplied configuration, etc.
+ignore environment variables (for setuid programs), disable hostname
+syntax sanity checks to return arbitrary data, override or ignore
+resolv.conf in favour of supplied configuration, etc.
 
 <li>Believed to be correct !  For example, will correctly back off to
 TCP in case of long replies or queries, or to other nameservers if
 several are available.  It has sensible handling of bad responses etc.
 
 </ul>
+
+<h2>DNS utility programs</h2>
 
 adns also comes with a number of utility programs for use from the
 command line and in scripts:
@@ -77,50 +77,33 @@ unduly delaying the output.  For example, you can usefully pipe the
 output of netstat -n, tcpdump -ln, and the like, into it.
 
 <li><code>adnshost</code> is a general-purpose DNS lookup utility
-which can be used easily in shell scripts to do simple lookups.  In a
-more advanced mode it can be used as a general-purpose DNS helper
-program for scripting languages which can invoke and communicate with
-subprocesses.
+which can be used easily in from the command line and from shell
+scripts to do simple lookups.  In a more advanced mode it can be used
+as a general-purpose DNS helper program for scripting languages which
+can invoke and communicate with subprocesses.  See the
+<A href="http://www.chiark.greenend.org.uk/~ian/adns/usage/adnsresfilter_usage.text">usage
+message</A> for a summary of its capabilities.
 
 </ul>
 
-<h2>Forthcoming:</h2>
+<h2>Technical note</h2>
 
-A native Perl interface is in the works, thanks to Tony Finch.
-
-<p>
-
-I hope that future versions may also have the following features:
-
-<ul>
-
-<li>The library should be useable by threads in a multithreaded
-program in a natural way.  It should multiplex many threads' queries
-through a single query socket.
-
-<li>IPv6 support.
-
-<li>Some kind of awareness of DNSSEC.
-
-<li>Possibly some very limited caching behaviour.
-
-</ul>
-
-(Technical note: adns requires a real nameserver like
+adns requires a real nameserver like
 <A href="http://www.isc.org/view.cgi?/products/BIND/index.phtml">BIND</A>
 or
 <A href="http://www.dents.org/">Dents</A> running on
 the same system or a nearby one, which must be willing to provide
 `recursive service'.  I.e., adns is a `stub resolver'.  All properly
 configured UN*X and GNU systems will already have such nameserver(s);
-they are usually listed in /etc/resolv.conf.)
+they are usually listed in /etc/resolv.conf.
 
 <h2>Documentation</h2>
 
 I'm afraid there is no manual yet.  However, competent C programmers
 should be able to use the library based on the
 <A href="http://www.chiark.greenend.org.uk/~ian/adns/adns.h.txt">commented
-adns.h header file</A>.
+adns.h header file</A>, and the usage messages for the programs should
+be sufficient.
 
 <h2>Feedback</h2>
 

@@ -27,8 +27,8 @@ VPATH=		@srcdir@
 PROGS_SYSDEP=	@PROGS_HAVE_TSEARCH@
 ENABLE_DYNAMIC=	@ENABLE_DYNAMIC@
 
-PROGRAMS=	adnstest adnslogres adnshost $(PROGS_SYSDEP)
-PROGRAMS_LOCAL=	fanftest
+PROGRAMS=	adnslogres adnshost $(PROGS_SYSDEP)
+PROGRAMS_LOCAL=	fanftest adnstest
 PROGRAMS_ALL=	$(PROGRAMS) $(PROGRAMS_LOCAL)
 
 STATIC_LIB=	$(ADNSDIR)/libadns.a
@@ -80,4 +80,3 @@ adnsresfilter.o:	$(ADNSDIR)/tvarith.h
 
 %_s:		%.o $(STATIC_LIB)
 		$(CC) $(LDFLAGS) $< $(STATIC_LIB) -o $@ $(LDLIBS)
-
