@@ -39,6 +39,7 @@
 #include <arpa/inet.h>
 
 #include "internal.h"
+#include "tvarith.h"
 
 /* TCP connection management. */
 

@@ -32,6 +32,7 @@
 #include <sys/uio.h>
 
 #include "internal.h"
+#include "tvarith.h"
 
 #define MKQUERY_START(vb) (rqp= (vb)->buf+(vb)->used)
 #define MKQUERY_ADDB(b) *rqp++= (b)

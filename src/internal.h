@@ -677,16 +677,6 @@ void adns__consistency(adns_state ads, adns_query qu, consistency_checks cc);
 
 /* Useful static inline functions: */
 
-static inline void timevaladd(struct timeval *tv_io, long ms) {
-  struct timeval tmp;
-  assert(ms>=0);
-  tmp= *tv_io;
-  tmp.tv_usec += (ms%1000)*1000000;
-  tmp.tv_sec += ms/1000;
-  if (tmp.tv_usec >= 1000000) { tmp.tv_sec++; tmp.tv_usec -= 1000; }
-  *tv_io= tmp;
-}
-
 static inline int ctype_whitespace(int c) { return c==' ' || c=='\n' || c=='\t'; }
 static inline int ctype_digit(int c) { return c>='0' && c<='9'; }
 static inline int ctype_alpha(int c) {
