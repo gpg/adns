@@ -98,8 +98,15 @@ static int consistsof(const char *string, const char *accept) {
 }
 
 int main(int argc, char *const *argv) {
+  struct myctx {
+    adns_query qu;
+    int doneyet;
+  };
+  
   adns_state ads;
-  adns_query *qus, qu;
+  adns_query qu;
+  struct myctx *mcs, *mc;
+  void *mcr;
   adns_answer *ans;
   const char *initstring, *rrtn, *fmtn;
   const char *const *fdomlist, *domain;
@@ -173,8 +180,8 @@ int main(int argc, char *const *argv) {
 
   for (qc=0; fdomlist[qc]; qc++);
   for (tc=0; types[tc] != adns_r_none; tc++);
-  qus= malloc(sizeof(qus)*qc*tc);
-  if (!qus) { perror("malloc qus"); exit(3); }
+  mcs= malloc(sizeof(*mcs)*qc*tc);
+  if (!mcs) { perror("malloc mcs"); exit(3); }
 
   if (initstring) {
     r= adns_init_strcfg(&ads,
@@ -197,11 +204,15 @@ int main(int argc, char *const *argv) {
       exit(4);
     }
     for (ti=0; ti<tc; ti++) {
+      mc= &mcs[qi*tc+ti];
+      mc->doneyet= 0;
+
       fprintf(stdout,"%s flags %d type %d",domain,qflags,types[ti]);
-      r= adns_submit(ads,domain,types[ti],qflags,0,&qus[qi*tc+ti]);
+      r= adns_submit(ads,domain,types[ti],qflags,mc,&mc->qu);
       if (r == adns_s_unknownrrtype) {
 	fprintf(stdout," not implemented\n");
-	qus[qi*tc+ti]= 0;
+	mc->qu= 0;
+	mc->doneyet= 1;
       } else if (r) {
 	failure_errno("submit",r);
       } else {
@@ -215,14 +226,15 @@ int main(int argc, char *const *argv) {
 
   for (qi=0; qi<qc; qi++) {
     fdom_split(fdomlist[qi],&domain,&qflags,ownflags,sizeof(ownflags));
-      
+
     for (ti=0; ti<tc; ti++) {
-      qu= qus[qi*tc+ti];
-      if (!qu) continue;
+      mc= &mcs[qi*tc+ti];
+      if (mc->doneyet) continue;
+      qu= mc->qu;
 
       if (strchr(owninitflags,'p')) {
 	for (;;) {
-	  r= adns_check(ads,&qu,&ans,0);
+	  r= adns_check(ads,&qu,&ans,&mcr);
 	  if (r != EWOULDBLOCK) break;
 	  for (;;) {
 	    npollfds= npollfdsavail;
@@ -239,9 +251,11 @@ int main(int argc, char *const *argv) {
 	  adns_afterpoll(ads,pollfds, r?npollfds:0, 0);
 	}
       } else {
-	r= adns_wait(ads,&qu,&ans,0);
+	r= adns_wait(ads,&qu,&ans,&mcr);
       }
       if (r) failure_errno("wait/check",r);
+
+      assert(mcr==mc);
 
       if (gettimeofday(&now,0)) { perror("gettimeofday"); exit(3); }
       
@@ -270,7 +284,7 @@ int main(int argc, char *const *argv) {
     }
   }
 
-  free(qus);
+  free(mcs);
   adns_finish(ads);
   
   exit(0);

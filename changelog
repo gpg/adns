@@ -20,6 +20,7 @@ adns (0.3) unstable; urgency=low
   * In adnstest, don't print errno values as adns_status values.
  
   * Added TODO file.
+  * Made adnstest.c test context pointers.
 
  --
 
