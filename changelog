@@ -34,6 +34,7 @@ adns (0.5) unstable; urgency=medium
   * New comment in adns_processany and return 0 (not r which is 0).
   * Documentation of resolv.conf directives and options, and of environment
     variables understood, in adns.h
+  * Regression test scripts set EF_DISABLE_BANNER (for Electric Fence).
 
   Portability and build improvements:
   * Give install the '-c' flag (otherwise some delete the original !).

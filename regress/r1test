@@ -17,6 +17,9 @@ initstring="`cat init-$initfile.text`"
 
 rm -f $ocase.*
 
+EF_DISABLE_BANNER=1
+export EF_DISABLE_BANNER
+
 set +e
 ADNS_TEST_REPORT_FD=3 3>>"$ocase.report" >"$ocase.out" 2>"$ocase.err" \
  ./hplayback $initflags "/$initstring" $queryargs
