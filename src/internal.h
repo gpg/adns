@@ -213,7 +213,10 @@ struct adns__query {
    *  tcpsent timew   null   >=0  irrelevant     zero        any
    *				  
    *  child   childw  set    >=0  irrelevant     irrelevant  irrelevant
+   *  child   NONE    null   >=0  irrelevant     irrelevant  irrelevant
    *  done    output  null   -1   irrelevant     irrelevant  irrelevant
+   *
+   * Queries are only not on a queue when they are actually being processed.
    *
    *			      +------------------------+
    *             START -----> |      udp/NONE          |
@@ -378,6 +381,17 @@ adns_status adns__internal_submit(adns_state ads, adns_query *query_r,
  * succeeds or fails (if it succeeds, the vbuf is reused for qu->vb).
  *
  * *ctx is copied byte-for-byte into the query.
+ *
+ * When the child query is done, ctx->callback will be called.  The
+ * child will already have been taken off both the global list of
+ * queries in ads and the list of children in the parent.  The child
+ * will be freed when the callback returns.  The parent will have been
+ * taken off the global childw queue iff this is the last child for
+ * that parent.  If there is no error detected in the callback, then
+ * it should call adns__query_done if and only if there are no more
+ * children (by checking parent->children.head).  If an error is
+ * detected in the callback it should call adns__query_fail and any
+ * remaining children will automatically be cancelled.
  */
 
 void adns__search_next(adns_state ads, adns_query qu, struct timeval now);
