@@ -1,6 +1,7 @@
-adns (0.7) unstable; urgency=low
+adns (0.7) BETA; urgency=medium
 
   * README updated (from www home page).
+  * Better reporting of unexpected or weird replies from nameserver.
 
  --
 
