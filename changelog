@@ -10,6 +10,7 @@ adns (0.6) unstable; urgency=medium
 
   General improvements
   * New fanftest test program from Tony Finch.
+  * New adns_if_logpid option (functionality suggested by Tony Finch).
 
  --
 
