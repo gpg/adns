@@ -8,6 +8,8 @@ adns (0.2) experimental; urgency=low
   * Include <sys/times.h> in a few more files.
   * Include <unistd.h> and <sys/time.h> for select.
   * Look for inet_aton and inet_ntoa (in -lnsl and -lsocket).
+  
+  * Added COPYING (copy of the GPL).
 
  --
 
