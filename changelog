@@ -28,7 +28,7 @@ adns (0.9) unstable; urgency=high
   * Referrals with RD+RA set, or RCODE=Refused, don't generate warnings,
     just debug messages.  BIND does this kind of thing all the time.
 
- --
+ -- Ian Jackson <ian@davenant.greenend.org.uk>  Wed,  9 Aug 2000 16:59:28 +0100
 
 adns (0.8) BETA; urgency=medium
 
