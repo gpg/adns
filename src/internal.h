@@ -39,6 +39,7 @@ typedef unsigned char byte;
 #include <signal.h>
 #include <errno.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include <sys/time.h>
 
