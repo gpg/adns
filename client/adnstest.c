@@ -100,12 +100,13 @@ static int consistsof(const char *string, const char *accept) {
 int main(int argc, char *const *argv) {
   struct myctx {
     adns_query qu;
-    int doneyet;
+    int doneyet, found;
+    const char *fdom;
   };
   
   adns_state ads;
   adns_query qu;
-  struct myctx *mcs, *mc;
+  struct myctx *mcs, *mc, *mcw;
   void *mcr;
   adns_answer *ans;
   const char *initstring, *rrtn, *fmtn;
@@ -206,6 +207,7 @@ int main(int argc, char *const *argv) {
     for (ti=0; ti<tc; ti++) {
       mc= &mcs[qi*tc+ti];
       mc->doneyet= 0;
+      mc->fdom= fdomlist[qi];
 
       fprintf(stdout,"%s flags %d type %d",domain,qflags,types[ti]);
       r= adns_submit(ads,domain,types[ti],qflags,mc,&mc->qu);
@@ -224,13 +226,34 @@ int main(int argc, char *const *argv) {
     }
   }
 
-  for (qi=0; qi<qc; qi++) {
-    fdom_split(fdomlist[qi],&domain,&qflags,ownflags,sizeof(ownflags));
+  for (;;) {
+    for (qi=0; qi<qc; qi++) {
+      for (ti=0; ti<tc; ti++) {
+	mc= &mcs[qi*tc+ti];
+	mc->found= 0;
+      }
+    }
+    for (adns_forallqueries_begin(ads);
+	 (qu= adns_forallqueries_next(ads,&mcr));
+	 ) {
+      mc= mcr;
+      assert(qu == mc->qu);
+      assert(!mc->doneyet);
+      mc->found= 1;
+    }
+    mcw= 0;
+    for (qi=0; qi<qc; qi++) {
+      for (ti=0; ti<tc; ti++) {
+	mc= &mcs[qi*tc+ti];
+	if (mc->doneyet) continue;
+	assert(mc->found);
+	if (!mcw) mcw= mc;
+      }
+    }
+    if (!mcw) break;
 
-    for (ti=0; ti<tc; ti++) {
-      mc= &mcs[qi*tc+ti];
-      if (mc->doneyet) continue;
-      qu= mc->qu;
+    mc= mcw;
+    qu= mcw->qu;
 
       if (strchr(owninitflags,'p')) {
 	for (;;) {
@@ -256,6 +279,7 @@ int main(int argc, char *const *argv) {
       if (r) failure_errno("wait/check",r);
 
       assert(mcr==mc);
+      fdom_split(mc->fdom,&domain,&qflags,ownflags,sizeof(ownflags));
 
       if (gettimeofday(&now,0)) { perror("gettimeofday"); exit(3); }
       
@@ -281,7 +305,8 @@ int main(int argc, char *const *argv) {
 	}
       }
       free(ans);
-    }
+
+      mc->doneyet= 1;
   }
 
   free(mcs);
