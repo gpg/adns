@@ -441,6 +441,7 @@ static int init_begin(adns_state *ads_r, adns_initflags flags, FILE *diagfile) {
 
   ads->iflags= flags;
   ads->diagfile= diagfile;
+  ads->configerrno= 0;
   LIST_INIT(ads->timew);
   LIST_INIT(ads->childw);
   LIST_INIT(ads->output);
@@ -450,10 +451,10 @@ static int init_begin(adns_state *ads_r, adns_initflags flags, FILE *diagfile) {
   adns__vbuf_init(&ads->tcpsend);
   adns__vbuf_init(&ads->tcprecv);
   ads->nservers= ads->nsortlist= ads->nsearchlist= ads->tcpserver= 0;
-  ads->tcpstate= server_disconnected;
-  ads->searchlist= 0;
   ads->searchndots= 1;
+  ads->tcpstate= server_disconnected;
   timerclear(&ads->tcptimeout);
+  ads->searchlist= 0;
 
   *ads_r= ads;
   return 0;

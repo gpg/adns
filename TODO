@@ -1,6 +1,7 @@
 BUGS:
 * config.cache shipped !
 
+Easy way to make a reverse query.
 
 DNSSEC compatibility
  - be able to retreive KEY and SIG RRs

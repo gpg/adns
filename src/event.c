@@ -173,7 +173,7 @@ void adns__timeouts(adns_state ads, int act,
 
   for (qu= ads->timew.head; qu; qu= nqu) {
     nqu= qu->next;
-    if (timercmp(&now,&qu->timeout,<=)) {
+    if (!timercmp(&now,&qu->timeout,>)) {
       if (!tv_io) continue;
       inter_maxtoabs(tv_io,tvbuf,now,qu->timeout);
     } else {
