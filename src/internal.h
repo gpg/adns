@@ -479,7 +479,7 @@ void adns__query_fail(adns_query qu, adns_status stat);
 /* From reply.c: */
 
 void adns__procdgram(adns_state ads, const byte *dgram, int len,
-		     int serv, struct timeval now);
+		     int serv, int viatcp, struct timeval now);
 
 /* From types.c: */
 

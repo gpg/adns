@@ -26,7 +26,7 @@
 #include "internal.h"
     
 void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
-		     int serv, struct timeval now) {
+		     int serv, int viatcp, struct timeval now) {
   int cbyte, rrstart, wantedrrs, rri, foundsoa, foundns, cname_here;
   int id, f1, f2, qdcount, ancount, nscount, arcount;
   int flg_ra, flg_rd, flg_tc, flg_qr, opcode;
@@ -89,6 +89,12 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
 	       dgram+DNS_HDRSIZE,
 	       qu->query_dglen-DNS_HDRSIZE))
       continue;
+    if (viatcp) {
+      if (qu->state != query_tcpsent) continue;
+    } else {
+      if (qu->state != query_tosend) continue;
+      if (!(qu->udpsent & (1<<serv))) continue;
+    }
     break;
   }
   if (!qu) {

@@ -8,6 +8,7 @@ adns (0.4) unstable; urgency=low
   * Improvements to install instructions, TODO, etc.
   * Changed memory semantics of internal queries to fix bugs.
   * Restarting a TCP-using query doesn't abort.
+  * Only accept a reply from the subset of servers we sent the query.
 
  --
 

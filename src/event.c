@@ -251,7 +251,7 @@ int adns_processreadable(adns_state ads, int fd, const struct timeval *now) {
 	if (ads->tcprecv.used<skip+2+dgramlen) {
 	  want= 2+dgramlen;
 	} else {
-	  adns__procdgram(ads,ads->tcprecv.buf+skip+2,dgramlen,ads->tcpserver,*now);
+	  adns__procdgram(ads,ads->tcprecv.buf+skip+2,dgramlen,ads->tcpserver,1,*now);
 	  skip+= 2+dgramlen; continue;
 	}
       }
@@ -315,7 +315,7 @@ int adns_processreadable(adns_state ads, int fd, const struct timeval *now) {
 		   inet_ntoa(udpaddr.sin_addr));
 	continue;
       }
-      adns__procdgram(ads,udpbuf,r,serv,*now);
+      adns__procdgram(ads,udpbuf,r,serv,0,*now);
     }
   }
   return 0;

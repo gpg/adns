@@ -14,29 +14,27 @@ adns debug: using nameserver 172.18.45.6
 254.0.99.203.in-addr.arpa flags 292 type 65551 MX(+addr) submitted
 254.0.99.203.in-addr.arpa flags 292 type 131078 SOA(822) submitted
 254.0.99.203.in-addr.arpa flags 292 type 131089 RP(822) submitted
-254.0.99.203.in-addr.arpa flags 292 type RP(822): No such data; nrrs=0; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=86400
+254.0.99.203.in-addr.arpa flags 292 type A(-): No such data; nrrs=0; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=162
 254.0.99.203.in-addr.arpa flags 292 type NS(raw): No such data; nrrs=0; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=86400
 254.0.99.203.in-addr.arpa flags 292 type CNAME(-): No such data; nrrs=0; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=86400
-254.0.99.203.in-addr.arpa flags 292 type A(-): No such data; nrrs=0; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=86400
-adns debug: reply not found, id 311f, query owner 254.0.99.203.in-addr.arpa (NS=172.18.45.6)
-adns debug: reply not found, id 311f, query owner 254.0.99.203.in-addr.arpa (NS=172.18.45.6)
-254.0.99.203.in-addr.arpa flags 292 type TXT(-): No such data; nrrs=0; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=86400
-254.0.99.203.in-addr.arpa flags 292 type SOA(822): No such data; nrrs=0; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=86400
-254.0.99.203.in-addr.arpa flags 292 type A(addr): No such data; nrrs=0; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=86400
-adns debug: reply not found, id 312d, query owner 254.0.99.203.in-addr.arpa (NS=172.18.45.6)
-adns debug: reply not found, id 3126, query owner 254.0.99.203.in-addr.arpa (NS=172.18.45.6)
-254.0.99.203.in-addr.arpa flags 292 type RP(raw): No such data; nrrs=0; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=600
-adns debug: reply not found, id 3128, query owner 254.0.99.203.in-addr.arpa (NS=172.18.45.6)
-254.0.99.203.in-addr.arpa flags 292 type NS(+addr): No such data; nrrs=0; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=600
-adns debug: reply not found, id 312c, query owner 254.0.99.203.in-addr.arpa (NS=172.18.45.6)
-adns debug: reply not found, id 3127, query owner 254.0.99.203.in-addr.arpa (NS=172.18.45.6)
 254.0.99.203.in-addr.arpa flags 292 type HINFO(-): No such data; nrrs=0; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=86400
+254.0.99.203.in-addr.arpa flags 292 type A(addr): No such data; nrrs=0; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=162
+254.0.99.203.in-addr.arpa flags 292 type TXT(-): No such data; nrrs=0; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=162
 254.0.99.203.in-addr.arpa flags 292 type SOA(raw): No such data; nrrs=0; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=86400
-254.0.99.203.in-addr.arpa flags 292 type MX(+addr): No such data; nrrs=0; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=86400
-254.0.99.203.in-addr.arpa flags 292 type MX(raw): No such data; nrrs=0; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=599
-adns debug: reply not found, id 3124, query owner 254.0.99.203.in-addr.arpa (NS=172.18.45.6)
+254.0.99.203.in-addr.arpa flags 292 type MX(raw): No such data; nrrs=0; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=86400
+adns debug: reply not found, id 3129, query owner 254.0.99.203.in-addr.arpa (NS=172.18.45.6)
+254.0.99.203.in-addr.arpa flags 292 type NS(+addr): No such data; nrrs=0; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=600
+254.0.99.203.in-addr.arpa flags 292 type MX(+addr): No such data; nrrs=0; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=600
+254.0.99.203.in-addr.arpa flags 292 type SOA(822): No such data; nrrs=0; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=600
+adns debug: reply not found, id 312b, query owner 254.0.99.203.in-addr.arpa (NS=172.18.45.6)
+adns debug: reply not found, id 312c, query owner 254.0.99.203.in-addr.arpa (NS=172.18.45.6)
+254.0.99.203.in-addr.arpa flags 292 type RP(822): No such data; nrrs=0; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=86400
+adns debug: reply not found, id 312d, query owner 254.0.99.203.in-addr.arpa (NS=172.18.45.6)
+254.0.99.203.in-addr.arpa flags 292 type RP(raw): No such data; nrrs=0; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=598
 adns debug: TCP connected (NS=172.18.45.6)
-254.0.99.203.in-addr.arpa flags 292 type PTR(raw): OK; nrrs=94; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=86398
+adns debug: reply via udp from unexpected server, state 2, expected 1 (NS=172.18.45.6)
+adns debug: reply not found, id 312a, query owner 254.0.99.203.in-addr.arpa (NS=172.18.45.6)
+254.0.99.203.in-addr.arpa flags 292 type PTR(raw): OK; nrrs=94; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=20169
  "ns.security.co.nz"
  "tetra.co.nz"
  "mail.agate.co.nz"
@@ -131,7 +129,5 @@ adns debug: TCP connected (NS=172.18.45.6)
  "ns.asis.org.nz"
  "ns.bouquets.co.nz"
  "agate.co.nz"
-adns debug: reply not found, id 3123, query owner 254.0.99.203.in-addr.arpa (NS=172.18.45.6)
-adns debug: reply not found, id 3129, query owner 254.0.99.203.in-addr.arpa (NS=172.18.45.6)
-254.0.99.203.in-addr.arpa flags 292 type PTR(checked): Inconsistent resource records in DNS; nrrs=0; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=86396
+254.0.99.203.in-addr.arpa flags 292 type PTR(checked): Inconsistent resource records in DNS; nrrs=0; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=20167
 rc=0
