@@ -74,6 +74,23 @@ static void configparseerr(adns_state ads, const char *fn, int lno,
   fputc('\n',ads->diagfile);
 }
 
+static int nextword(const char **bufp_io, const char **word_r, int *l_r) {
+  const char *p, *q;
+
+  p= *bufp_io;
+  while (ctype_whitespace(*p)) p++;
+  if (!*p) return 0;
+
+  q= p;
+  while (*q && !ctype_whitespace(*q)) q++;
+
+  *l_r= q-p;
+  *word_r= p;
+  *bufp_io= q;
+
+  return 1;
+}
+
 static void ccf_nameserver(adns_state ads, const char *fn, int lno, const char *buf) {
   struct in_addr ia;
   
@@ -86,42 +103,57 @@ static void ccf_nameserver(adns_state ads, const char *fn, int lno, const char *
 }
 
 static void ccf_search(adns_state ads, const char *fn, int lno, const char *buf) {
+  const char *bufp, *word;
+  char *newchars, **newptrs, **pp;
+  int count, tl, l;
+
   if (!buf) return;
-  adns__diag(ads,-1,0,"warning - `search' ignored fixme");
+
+  bufp= buf;
+  count= 0;
+  tl= 0;
+  while (nextword(&bufp,&word,&l)) { count++; tl += l+1; }
+
+  newptrs= malloc(sizeof(char*)*count);  if (!newptrs) { saveerr(ads,errno); return; }
+  newchars= malloc(tl);  if (!newchars) { saveerr(ads,errno); free(newptrs); return; }
+
+  bufp= buf;
+  pp= newptrs;
+  while (nextword(&bufp,&word,&l)) {
+    *pp++= newchars;
+    memcpy(newchars,word,l);
+    newchars += l;
+    *newchars++ = 0;
+  }
+
+  free(ads->searchlist);
+  ads->nsearchlist= count;
+  ads->searchlist= newptrs;
+  /* fixme: actually pay attention */
 }
 
-static void ccf_sortlist(adns_state ads, const char *fn, int lno, const char *bufp) {
-  const char *p, *q;
+static void ccf_sortlist(adns_state ads, const char *fn, int lno, const char *buf) {
+  const char *word;
   char tbuf[200], *slash, *ep;
   struct in_addr base, mask;
   int l;
   unsigned long initial, baselocal;
 
+  if (!buf) return;
+  
   ads->nsortlist= 0;
-  if (!bufp) return;
-
-  for (;;) {
-    while (ctype_whitespace(*bufp)) bufp++;
-    if (!*bufp) return;
-
-    q= bufp;
-    while (*q && !ctype_whitespace(*q)) q++;
-
-    p= bufp;
-    l= q-p;
-    bufp= q;
-
+  while (nextword(&buf,&word,&l)) {
     if (ads->nsortlist >= MAXSORTLIST) {
-      adns__diag(ads,-1,0,"too many sortlist entries, ignoring %.*s onwards",l,p);
+      adns__diag(ads,-1,0,"too many sortlist entries, ignoring %.*s onwards",l,word);
       return;
     }
 
     if (l >= sizeof(tbuf)) {
-      configparseerr(ads,fn,lno,"sortlist entry `%.*s' too long",l,p);
+      configparseerr(ads,fn,lno,"sortlist entry `%.*s' too long",l,word);
       continue;
     }
     
-    memcpy(tbuf,p,l);
+    memcpy(tbuf,word,l);
     slash= strchr(tbuf,'/');
     if (slash) *slash++= 0;
     
@@ -393,8 +425,9 @@ static int init_begin(adns_state *ads_r, adns_initflags flags, FILE *diagfile) {
   ads->udpsocket= ads->tcpsocket= -1;
   adns__vbuf_init(&ads->tcpsend);
   adns__vbuf_init(&ads->tcprecv);
-  ads->nservers= ads->nsortlist= ads->tcpserver= 0;
+  ads->nservers= ads->nsortlist= ads->nsearchlist= ads->tcpserver= 0;
   ads->tcpstate= server_disconnected;
+  ads->searchlist= 0;
   timerclear(&ads->tcptimeout);
 
   *ads_r= ads;
@@ -429,6 +462,14 @@ static int init_finish(adns_state ads) {
   return r;
 }
 
+static void init_abort(adns_state ads) {
+  if (ads->nsearchlist) {
+    free(ads->searchlist[0]);
+    free(ads->searchlist);
+  }
+  free(ads);
+}
+
 int adns_init(adns_state *ads_r, adns_initflags flags, FILE *diagfile) {
   adns_state ads;
   const char *res_options, *adns_res_options;
@@ -455,6 +496,12 @@ int adns_init(adns_state *ads_r, adns_initflags flags, FILE *diagfile) {
   ccf_search(ads,"LOCALDOMAIN",-1,instrum_getenv(ads,"LOCALDOMAIN"));
   ccf_search(ads,"ADNS_LOCALDOMAIN",-1,instrum_getenv(ads,"ADNS_LOCALDOMAIN"));
 
+  if (ads->configerrno && ads->configerrno != EINVAL) {
+    r= ads->configerrno;
+    init_abort(ads);
+    return r;
+  }
+
   r= init_finish(ads);
   if (r) return r;
 
@@ -472,7 +519,7 @@ int adns_init_strcfg(adns_state *ads_r, adns_initflags flags,
   readconfigtext(ads,configtext,"<supplied configuration text>");
   if (ads->configerrno) {
     r= ads->configerrno;
-    free(ads);
+    init_abort(ads);
     return r;
   }
 

@@ -113,7 +113,7 @@ int adns_submit(adns_state ads,
 		adns_query *query_r) {
   qcontext ctx;
   int id, r, ol;
-  vbuf vb;
+  vbuf vb, search_vb;
   adns_status stat;
   const typeinfo *typei;
   struct timeval now;
@@ -131,9 +131,9 @@ int adns_submit(adns_state ads,
   adns__vbuf_init(&vb);
 
   ol= strlen(owner);
-  if (ol<=1 || ol>DNS_MAXDOMAIN+1) { stat= adns_s_querydomaintoolong; goto xit; }
+  if (ol>DNS_MAXDOMAIN+1) { stat= adns_s_querydomaintoolong; goto xit; }
 				 
-  if (owner[ol-1]=='.' && owner[ol-2]!='\\') { flags &= ~adns_qf_search; ol--; }
+  if (ol>=2 && owner[ol-1]=='.' && owner[ol-2]!='\\') { flags &= ~adns_qf_search; ol--; }
 
   stat= adns__mkquery(ads,&vb,&id, owner,ol, typei,flags);
 			

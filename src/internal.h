@@ -178,6 +178,18 @@ struct adns__query {
   byte *cname_dgram;
   int cname_dglen, cname_begin;
   /* If non-0, has been allocated using . */
+
+  vbuf search_vb;
+  int search_origlen, search_pos, search_doneabs;
+  /* Used by the searching algorithm.  The query domain in textual form
+   * is copied into the vbuf, and _origlen set to its length.  Then
+   * we walk the searchlist, if we want to.  _pos says where we are
+   * (next entry to try), and _doneabs says whether we've done the
+   * absolute query yet.  If flags doesn't have adns_qf_search then
+   * the vbuf is initialised but empty and everything else is zero.
+   *
+   * fixme: actually implement this!
+   */
   
   int id, flags, udpretries;
   int udpnextserver;
@@ -247,7 +259,7 @@ struct adns__state {
   struct { adns_query head, tail; } timew, childw, output;
   int nextid, udpsocket, tcpsocket;
   vbuf tcpsend, tcprecv;
-  int nservers, nsortlist, tcpserver;
+  int nservers, nsortlist, nsearchlist, tcpserver;
   enum adns__tcpstate { server_disconnected, server_connecting, server_ok } tcpstate;
   struct timeval tcptimeout;
   struct sigaction stdsigpipe;
@@ -258,6 +270,7 @@ struct adns__state {
   struct sortlist {
     struct in_addr base, mask;
   } sortlist[MAXSORTLIST];
+  char **searchlist;
 };
 
 /* From setup.c: */
