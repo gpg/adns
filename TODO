@@ -1,6 +1,3 @@
-BUGS:
-* config.cache shipped !
-
 WISHLIST:
 * Easy way to make a reverse query.
 * `fake' reverse queries (give nnn.nnn.nnn.nnn either always or on error)

@@ -40,7 +40,7 @@ install-strip:
 	$(MAKE) INSTALL_PROGRAM_FLAGS=-s
 
 dist_tmp=dist_tmp/adns-$(DISTVERSION)
-dist:			distprep
+dist:			distclean distprep
 	rm -rf dist_tmp*
 	mkdir dist_tmp $(dist_tmp)
 	find \( -name CVS -o -name dist_tmp* \) -prune -o -type d -print | \
