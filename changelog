@@ -1,3 +1,9 @@
+adns (0.7) unstable; urgency=low
+
+  * README updated (from www home page).
+
+ --
+
 adns (0.6) BETA; urgency=high
 
   Core library bugfixes:
