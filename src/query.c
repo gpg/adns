@@ -210,9 +210,19 @@ void *adns__alloc_final(adns_query qu, size_t sz) {
   return rp;
 }
 
+static void cancel_children(adns_query qu) {
+  adns_query cqu, ncqu;
+
+  for (cqu= qu->children.head; cqu; cqu= ncqu) {
+    ncqu= cqu->siblings.next;
+    adns_cancel(cqu);
+  }
+  LIST_INIT(qu->children);
+}
+
 void adns__reset_cnameonly(adns_query qu) {
-  /* fixme: cancel children */
   assert(!qu->final_allocspace);
+  cancel_children(qu);
   qu->answer->nrrs= 0;
   qu->answer->rrs= 0;
   qu->interim_allocd= qu->answer->cname ? MEM_ROUND(strlen(qu->answer->cname)+1) : 0;
@@ -220,12 +230,8 @@ void adns__reset_cnameonly(adns_query qu) {
 
 static void free_query_allocs(adns_query qu) {
   allocnode *an, *ann;
-  adns_query cqu, ncqu;
 
-  for (cqu= qu->children.head; cqu; cqu= ncqu) {
-    ncqu= cqu->siblings.next;
-    adns_cancel(cqu);
-  }
+  cancel_children(qu);
   for (an= qu->allocations.head; an; an= ann) { ann= an->next; free(an); }
   adns__vbuf_free(&qu->vb);
 }

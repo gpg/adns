@@ -38,14 +38,21 @@ static const adns_rrtype defaulttypes[]= {
   adns_r_a,
   adns_r_ns_raw,
   adns_r_cname,
+  adns_r_soa_raw,
   adns_r_ptr_raw,
+  adns_r_hinfo,
   adns_r_mx_raw,
   adns_r_txt,
   adns_r_rp_raw,
+  
   adns_r_addr,
   adns_r_ns,
-  adns_r_mx,
   adns_r_ptr,
+  adns_r_mx,
+  
+  adns_r_soa,
+  adns_r_rp,
+
   adns_r_none
 };
 
@@ -143,5 +150,7 @@ int main(int argc, char *const *argv) {
   }
 
   free(qus);
+  adns_finish(ads);
+  
   exit(0);
 }

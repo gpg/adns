@@ -31,7 +31,7 @@ int vbuf__append_quoted1035(vbuf *vb, const byte *buf, int len) {
     for (i=0; i<len; i++) {
       ch= buf[i];
       if (ch == '.' || ch == '"' || ch == '(' || ch == ')' ||
-	  ch == '@' || ch == ';' || ch == '$') {
+	  ch == '@' || ch == ';' || ch == '$' || ch == '\\') {
 	sprintf(qbuf,"\\%c",ch);
 	break;
       } else if (ch <= ' ' || ch >= 127) {
@@ -41,7 +41,9 @@ int vbuf__append_quoted1035(vbuf *vb, const byte *buf, int len) {
     }
     if (!adns__vbuf_append(vb,buf,i) || !adns__vbuf_append(vb,qbuf,strlen(qbuf)))
       return 0;
-    buf+= i; len-= i;
+    if (i<len) i++;
+    buf+= i;
+    len-= i;
   }
   return 1;
 }

@@ -248,6 +248,16 @@ int adns_init(adns_state *ads_r, adns_initflags flags, FILE *diagfile) {
   return r;
 }
 
-int adns_finish(adns_state ads) {
-  abort(); /* fixme */
+void adns_finish(adns_state ads) {
+  for (;;) {
+    if (ads->timew.head) adns_cancel(ads->timew.head);
+    else if (ads->childw.head) adns_cancel(ads->childw.head);
+    else if (ads->output.head) adns_cancel(ads->output.head);
+    else break;
+  }
+  close(ads->udpsocket);
+  if (ads->tcpsocket >= 0) close(ads->tcpsocket);
+  adns__vbuf_free(&ads->tcpsend);
+  adns__vbuf_free(&ads->tcprecv);
+  free(ads);
 }

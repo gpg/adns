@@ -143,7 +143,7 @@ typedef struct {
 } adns_rr_hostaddr;
 
 typedef struct {
-  char *a, *b;
+  char *(array[2]);
 } adns_rr_strpair;
 
 typedef struct {
@@ -162,7 +162,11 @@ typedef struct {
 } adns_rr_intstr;
 
 typedef struct {
-  char *ns0, *rp;
+  adns_rr_intstr array[2];
+} adns_rr_intstrpair;
+
+typedef struct {
+  char *mname, *rname;
   unsigned long serial, refresh, retry, expire, minimum;
 } adns_rr_soa;
 
@@ -179,7 +183,8 @@ typedef struct {
     adns_rr_addr *addr;               /* addr */
     struct in_addr *inaddr;           /* a */
     adns_rr_hostaddr *hostaddr;       /* ns */
-    adns_rr_strpair *strpair;         /* hinfo ??fixme, rp, rp_raw */
+    adns_rr_intstrpair *intstrpair;   /* hinfo */
+    adns_rr_strpair *strpair;         /* rp, rp_raw */
     adns_rr_inthostaddr *inthostaddr; /* mx */
     adns_rr_intstr *intstr;           /* mx_raw */
     adns_rr_soa *soa;                 /* soa, soa_raw */
@@ -242,7 +247,7 @@ int adns_wait(adns_state ads,
 
 void adns_cancel(adns_query query);
 
-int adns_finish(adns_state);
+void adns_finish(adns_state);
 /* You may call this even if you have queries outstanding;
  * they will be cancelled.
  */
