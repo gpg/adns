@@ -20,4 +20,10 @@ set -e
 
 egrep . -- "$case.stderr" "$case.stdout"
 echo "exit status: $rc"
+
+if test $rc = 0
+then
+	echo "test created ok"
+fi
+
 exit $rc

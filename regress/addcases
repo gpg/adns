@@ -1,0 +1,9 @@
+#!/bin/sh
+# usage: ./a1test <casename> ...
+
+set -e
+
+for f in "$@"
+do
+	cvs add "case-$f".{sys,stdout,stderr}
+done

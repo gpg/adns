@@ -2,7 +2,8 @@
 # usage: r1test <testcasename>
 
 set -e
-case="case-$1"
+casename="$1"
+case="case-$casename"
 
 exec <"$case.sys"
 read initfile
@@ -34,6 +35,6 @@ do
 	fi
 done
 
-echo -n " $case "
+echo -n "$casename "
 
 exit 0
