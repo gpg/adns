@@ -16,21 +16,24 @@
 
 #include "adns-internal.h"
 
-#define LIST_UNLINK(list,node) \
+#define LIST_UNLINK_PART(list,node,part) \
   do { \
-    if ((node)->back) (node)->back->next= (node)->next; \
-      else                   (list).head= (node)->next; \
-    if ((node)->next) (node)->next->back= (node)->back; \
-      else                   (list).tail= (node)->back; \
+    if ((node)->back) (node)->back->part next= (node)->part next; \
+      else                        (list).head= (node)->part next; \
+    if ((node)->next) (node)->next->part back= (node)->part back; \
+      else                        (list).tail= (node)->part back; \
   } while(0)
 
-#define LIST_LINK_TAIL(list,node) \
+#define LIST_LINK_TAIL_PART(list,node,part) \
   do { \
-    (node)->back= 0; \
-    (node)->next= (list).tail; \
-    if ((list).tail) (list).tail->back= (node); else (list).head= (node); \
+    (node)->part back= 0; \
+    (node)->part next= (list).tail; \
+    if ((list).tail) (list).tail->part back= (node); else (list).part head= (node); \
     (list).tail= (node); \
   } while(0)
+
+#define LIST_UNLINK(list,node) LIST_UNLINK_PART(list,node,)
+#define LIST_LINK_TAIL_PART(list,node) LIST_LINK_TAIL(list,node,)
 
 static void vdebug(adns_state ads, const char *fmt, va_list al) {
   if (!(ads->iflags & adns_if_debug)) return;
@@ -289,13 +292,7 @@ int adns_finish(adns_state ads) {
   abort(); /* FIXME */
 }
 
-void adns_interest(adns_state ads, int *maxfd,
-		   fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
-		   struct timeval **tv_io, struct timeval *tvbuf) {
-  abort(); /* FIXME */
-}
-
-static void autosys(adns_state ads) {
+static void autosys(adns_state ads, struct timeval now) {
   if (ads->iflags & adns_if_noautosys) return;
   adns_callback(ads,-1,0,0,0);
 }
@@ -308,6 +305,100 @@ int adns_callback(adns_state ads, int maxfd,
 		  const fd_set *readfds, const fd_set *writefds,
 		  const fd_set *exceptfds) {
   abort(); /* FIXME */
+}
+
+static void inter_maxto(struct timeval **tv_io, struct timeval *tvbuf,
+			struct timeval maxto) {
+  struct timeval rbuf;
+
+  rbuf= *tv_io;
+  if (!rbuf) { *tvbuf= maxto; *tv_io= tvbuf; return; }
+  if (timercmp(rbuf,&maxto,>)) *rbuf= maxto;
+}
+
+static void inter_maxtoabs(struct timeval **tv_io, struct timeval *tvbuf,
+			   struct timeval now, struct timeval maxtime) {
+  ldiv_t dr;
+  
+  maxtime.tv_sec -= (now.tv_sec-1);
+  maxtime.tv_usec += (1000-now.tv_usec);
+  dr= ldiv(maxtime.tv_usec,1000);
+  maxtime.tv_sec += dr.quot;
+  maxtime.tv_usec -= dr.rem;
+  inter_maxto(tv_io,tvbuf,maxtime);
+}
+
+static void localresourcerr(struct timeval **tv_io, struct timeval *tvbuf,
+			    const char *syscall) {
+  struct timeval tvto_lr;
+  
+  diag(ads,"local system resources scarce (during %s): %s",syscall,strerror(errno));
+  timerclear(&tvto_lr); timevaladd(&tvto_lr,LOCALRESOURCEMS);
+  inter_maxto(tv_io, tvbuf, tvto_lr);
+  return;
+}
+
+static inline void timevaladd(struct timeval *tv_io, long ms) {
+  struct timeval tmp;
+  assert(ms>=0);
+  tmp= *tv_io;
+  tmp.tv_usec += (ms%1000)*1000;
+  tmp.tv_sec += ms/1000;
+  if (tmp.tv_usec >= 1000) { tmp.tv_sec++; tmp.tv_usec -= 1000; }
+  *tv_io= tmp;
+}    
+
+void adns_interest(adns_state ads, int *maxfd,
+		   fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
+		   struct timeval **tv_io, struct timeval *tvbuf) {
+  struct timeval now;
+  adns_query qu;
+  int r;
+  
+  r= gettimeofday(&now,0);
+  if (r) { localresourcerr(tv_io,tvbuf,"gettimeofday"); return; }
+
+  for (qu= ads->timew; qu; qu= nqu) {
+    nqu= qu->next;
+    if (timercmp(&now,qu->timeout,>)) {
+      DLIST_UNLINK(ads->timew,qu);
+      if (qu->nextudpserver == -1) {
+	query_fail(ads,qu,adns_s_notresponding);
+      } else {
+	DLIST_LINKTAIL(ads->tosend,qu);
+      }
+    } else {
+      inter_maxtoabs(tv_io,tvbuf,now,qu->timeout);
+    }
+  }
+  
+  for (qu= ads->tosend; qu; qu= nqu) {
+    nqu= qu->next;
+    quproc_tosend(ads,qu,now);
+  }
+
+  for (qu= ads->timew; qu; qu= qu->next) {
+    if (qu->sentudp) {
+      inter_addfd(maxfd,readfds,ads->udpsocket);
+      break;
+    }
+  }
+  switch (ads->tcpstate) {
+  case server_disc:
+    break;
+  case server_connecting:
+    inter_addfd(maxfd,readfds,ads->tcpsocket);
+    inter_addfd(maxfd,writefds,ads->tcpsocket);
+    inter_addfd(maxfd,exceptfds,ads->tcpsocket);
+    break;
+  case server_connected:
+    inter_addfd(maxfd,readfds,ads->tcpsocket);
+    inter_addfd(maxfd,exceptfds,ads->tcpsocket);
+    if (ads->opbufused) inter_addfd(maxfd,writefds,ads->tcpsocket);
+  default:
+    abort();
+  }
+  
 }
 
 static int internal_check(adns_state ads,
@@ -452,7 +543,9 @@ static adns_query allocquery(adns_state ads, const char *owner, int ol,
   unsigned char *qm;
   
   qu= malloc(sizeof(*qu)+ol+1+qml); if (!qu) return 0;
-  qu->next= qu->back= qu->parent= qu->child= 0;
+  qu->next= qu->back= qu->parent= 0;
+  qu->children.head= qu->children.tail= 0;
+  qu->siblings.next= qu->siblings.back= 0;
   qu->id= id;
   qu->type= type;
   qu->answer= 0;
@@ -479,14 +572,73 @@ static int failsubmit(adns_state ads, void *context, adns_query *query_r,
   return 0;
 }
 
-static void trysendudp(adns_state ads, adns_query qu) {
+static void quproc_tosend(adns_state ads, adns_query qu, struct timeval now) {
+  /* Query must be on the `tosend' queue, and guarantees to remove it. */
   struct sockaddr_in servaddr;
-  /* FIXME: _f_usevc not implemented */
-  memset(&servaddr,0,sizeof(servaddr));
-  servaddr.sin_family= AF_INET;
-  servaddr.sin_addr= ads->servers[qu->nextserver].addr;
-  servaddr.sin_port= htons(53);
-  sendto(ads->udpsocket,qu->querymsg,qu->querylen,0,&servaddr,sizeof(servaddr));
+  int serv;
+
+  if (qu->nextudpserver != -1) {
+    if (qu->udpretries >= UDPMAXRETRIES) {
+      DLIST_UNLINK(ads->tosend,qu);
+      query_fail(ads,qu,adns_s_notresponding);
+      return;
+    }
+    serv= qu->nextudpserver;
+    memset(&servaddr,0,sizeof(servaddr));
+    servaddr.sin_family= AF_INET;
+    servaddr.sin_addr= ads->servers[serv].addr;
+    servaddr.sin_port= htons(53);
+    r= sendto(ads->udpsocket,qu->querymsg,qu->querylen,0,&servaddr,sizeof(servaddr));
+    if (r<0 && errno == EMSGSIZE) {
+      qu->nextudpserver= -1;
+    } else {
+      if (r<0) {
+	diag("sendto %s failed: %s",inet_ntoa(servaddr.sin_addr),strerror(errno));
+      }
+      DLIST_UNLINK(ads->tosend,qu);
+      timevaladd(&now,UDPRETRYMS);
+      qu->timeout= now;
+      qu->sentudp |= (1<<serv);
+      qu->nextudpserver= (serv+1)%ads->nservers;
+      qu->udpretries++;
+      DLIST_LINKTAIL(ads->timew,qu);
+      return;
+    }
+  }
+
+  for (;;) {
+    serv= tcpserver_get(ads);
+    if (serv<0) { r=0; break; }
+    if (ads->opbufused) { r=0; break; }
+    r= write(ads->tcpsocket,qu->querymsg,qu->querylen);
+    if (r >= 0) break;
+    if (errno == EAGAIN || errno == EINTR || errno == ENOSPC ||
+	errno == ENOBUFS || errno == ENOMEM) {
+      r= 0; break;
+    }
+    tcpserver_broken(serv);
+  }
+  if (r < qu->querylen) {
+    newopbufused= qu->opbufused + (qu->querylen-r);
+    if (newopbufused > ads->opbufavail) {
+      newopbufavail= ads->newopbufused<<1;
+      newopbuf= realloc(newopbufavail);
+      if (!newopbuf) {
+	DLIST_UNLINK(ads->tosend,qu);
+	query_fail(ads,qu,adns_s_nolocalmem);
+	return;
+      }
+      ads->opbuf= newopbuf;
+      ads->opbufavail= newopbufavail;
+    }
+    memcpy(ads->opbuf+ads->opbufused,qu->querymsg+r,qu->querylen-r);
+    ads->opbufused= newopbufused;
+  }
+  DLIST_UNLINK(ads->tosend,qu);
+  timevaladd(&now,TCPMS);
+  qu->timeout= now;
+  qu->senttcp |= (1<<qu->nextserver);
+  DLIST_LINKTAIL(ads->timew,qu);
 }
 
 int adns_submit(adns_state ads,
@@ -510,10 +662,12 @@ int adns_submit(adns_state ads,
   if (stat) return failsubmit(ads,context,query_r,type,flags,id,stat);
 
   qu= allocquery(ads,owner,ol,qml,id,type,flags,context); if (!qu) return errno;
-
+  if (qu->flags & adns_f_usevc) qu->udpretries= -1;
   LIST_LINK_TAIL(ads->tosend,qu);
-  trysendudp(ads,qu);
-  autosys(ads);
+    
+  r= gettimeofday(&now,0); if (r) return;
+  quproc_tosend(ads,qu,now);
+  autosys(ads,now);
 
   *query_r= qu;
   return 0;

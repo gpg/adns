@@ -79,6 +79,13 @@ typedef enum {
  */
 
 typedef struct {
+  char *dm;
+  adns_status astatus;
+  int naddrs; /* temp fail => -1, perm fail => 0, s_ok => >0 */
+  struct in_addr *addrs;
+} adns_dmaddr;
+
+typedef struct {
   adns_status status;
   char *cname; /* always NULL if query was for CNAME records */
   adns_rrtype type;
@@ -86,12 +93,9 @@ typedef struct {
   union {
     struct in_addr inaddr[1];                                                    /* a */
     char (*str)[1];                               /* ns_raw, cname, ptr, ptr_raw, txt */
-    struct { char *dm; adns_status ref; struct in_addr addr; } dmaddr;          /* ns */
+    adns_dmaddr dmaddr[1];                                                      /* ns */
     struct { char *a, *b; } strpair[1];                          /* hinfo, rp, rp_raw */
-    struct {
-      int pref; char *dm;
-      adns_status ref; struct in_addr addr;
-    } intdmaddr[1];                                                             /* mx */
+    struct { int pref; adns_dmaddrs dmaddr; } intdmaddr[1];                     /* mx */
     struct { int pref; char *str; } intstr[1];                              /* mx_raw */
     struct {
       char *ns0, *rp;

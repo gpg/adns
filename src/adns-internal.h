@@ -8,16 +8,30 @@
 #include "adns.h"
 
 #define MAXSERVERS 5
-#define MAXUDPRETRIES 10
+#define MAXUDPRETRIES 15
 #define UDPRETRYMS 2000
-#define TCPMS 20000
+#define TCPMS 30000
+#define LOCALRESOURCEMS 20
+
+union adns__align {
+  adns_status status;
+  char *cp;
+  adns_rrtype type;
+  int int;
+  struct in_addr ia;
+  unsigned long ul;
+};
 
 struct adns__query {
-  adns_query next, back;
-  adns_query parent, child;
+  adns_query back, next;
+  adns_query parent;
+  struct { adns_query head, tail; } children;
+  struct { adns_query back, next; } siblings;
   adns_rrtype type;
   adns_answer *answer;
-  int id, flags, udpretries, nextserver;
+  size_t ansalloc; ansused;
+  int id, flags, udpretries; /* udpretries==-1 => _f_usevc or too big for UDP */
+  int nextudpserver;
   unsigned long sentudp, senttcp; /* bitmaps indexed by server */
   struct timeval timeout;
   void *context;
@@ -39,13 +53,14 @@ struct adns__state {
   int nextid, udpsocket;
   int qbufavail, tcpbufavail, tcpbufused, tcpbufdone;
   unsigned char *qbuf, *tcpbuf;
-  int nservers;
+  int nservers, tcpserver;
+  enum { server_disc, server_connecting, server_ok } tcpstate;
+  int tcpsocket;
+  struct timeval tcptimeout;
+  int opbufavail, opbufused;
+  unsigned char *opbuf;
   struct server {
     struct in_addr addr;
-    enum { server_disc, server_connecting, server_ok } state;
-    int tcpsocket;
-    struct timeval timeout;
-    struct { adns_query head, tail; } connw;
   } servers[MAXSERVERS];
 };
 
