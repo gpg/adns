@@ -32,7 +32,6 @@ adns debug: reply not found, id 312c, query owner 254.0.99.203.in-addr.arpa (NS=
 adns debug: reply not found, id 312d, query owner 254.0.99.203.in-addr.arpa (NS=172.18.45.6)
 254.0.99.203.in-addr.arpa flags 292 type RP(raw): No such data; nrrs=0; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=598
 adns debug: TCP connected (NS=172.18.45.6)
-adns debug: reply via udp from unexpected server, state 2, expected 1 (NS=172.18.45.6)
 adns debug: reply not found, id 312a, query owner 254.0.99.203.in-addr.arpa (NS=172.18.45.6)
 254.0.99.203.in-addr.arpa flags 292 type PTR(raw): OK; nrrs=94; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=20169
  "ns.security.co.nz"
