@@ -663,7 +663,7 @@ void adns_beforeselect(adns_state ads, int *maxfd, fd_set *readfds,
  * for adns_firsttimeout.  readfds, writefds, exceptfds and maxfd_io may
  * not be 0.
  *
- * If *now is not 0 then this will never actually do any I/O, or
+ * If now is not 0 then this will never actually do any I/O, or
  * change the fds that adns is using or the timeouts it wants.  In any
  * case it won't block.
  */
@@ -810,9 +810,9 @@ adns_status adns_rr_info(adns_rrtype type,
  * hostname, as usual, followed by the adns_status value, as an
  * abbreviation, and then a descriptive string (encoded as if it were
  * a piece of text), for the address lookup, followed by zero or more
- * addresses enclosed in ( and ).  If the result was a permanent
+ * addresses enclosed in ( and ).  If the result was a temporary
  * failure, then a single ?  appears instead of the ( ).  If the
- * result was a temporary failure then an empty pair of parentheses
+ * result was a permanent failure then an empty pair of parentheses
  * appears (which a space in between).  For example, one of the NS
  * records for greenend.org.uk comes out like
  *  ns.chiark.greenend.org.uk ok "OK" ( INET 195.224.76.132 )
