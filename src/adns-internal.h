@@ -21,6 +21,8 @@ struct adns__query {
   unsigned long sentudp, senttcp; /* bitmaps indexed by server */
   struct timeval timeout;
   void *context;
+  unsigned char *querymsg;
+  int querylen;
   char owner[1];
   /* Possible states:
    *  Queue   child  answer   nextserver  sentudp             senttcp
@@ -36,7 +38,7 @@ struct adns__state {
   struct { adns_query head, tail; } input, timew, childw, output;
   int nextid, udpsocket;
   int qbufavail, tcpbufavail, tcpbufused, tcpbufdone;
-  char *qbuf, *tcpbuf;
+  unsigned char *qbuf, *tcpbuf;
   int nservers;
   struct server {
     struct in_addr addr;
