@@ -270,6 +270,9 @@ void adns__query_done(adns_query qu) {
   
   qu->id= -1;
   LIST_LINK_TAIL(qu->ads->output,qu);
+
+  assert(!qu->parent);
+  /* fixme: do something with the answers to internally-generated queries. */
 }
 
 void adns__query_fail(adns_query qu, adns_status stat) {
