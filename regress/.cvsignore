@@ -1,8 +1,12 @@
 Makefile
 harness.h
+hsyscalls.h
+hredirect.h
 hcommon.c
-hrecord
+*_record
+*_playback
 hrecord.c
-hplayback
 hplayback.c
 output-*.*
+pipe.out
+pipe.err

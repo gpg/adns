@@ -28,9 +28,22 @@
 
 #include "adnshost.h"
 
+int rcode;
+const char *config_text;
+
+static int used, avail;
+static char *buf;
+
+void quitnow(int rc) {
+  if (ads) adns_finish(ads);
+  free(buf);
+  free(ov_id);
+  exit(rc);
+}
+
 void sysfail(const char *what, int errnoval) {
   fprintf(stderr,"adnshost failed: %s: %s\n",what,strerror(errnoval));
-  exit(10);
+  quitnow(10);
 }
 
 void usageerr(const char *fmt, ...) {
@@ -40,7 +53,7 @@ void usageerr(const char *fmt, ...) {
   vfprintf(stderr,fmt,al);
   va_end(al);
   putc('\n',stderr);
-  exit(11);
+  quitnow(11);
 }
 
 void outerr(void) {
@@ -60,6 +73,10 @@ char *xstrsave(const char *str) {
   p= xmalloc(strlen(str)+1);
   strcpy(p,str);
   return p;
+}
+
+void of_config(const struct optioninfo *oi, const char *arg, const char *arg2) {
+  config_text= arg;
 }
 
 void of_type(const struct optioninfo *oi, const char *arg, const char *arg2) {
@@ -99,8 +116,6 @@ void of_type(const struct optioninfo *oi, const char *arg, const char *arg2) {
   if (!tnp->type) usageerr("unknown RR type %s",arg);
   ov_type= tnp->type;
 }
-
-int rcode;
 
 static void process_optarg(const char *arg,
 			   const char *const **argv_p,
@@ -164,9 +179,6 @@ static void process_optarg(const char *arg,
 }
     
 static void read_stdin(void) {
-  static int used, avail;
-  static char *buf;
-
   int anydone, r;
   char *newline, *space;
 
@@ -248,5 +260,5 @@ int main(int argc, const char *const *argv) {
   }
 x_quit:
   if (fclose(stdout)) outerr();
-  exit(rcode);
+  quitnow(rcode);
 }

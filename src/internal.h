@@ -45,6 +45,10 @@ typedef unsigned char byte;
 #include "adns.h"
 #include "dlist.h"
 
+#ifdef ADNS_REGRESS_TEST
+# include "hredirect.h"
+#endif
+
 /* Configuration and constants */
 
 #define MAXSERVERS 5

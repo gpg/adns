@@ -32,10 +32,10 @@ m4_define(`hm_args_massage',
 				`'),
 		`',
 		`$2',
-		`
+		`m4_dnl
 	m4_patsubst(m4_patsubst(m4_patsubst(m4_translit($1, `
 	',` '), `\(hm_comma *\)*$', `'), `^\( *hm_comma\)*', `'),
-		`\( *hm_comma *\)+',` hm_comma ')
+		`\( *hm_comma *\)+',` hm_comma ')m4_dnl
 	')')
 
 m4_define(`hm_create_nothing', `

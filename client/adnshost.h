@@ -46,6 +46,10 @@
 #include "adns.h"
 #include "dlist.h"
 
+#ifdef ADNS_REGRESS_TEST
+# include "hredirect.h"
+#endif
+
 /* declarations related to option processing */
 
 struct optioninfo;
@@ -79,7 +83,8 @@ extern int ov_tcp, ov_cname, ov_format;
 extern char *ov_id;
 extern struct perqueryflags_remember ov_pqfr;
 
-extern optfunc of_help, of_type, of_ptr, of_reverse, of_asynch_id, of_cancel_id;
+extern optfunc of_config, of_help, of_type, of_ptr, of_reverse;
+extern optfunc of_asynch_id, of_cancel_id;
 
 const struct optioninfo *opt_findl(const char *opt);
 const struct optioninfo *opt_finds(const char **optp);
@@ -110,6 +115,9 @@ void outerr(void) NONRETURNING;
 void *xmalloc(size_t sz);
 char *xstrsave(const char *str);
 
+void quitnow(int rc) NONRETURNING;
+
 extern int rcode;
+extern const char *config_text; /* 0 => use defaults */
 
 #endif

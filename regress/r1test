@@ -32,10 +32,17 @@ case="case-$casename"
 ocase="output-$casename"
 
 exec <"$case.sys"
-read initfile initflags
+read program initfile initflags
 read queryargs
 
 initstring="`cat init-$initfile.text`"
+xinitflagsf=$program-xinitflags.text
+if test -f $xinitflagsf
+then
+	initflags="$initflags $(cat $xinitflagsf)";
+else
+	initflags="$initflags /"
+fi
 
 rm -f $ocase.*
 
@@ -44,7 +51,7 @@ export EF_DISABLE_BANNER
 
 set +e
 ADNS_TEST_REPORT_FD=3 3>>"$ocase.report" >"$ocase.out" 2>"$ocase.err" \
- ./hplayback $initflags "/$initstring" $queryargs
+ ./${program}_playback $initflags"$initstring" $queryargs
 rc=$?
 set -e
 

@@ -120,3 +120,11 @@ hm_syscall(
 	hm_arg_fd(fd) hm_na
 	hm_arg_bytes_in(void,buf,size_t,len) hm_na
 ')
+
+hm_specsyscall(int, writev, `int fd, const struct iovec *vector, size_t count')
+hm_specsyscall(int, gettimeofday, `struct timeval *tv, struct timezone *tz')
+
+hm_specsyscall(void*, malloc, `size_t sz')
+hm_specsyscall(void, free, `void *ptr')
+hm_specsyscall(void*, realloc, `void *op, size_t nsz')
+hm_specsyscall(void, exit, `int rv', NONRETURNING)

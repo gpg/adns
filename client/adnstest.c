@@ -36,8 +36,8 @@
 #include "config.h"
 #include "adns.h"
 
-#ifndef OUTPUTSTREAM
-# define OUTPUTSTREAM stdout
+#ifdef ADNS_REGRESS_TEST
+# include "hredirect.h"
 #endif
 
 struct myctx {

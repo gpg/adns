@@ -24,40 +24,49 @@
 srcdir=		@srcdir@
 VPATH=		@srcdir@
 
-TARGETS=	hplayback hrecord
-AUTOCSRCS=	harness.h hrecord.c hplayback.c hcommon.c
+CLIENTS=	adnstest adnshost
+AUTOCHDRS=	harness.h hsyscalls.h hredirect.h
+AUTOCSRCS=	hrecord.c hplayback.c hcommon.c
 include		$(srcdir)/../settings.make
 include		$(srcdir)/../src/adns.make
 
 DIRCFLAGS=	-I$(srcdir)/../src
 
-HCPPFLAGS:= $(foreach F,			\
-	gettimeofday select poll		\
-	socket fcntl connect close		\
-	sendto recvfrom read write writev	\
-	malloc realloc free exit		\
-, -D$F=H$F)
+HCPPFLAGS=	-DADNS_REGRESS_TEST -I.
 
-HARNLOBJS=	$(addsuffix _d.o, $(basename $(LIBOBJS)))
-ALLOBJS=	$(HARNLOBJS) dtest.o hrecord.o hplayback.o hcommon.o
+REDIRLIBOBJS=	$(addsuffix _d.o, $(basename $(LIBOBJS)))
+HARNLOBJS=	hcommon.o $(REDIRLIBOBJS)
+TARGETS=	$(addsuffix _record, $(CLIENTS)) $(addsuffix _playback, $(CLIENTS))
+ADH_OBJS=	adh-main_c.o adh-opts_c.o adh-query_c.o
+ALL_OBJS=	$(HARNLOBJS) dtest.o hrecord.o hplayback.o
 
-.PRECIOUS:	$(AUTOCSRCS)
+.PRECIOUS:	$(AUTOCSRCS) $(AUTOCHDRS)
+
+all install uninstall: $(TARGETS)
 
 check:		$(TARGETS)
 		./checkall
 
-all install uninstall:
+LINK_CMD=	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
-hrecord:	adnstest_c.o hrecord.o hcommon.o $(HARNLOBJS)
-hplayback:	adnstest_c.o hplayback.o hcommon.o $(HARNLOBJS)
+%_record:	%_c.o hrecord.o $(HARNLOBJS)
+		$(LINK_CMD)
 
-%_d.o:		$(srcdir)/../src/%.c
+%_playback:	%_c.o hplayback.o $(HARNLOBJS)
+		$(LINK_CMD)
+
+adnshost_%:	$(ADH_OBJS) h%.o $(HARNLOBJS)
+		$(LINK_CMD)
+
+%_d.o:		$(srcdir)/../src/%.c hredirect.h
 		$(CC) $(HCPPFLAGS) -c -g -o $@ $<
 
-%_c.o:		$(srcdir)/../client/%.c
+%_c.o:		$(srcdir)/../client/%.c hredirect.h
 		$(CC) $(HCPPFLAGS) -I $(srcdir)/../src -c -g -o $@ $<
 
-$(ALLOBJS):	$(srcdir)/../src/adns.h $(srcdir)/../src/internal.h harness.h
+$(ALL_OBJS):	$(srcdir)/../src/adns.h $(srcdir)/../src/internal.h
+$(ALL_OBJS):	harness.h hsyscalls.h
+$(ADH_OBJS):	$(srcdir)/../client/adnshost.h
 
 %::	%.m4 hmacros.i4 hsyscalls.i4
 	$(M4) -P $< >$@-a.new

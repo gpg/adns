@@ -122,8 +122,9 @@ void Q$1(hm_args_massage($3,void)) {
 }
 ')
 
-m4_include(`hsyscalls.i4')
+m4_define(`hm_specsyscall', `')
 
+m4_include(`hsyscalls.i4')
 
 void Tvbaddr(const struct sockaddr *addr, int len) {
   const struct sockaddr_in *ai= (const struct sockaddr_in*)addr;

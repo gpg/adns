@@ -64,7 +64,7 @@ clean mostlyclean:
 distclean:		clean
 		rm -f $(TARGETS) *~ ./#*# core *.orig *.rej Makefile
 
-distprep:		$(AUTOCSRCS)
+distprep:		$(AUTOCSRCS) $(AUTOCHDRS)
 
 maintainer-clean:	distclean
-		-rm -f $(AUTOCSRCS)
+		-rm -f $(AUTOCSRCS) $(AUTOCHDRS)

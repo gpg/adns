@@ -3,6 +3,11 @@ adns (0.10) unstable; urgency=low
   Bugfixes:
   * Actually compile shared libraries by default !
 
+  General Improvements:
+  * adnshost has --config option for overriding configuration.
+  * Regression tests now include `adnshost' invocations.
+  * Test cancellation both before and after query completion.
+
   Portability fixes:
   * Fix <sys/fcntl.h> in client/adnsresfilter.c to <fcntl.h>.
   * #include <sys/types.h> and <unistd.h> for fcntl in */*.c.
@@ -12,6 +17,7 @@ adns (0.10) unstable; urgency=low
   * adnstest: setvbuf(stdout,...) before we do first output.
   * Cast a sizeof(...) in src/event.c to unsigned long before printing.
   * #include <sys/select.h> if it exists.
+  * Regression tests work better if some syscalls are already macros.
 
   Portability cleanups:
   * Add list of tested platforms in INSTALL file.

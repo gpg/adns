@@ -62,6 +62,8 @@ static const struct optioninfo global_options[]= {
     "Vd", "debug",         &ov_verbose, adns_if_debug },
   		         
   { ot_desconly, "other global options:" },
+  { ot_funcarg,          "Configuration to use instead of /etc/resolv.conf",
+    0, "config",           0,0, of_config, "<config-text>" },
   { ot_func,             "Print usage information",
     0, "help",             0,0, of_help },
 
@@ -270,7 +272,7 @@ static void printusage(void) {
 void of_help(const struct optioninfo *oi, const char *arg, const char *arg2) {
   printusage();
   if (fclose(stdout)) sysfail("finish writing output",errno);
-  exit(0);
+  quitnow(0);
 }
 
 typedef int comparer_type(const char **optp, const struct optioninfo *entry);
