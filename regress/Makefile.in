@@ -61,10 +61,10 @@ adnshost_%:	$(ADH_OBJS) h%.o $(HARNLOBJS)
 		$(LINK_CMD)
 
 %_d.o:		$(srcdir)/../src/%.c hredirect.h
-		$(CC) $(HCPPFLAGS) -c -g -o $@ $<
+		$(CC) $(CFLAGS) $(HCPPFLAGS) -c -g -o $@ $<
 
 %_c.o:		$(srcdir)/../client/%.c hredirect.h
-		$(CC) $(HCPPFLAGS) -I $(srcdir)/../src -c -g -o $@ $<
+		$(CC) $(CFLAGS) $(HCPPFLAGS) -I $(srcdir)/../src -c -g -o $@ $<
 
 $(ALL_OBJS):	$(srcdir)/../src/adns.h $(srcdir)/../src/internal.h
 $(ALL_OBJS):	harness.h hsyscalls.h
