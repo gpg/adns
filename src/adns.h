@@ -336,10 +336,10 @@ typedef struct {
  *  requested.
  */
 
-int adns_init(adns_state *newstate_r, adns_initflags flags,
+int adns_init(adns_state *newstate_r, int flags /*adns_initflags*/,
 	      FILE *diagfile /*0=>stderr*/);
 
-int adns_init_strcfg(adns_state *newstate_r, adns_initflags flags,
+int adns_init_strcfg(adns_state *newstate_r, int flags /*adns_initflags*/,
 		     FILE *diagfile /*0=>discard*/, const char *configtext);
 
 /* Configuration:
@@ -443,7 +443,7 @@ int adns_init_strcfg(adns_state *newstate_r, adns_initflags flags,
 int adns_synchronous(adns_state ads,
 		     const char *owner,
 		     adns_rrtype type,
-		     adns_queryflags flags,
+		     int flags /*adns_queryflags*/,
 		     adns_answer **answer_r);
 
 /* NB: if you set adns_if_noautosys then _submit and _check do not
@@ -454,7 +454,7 @@ int adns_synchronous(adns_state ads,
 int adns_submit(adns_state ads,
 		const char *owner,
 		adns_rrtype type,
-		adns_queryflags flags,
+		int flags /*adns_queryflags*/,
 		void *context,
 		adns_query *query_r);
 
@@ -493,7 +493,7 @@ void adns_cancel(adns_query query);
 int adns_submit_reverse(adns_state ads,
 			const struct sockaddr *addr,
 			adns_rrtype type,
-			adns_queryflags flags,
+			int flags /*adns_queryflags*/,
 			void *context,
 			adns_query *query_r);
 /* type must be _r_ptr or _r_ptr_raw.  _qf_search is ignored.

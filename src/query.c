@@ -195,7 +195,7 @@ static int save_owner(adns_query qu, const char *owner, int ol) {
 int adns_submit(adns_state ads,
 		const char *owner,
 		adns_rrtype type,
-		adns_queryflags flags,
+		int flags,
 		void *context,
 		adns_query *query_r) {
   int r, ol, ndots;
@@ -261,7 +261,7 @@ int adns_submit(adns_state ads,
 int adns_submit_reverse(adns_state ads,
 			const struct sockaddr *addr,
 			adns_rrtype type,
-			adns_queryflags flags,
+			int flags,
 			void *context,
 			adns_query *query_r) {
   const unsigned char *iaddr;
@@ -282,7 +282,7 @@ int adns_submit_reverse(adns_state ads,
 int adns_synchronous(adns_state ads,
 		     const char *owner,
 		     adns_rrtype type,
-		     adns_queryflags flags,
+		     int flags,
 		     adns_answer **answer_r) {
   adns_query qu;
   int r;

@@ -45,6 +45,7 @@ adns (0.5) unstable; urgency=high
   * Remove trailing , from some enums in adns.h.
   * Dynamically linked clients now made with -l, so as to avoid rpath.
   * Do not use $^ in make rules (should help with non-GNU make).
+  * Declare flags parameters as ints not enums because C++ is crap.
 
  --
 
