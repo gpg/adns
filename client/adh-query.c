@@ -202,5 +202,7 @@ void of_asynch_id(const struct optioninfo *oi, const char *arg) {
   ov_id= xstrsave(arg);
 }
 
-void of_cancel_id(const struct optioninfo *oi, const char *arg) { abort(); }
+void of_cancel_id(const struct optioninfo *oi, const char *arg) {
+  assert(!"implemented");
+}
 

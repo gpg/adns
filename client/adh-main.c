@@ -68,13 +68,13 @@ char *xstrsave(const char *str) {
   return p;
 }
 
-void of_type(const struct optioninfo *oi, const char *arg) { abort(); }
+void of_type(const struct optioninfo *oi, const char *arg) { assert(!"implemented"); }
 
 int rcode;
 
 void setnonblock(int fd, int nonblock) { }
 
-static void read_query(void) { abort(); }
+static void read_query(void) { assert(!"implemented"); }
 
 int main(int argc, const char *const *argv) {
   const char *arg;
