@@ -58,6 +58,9 @@ static const char *progname;
 
 #define msg(fmt, args...) fprintf(stderr, "%s: " fmt "\n", progname, ##args)
 
+#define sensible_ctype(type,ch) (type((unsigned char)(ch)))
+  /* isfoo() functions from ctype.h can't safely be fed char - blech ! */
+
 static void aargh(const char *cause) {
   const char *why = strerror(errno);
   if (!why) why = "Unknown error";
@@ -75,7 +78,7 @@ static char *ipaddr2domain(char *start, char **addr, char **rest) {
 
   ptrs[0]= start;
 retry:
-  while (!isdigit(*ptrs[0]))
+  while (!sensible_ctype(isdigit,*ptrs[0]))
     if (!*ptrs[0]++) {
       strcpy(buf, "invalid.");
       *addr= *rest= NULL;
@@ -83,8 +86,8 @@ retry:
     }
   for (i= 1; i < 5; i++) {
     ptrs[i]= ptrs[i-1];
-    while (isdigit(*ptrs[i]++));
-    if ((i == 4 && !isspace(ptrs[i][-1])) ||
+    while (sensible_ctype(isdigit,*ptrs[i]++));
+    if ((i == 4 && !sensible_ctype(isspace,ptrs[i][-1])) ||
 	(i != 4 && ptrs[i][-1] != '.') ||
 	(ptrs[i]-ptrs[i-1] > 4)) {
       ptrs[0]= ptrs[i]-1;

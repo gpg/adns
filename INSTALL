@@ -35,8 +35,9 @@ This file, INSTALL, contains installation instructions and other
 details for adns.
 
 adns is
- Copyright (C) 1997-1999 Ian Jackson <ian@davenant.greenend.org.uk>
- Copyright (C) 1999 Tony Finch <dot@dotat.at>
+ Copyright (C) 1997-2000 Ian Jackson <ian@davenant.greenend.org.uk>
+ Copyright (C) 1999 Tony Finch <dot@dotat.at>              [1]
+ Copyright (C) 1991 Massachusetts Institute of Technology  [2]
 
 adns is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free
@@ -52,6 +53,11 @@ You should have received a copy of the GNU General Public License
 along with userv as the file COPYING; if not, email me at the address
 above or write to the Free Software Foundation, 59 Temple Place -
 Suite 330, Boston, MA 02111-1307, USA.
+
+[1] Tony Finch holds the original copyright on
+    client/adnslogres.c and client/fanftest.c.
+[2] MIT hold the original copyright on the included install-sh,
+    which came via GNU autoconf.
 
 # Local variables:
 # mode: text

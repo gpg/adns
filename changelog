@@ -1,3 +1,10 @@
+adns (0.8) BETA; urgency=low
+
+  * Spurious `server failure on unidentifiable query' warning suppressed.
+  * install-sh (from autoconf 2.12 Debian r13) included.
+
+ --
+
 adns (0.7) BETA; urgency=medium
 
   * New adns_submit_reverse_any for eg RBL lookups, and corresponding
