@@ -353,6 +353,9 @@ static adns_status pap_hostaddr(const parseinfo *pai, int *cbyte_io,
 				int max, adns_rr_hostaddr *rrp) {
   adns_status st;
   int dmstart, cbyte;
+  qcontext ctx;
+  int id;
+  adns_query nqu;
 
   dmstart= cbyte= *cbyte_io;
   st= pap_domain(pai, &cbyte, max, &rrp->host,
@@ -374,8 +377,19 @@ static adns_status pap_hostaddr(const parseinfo *pai, int *cbyte_io,
   if (st) return st;
   if (rrp->naddrs != -1) return adns_s_ok;
 
-  rrp->naddrs= 0; /* fixme additional section didn't have required data */
-  rrp->astatus= adns_s_notimplemented;
+  st= adns__mkquery_frdgram(pai->ads, &pai->qu->vb, &id,
+			    pai->dgram, pai->dglen, dmstart,
+			    adns_r_addr, adns_qf_quoteok_query);
+  if (st) return st;
+  
+  ctx.hostaddr= rrp;
+  st= adns__internal_submit(pai->ads, &nqu, adns__findtype(adns_r_addr),
+			    &pai->qu->vb, id,
+			    adns_qf_quoteok_query, pai->now, 0, &ctx);
+  if (st) return st;
+
+  nqu->parent= pai->qu;
+  LIST_LINK_TAIL_PART(pai->qu->children,nqu,siblings.);
 
   return adns_s_ok;
 }

@@ -268,6 +268,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
   pai.nsstart= nsstart;
   pai.nscount= nscount;
   pai.arcount= arcount;
+  pai.now= now;
 
   for (rri=0, nrrs=0; rri<ancount; rri++) {
     st= adns__findrr(qu,serv, dgram,dglen,&cbyte,

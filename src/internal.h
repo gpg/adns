@@ -77,7 +77,7 @@ typedef struct {
 
 typedef union {
   void *ext;
-  int dmaddr_index;
+  adns_rr_hostaddr *hostaddr;
 } qcontext;
 
 typedef struct {
@@ -86,6 +86,7 @@ typedef struct {
   int serv;
   const byte *dgram;
   int dglen, nsstart, nscount, arcount;
+  struct timeval now;
 } parseinfo;
 
 typedef struct {
@@ -337,7 +338,7 @@ int adns__internal_submit(adns_state ads, adns_query *query_r,
  * If failstat is nonzero then if we are successful in creating the query
  * it is immediately failed with code failstat (but _submit still succeds).
  *
- * ctx is copied byte-for-byte into the query.
+ * *ctx is copied byte-for-byte into the query.
  */
 
 void *adns__alloc_interim(adns_query qu, size_t sz);
@@ -547,7 +548,7 @@ static inline int ctype_alpha(int c) {
   do { \
     (node)->part next= 0; \
     (node)->part back= (list).tail; \
-    if ((list).tail) (list).tail->part next= (node); else (list).part head= (node); \
+    if ((list).tail) (list).tail->part next= (node); else (list).head= (node); \
     (list).tail= (node); \
   } while(0)
 
