@@ -1,9 +1,10 @@
 adns (0.4) unstable; urgency=low
 
   Bugfixes:
-  * adns_s_systemfail is in table of errors (for eg adns_strerror).
+  * make _qf_owner work if _qf_search not specified, and test it (oops!)
   * timercmp(,,<=) doesn't work - use !timercmp(,,>).
   * ads->configerrno now initialised (in setup.c).
+  * adns_s_systemfail is in table of errors (for eg adns_strerror).
   * Improvements to install instructions, TODO, etc.
 
  --

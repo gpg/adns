@@ -48,6 +48,7 @@ static adns_query query_alloc(adns_state ads, const typeinfo *typei,
   LINK_INIT(qu->siblings);
   LIST_INIT(qu->allocations);
   qu->interim_allocd= 0;
+  qu->preserved_allocd= 0;
   qu->final_allocspace= 0;
 
   qu->typei= typei;
@@ -181,7 +182,7 @@ static int save_owner(adns_query qu, const char *owner, int ol) {
   ans= qu->answer;
   assert(!ans->owner);
 
-  ans->owner= adns__alloc_interim(qu,ol+1);  if (!ans->owner) return 0;
+  ans->owner= adns__alloc_preserved(qu,ol+1);  if (!ans->owner) return 0;
 
   memcpy(ans->owner,owner,ol);
   ans->owner[ol]= 0;
@@ -277,9 +278,23 @@ static void *alloc_common(adns_query qu, size_t sz) {
 }
 
 void *adns__alloc_interim(adns_query qu, size_t sz) {
+  void *rv;
+  
   sz= MEM_ROUND(sz);
+  rv= alloc_common(qu,sz);
+  if (!rv) return 0;
   qu->interim_allocd += sz;
-  return alloc_common(qu,sz);
+  return rv;
+}
+
+void *adns__alloc_preserved(adns_query qu, size_t sz) {
+  void *rv;
+  
+  sz= MEM_ROUND(sz);
+  rv= adns__alloc_interim(qu,sz);
+  if (!rv) return 0;
+  qu->preserved_allocd += sz;
+  return rv;
 }
 
 void *adns__alloc_mine(adns_query qu, size_t sz) {
@@ -330,12 +345,12 @@ static void cancel_children(adns_query qu) {
   LIST_INIT(qu->children);
 }
 
-void adns__reset_cnameonly(adns_query qu) {
+void adns__reset_preserved(adns_query qu) {
   assert(!qu->final_allocspace);
   cancel_children(qu);
   qu->answer->nrrs= 0;
   qu->answer->rrs.untyped= 0;
-  qu->interim_allocd= qu->answer->cname ? MEM_ROUND(strlen(qu->answer->cname)+1) : 0;
+  qu->interim_allocd= qu->preserved_allocd;
 }
 
 static void free_query_allocs(adns_query qu) {
@@ -401,9 +416,12 @@ static void makefinal_query(adns_query qu) {
   return;
   
  x_nomem:
-  qu->answer->status= adns_s_nomemory;
+  qu->preserved_allocd= 0;
   qu->answer->cname= 0;
-  adns__reset_cnameonly(qu);
+  qu->answer->owner= 0;
+  adns__reset_preserved(qu); /* (but we just threw away the preserved stuff) */
+
+  qu->answer->status= adns_s_nomemory;
   free_query_allocs(qu);
 }
 
@@ -448,7 +466,7 @@ void adns__query_done(adns_query qu) {
 }
 
 void adns__query_fail(adns_query qu, adns_status stat) {
-  adns__reset_cnameonly(qu);
+  adns__reset_preserved(qu);
   qu->answer->status= stat;
   adns__query_done(qu);
 }

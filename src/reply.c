@@ -170,7 +170,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
 	if (!qu->vb.used) goto x_truncated;
 	if (st) { adns__query_fail(qu,st); return; }
 	l= strlen(qu->vb.buf)+1;
-	qu->answer->cname= adns__alloc_interim(qu,l);
+	qu->answer->cname= adns__alloc_preserved(qu,l);
 	if (!qu->answer->cname) { adns__query_fail(qu,adns_s_nomemory); return; }
 
 	qu->cname_dgram= adns__alloc_mine(qu,dglen);
@@ -336,6 +336,6 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
     memcpy(newquery,qu->vb.buf,qu->vb.used);
   }
   
-  adns__reset_cnameonly(qu);
+  adns__reset_preserved(qu);
   adns__query_udp(qu,now);
 }

@@ -156,7 +156,7 @@ struct adns__query {
   struct { adns_query head, tail; } children;
   struct { adns_query back, next; } siblings;
   struct { allocnode *head, *tail; } allocations;
-  int interim_allocd;
+  int interim_allocd, preserved_allocd;
   void *final_allocspace;
 
   const typeinfo *typei;
@@ -409,20 +409,27 @@ void adns__search_next(adns_state ads, adns_query qu, struct timeval now);
  */
 
 void *adns__alloc_interim(adns_query qu, size_t sz);
+void *adns__alloc_preserved(adns_query qu, size_t sz);
 /* Allocates some memory, and records which query it came from
  * and how much there was.
  *
- * If an error occurs in the query, all its memory is simply freed.
- *
- * If the query succeeds, one large buffer will be made which is
- * big enough for all these allocations, and then adns__alloc_final
- * will get memory from this buffer.
+ * If an error occurs in the query, all the memory from _interim is
+ * simply freed.  If the query succeeds, one large buffer will be made
+ * which is big enough for all these allocations, and then
+ * adns__alloc_final will get memory from this buffer.
  *
  * _alloc_interim can fail (and return 0).
  * The caller must ensure that the query is failed.
  *
- * adns__alloc_interim_{only,fail}(qu,0) will not return 0,
- * but it will not necessarily return a distinct pointer each time.
+ * The memory from _preserved is is kept and transferred into the
+ * larger buffer - unless we run out of memory, in which case it too
+ * is freed.  When you use _preserved you have to add code to the
+ * x_nomem error exit case in adns__makefinal_query to clear out the
+ * pointers you made to those allocations, because that's when they're
+ * thrown away; you should also make a note in the declaration of
+ * those pointer variables, to note that they are _preserved rather
+ * than _interim.  If they're in the answer, note it here:
+ *  answer->cname and answer->owner are _preserved.
  */
 
 void adns__transfer_interim(adns_query from, adns_query to, void *block, size_t sz);
@@ -452,12 +459,12 @@ void *adns__alloc_final(adns_query qu, size_t sz);
 void adns__makefinal_block(adns_query qu, void **blpp, size_t sz);
 void adns__makefinal_str(adns_query qu, char **strp);
 
-void adns__reset_cnameonly(adns_query qu);
-/* Resets all of the memory management stuff etc. to
- * take account of only the CNAME.  Used when we find an error somewhere
- * and want to just report the error (with perhaps CNAME info), and also
- * when we're halfway through RRs in a datagram and discover that we
- * need to retry the query.
+void adns__reset_preserved(adns_query qu);
+/* Resets all of the memory management stuff etc. to take account of
+ * only the _preserved stuff from _alloc_preserved.  Used when we find
+ * an error somewhere and want to just report the error (with perhaps
+ * CNAME, owner, etc. info), and also when we're halfway through RRs
+ * in a datagram and discover that we need to retry the query.
  */
 
 void adns__query_done(adns_query qu);
