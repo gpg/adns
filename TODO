@@ -10,3 +10,4 @@ WISHLIST:
 * Threadsafe version/mode.
 * Caching in the library.
 * SRV RRs.
+* Make port configurable in config file.

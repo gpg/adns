@@ -7,6 +7,7 @@ adns (1.1); urgency=medium
     (and there doesn't seem to be much explanation why).
   * Understand and sort of check OpenBSD `lookup' resolv.conf directive.
   * Always #include <sys/types.h> before <sys/socket.h> (for FreeBSD 4.6).
+  * Added wishlist entry re configurable port no.
 
  --
 
