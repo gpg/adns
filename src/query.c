@@ -127,16 +127,24 @@ static void query_simple(adns_state ads, adns_query qu,
 			 const char *owner, int ol,
 			 const typeinfo *typei, adns_queryflags flags,
 			 struct timeval now) {
-  vbuf vb;
+  vbuf vb_new;
   int id;
   adns_status stat;
 
-  vb= qu->vb;
-  
-  stat= adns__mkquery(ads,&vb,&id, owner,ol, typei,flags);
-  if (stat) { adns__query_fail(qu,stat); return; }
+  stat= adns__mkquery(ads,&qu->vb,&id, owner,ol, typei,flags);
+  if (stat) {
+    if (stat == adns_s_querydomaintoolong && (flags & adns_qf_search)) {
+      adns__search_next(ads,qu,now);
+      return;
+    } else {
+      adns__query_fail(qu,stat);
+      return;
+    }
+  }
 
-  query_submit(ads,qu, typei,&vb,id, flags,now);
+  vb_new= qu->vb;
+  adns__vbuf_init(&qu->vb);
+  query_submit(ads,qu, typei,&vb_new,id, flags,now);
 }
 
 void adns__search_next(adns_state ads, adns_query qu, struct timeval now) {
