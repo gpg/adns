@@ -11,7 +11,7 @@ adns (0.7) BETA; urgency=medium
   * Better reporting of unexpected or weird replies from nameserver.
   * Add test case for recursion (infinite loop) domain compression.
 
- --
+ -- Ian Jackson <ian@davenant.greenend.org.uk>  Thu,  2 Mar 2000 01:45:40 +0000
 
 adns (0.6) BETA; urgency=high
 
