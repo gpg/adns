@@ -552,14 +552,20 @@ static void mf_hostaddr(adns_query qu, void *datap) {
 static adns_status csp_hostaddr(vbuf *vb, const adns_rr_hostaddr *rrp) {
   const char *errstr;
   adns_status st;
+  char buf[20];
   int i;
 
   st= csp_domain(vb,rrp->host);  if (st) return st;
 
   CSP_ADDSTR(" ");
-  CSP_ADDSTR(adns_errabbrev(rrp->astatus));
+  CSP_ADDSTR(adns_errtypeabbrev(rrp->astatus));
 
+  sprintf(buf," %d ",rrp->astatus);
+  CSP_ADDSTR(buf);
+
+  CSP_ADDSTR(adns_errabbrev(rrp->astatus));
   CSP_ADDSTR(" ");
+
   errstr= adns_strerror(rrp->astatus);
   st= csp_qstring(vb,errstr,strlen(errstr));  if (st) return st;
   

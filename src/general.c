@@ -204,6 +204,7 @@ adns_status adns_rr_info(adns_rrtype type,
   return st;
 }
 
+
 #define SINFO(n,s) { adns_s_##n, #n, s }
 
 static const struct sinfo {
@@ -240,7 +241,7 @@ static const struct sinfo {
   SINFO(  querydomaintoolong,  "Domain name is too long"                       ),
 
   SINFO(  nxdomain,            "No such domain"                                ),
-  SINFO(  nodata,              "No such data"                                  ),
+  SINFO(  nodata,              "No such data"                                  )
 };
 
 static int si_compar(const void *key, const void *elem) {
@@ -267,6 +268,43 @@ const char *adns_errabbrev(adns_status st) {
   si= findsinfo(st);
   return si->abbrev;
 }
+
+
+#define STINFO(max) { adns_s_max_##max, #max }
+
+static const struct stinfo {
+  adns_status stmax;
+  const char *abbrev;
+} stinfos[]= {
+  { adns_s_ok, "ok" },
+  STINFO(  localfail   ),
+  STINFO(  remotefail  ),
+  STINFO(  tempfail    ),
+  STINFO(  misconfig   ),
+  STINFO(  misquery    ),
+  STINFO(  permfail    )
+};
+
+static int sti_compar(const void *key, const void *elem) {
+  const adns_status *st= key;
+  const struct stinfo *sti= elem;
+
+  adns_status here, min, max;
+
+  here= *st;
+  min= (sti==stinfos) ? 0 : sti[-1].stmax+1;
+  max= sti->stmax;
+  
+  return here < min  ? -1 : here > max ? 1 : 0;
+}
+
+const char *adns_errtypeabbrev(adns_status st) {
+  const struct stinfo *sti;
+
+  sti= bsearch(&st,stinfos,sizeof(stinfos)/sizeof(*stinfos),sizeof(*stinfos),sti_compar);
+  return sti->abbrev;
+}
+
 
 void adns__isort(void *array, int nobjs, int sz, void *tempbuf,
 		 int (*needswap)(void *context, const void *a, const void *b),

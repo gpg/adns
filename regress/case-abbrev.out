@@ -29,11 +29,11 @@ greenend.org.uk flags 0 type TXT(-) ownflags=a: nodata; nrrs=0; cname=$; owner=$
 greenend.org.uk flags 0 type RP(raw) ownflags=a: nodata; nrrs=0; cname=$; owner=$; ttl=86400
 greenend.org.uk flags 0 type A(addr) ownflags=a: nodata; nrrs=0; cname=$; owner=$; ttl=86400
 greenend.org.uk flags 0 type NS(+addr) ownflags=a: ok; nrrs=2; cname=$; owner=$; ttl=86400
- ns0.relativity.greenend.org.uk ok "OK" ( INET 172.18.45.6 )
- ns1.relativity.greenend.org.uk ok "OK" ( INET 172.18.45.65 )
+ ns0.relativity.greenend.org.uk ok 0 ok "OK" ( INET 172.18.45.6 )
+ ns1.relativity.greenend.org.uk ok 0 ok "OK" ( INET 172.18.45.65 )
 greenend.org.uk flags 0 type PTR(checked) ownflags=a: nodata; nrrs=0; cname=$; owner=$; ttl=86400
 greenend.org.uk flags 0 type MX(+addr) ownflags=a: ok; nrrs=1; cname=$; owner=$; ttl=86400
- 10 chiark.greenend.org.uk ok "OK" ( INET 195.224.76.132 )
+ 10 chiark.greenend.org.uk ok 0 ok "OK" ( INET 195.224.76.132 )
 greenend.org.uk flags 0 type SOA(822) ownflags=a: ok; nrrs=1; cname=$; owner=$; ttl=86400
  ns.chiark.greenend.org.uk hostmaster@greenend.org.uk 1999061300 28800 7200 604800 86400
 greenend.org.uk flags 0 type RP(822) ownflags=a: nodata; nrrs=0; cname=$; owner=$; ttl=86400
