@@ -90,8 +90,85 @@ static void ccf_search(adns_state ads, const char *fn, int lno, const char *buf)
   adns__diag(ads,-1,0,"warning - `search' ignored fixme");
 }
 
-static void ccf_sortlist(adns_state ads, const char *fn, int lno, const char *buf) {
-  adns__diag(ads,-1,0,"warning - `sortlist' ignored fixme");
+static void ccf_sortlist(adns_state ads, const char *fn, int lno, const char *bufp) {
+  const char *p, *q;
+  char tbuf[200], *slash, *ep;
+  struct in_addr base, mask;
+  int l;
+  unsigned long initial, baselocal;
+
+  ads->nsortlist= 0;
+  if (!bufp) return;
+
+  for (;;) {
+    while (ctype_whitespace(*bufp)) bufp++;
+    if (!*bufp) return;
+
+    q= bufp;
+    while (*q && !ctype_whitespace(*q)) q++;
+
+    p= bufp;
+    l= q-p;
+    bufp= q;
+
+    if (ads->nsortlist >= MAXSORTLIST) {
+      adns__diag(ads,-1,0,"too many sortlist entries, ignoring %.*s onwards",l,p);
+      return;
+    }
+
+    if (l >= sizeof(tbuf)) {
+      configparseerr(ads,fn,lno,"sortlist entry `%.*s' too long",l,p);
+      continue;
+    }
+    
+    memcpy(tbuf,p,l);
+    slash= strchr(tbuf,'/');
+    if (slash) *slash++= 0;
+    
+    if (!inet_aton(tbuf,&base)) {
+      configparseerr(ads,fn,lno,"invalid address `%s' in sortlist",tbuf);
+      continue;
+    }
+
+    if (slash) {
+      if (strchr(slash,'.')) {
+	if (!inet_aton(slash,&mask)) {
+	  configparseerr(ads,fn,lno,"invalid mask `%s' in sortlist",slash);
+	  continue;
+	}
+	if (base.s_addr & ~mask.s_addr) {
+	  configparseerr(ads,fn,lno,
+			 "mask `%s' in sortlist overlaps address `%s'",slash,tbuf);
+	  continue;
+	}
+      } else {
+	initial= strtoul(slash,&ep,10);
+	if (*ep || initial>32) {
+	  configparseerr(ads,fn,lno,"mask length `%s' invalid",slash);
+	  continue;
+	}
+	mask.s_addr= htonl((0x0ffffffffUL) << (32-initial));
+      }
+    } else {
+      baselocal= ntohl(base.s_addr);
+      if (!baselocal & 0x080000000UL) /* class A */
+	mask.s_addr= htonl(0x0ff000000UL);
+      else if ((baselocal & 0x0c0000000UL) == 0x080000000UL)
+	mask.s_addr= htonl(0x0ffff0000UL); /* class B */
+      else if ((baselocal & 0x0f0000000UL) == 0x0e0000000UL)
+	mask.s_addr= htonl(0x0ff000000UL); /* class C */
+      else {
+	configparseerr(ads,fn,lno,
+		       "network address `%s' in sortlist is not in classed ranges,"
+		       " must specify mask explicitly", tbuf);
+	continue;
+      }
+    }
+
+    ads->sortlist[ads->nsortlist].base= base;
+    ads->sortlist[ads->nsortlist].mask= mask;
+    ads->nsortlist++;
+  }
 }
 
 static void ccf_options(adns_state ads, const char *fn, int lno, const char *buf) {
@@ -176,15 +253,14 @@ static int gl_file(adns_state ads, getline_ctx *src_io, const char *filename,
 
 static int gl_text(adns_state ads, getline_ctx *src_io, const char *filename,
 		   int lno, char *buf, int buflen) {
-  const char *cp= src_io->text, *nn;
+  const char *cp= src_io->text;
   int l;
 
-  if (!cp) return -1;
-  
-  nn= strchr(cp,'\n');
+  if (!cp || !*cp) return -1;
 
-  l= nn ? nn-cp : strlen(cp);
-  src_io->text= nn ? nn+1 : 0;
+  if (*cp == ';' || *cp == '\n') cp++;
+  l= strcspn(cp,";\n");
+  src_io->text = cp+l;
 
   if (l >= buflen) {
     adns__diag(ads,-1,0,"%s:%d: line too long, ignored",filename,lno);
@@ -282,6 +358,17 @@ static void readconfigenv(adns_state ads, const char *envvar) {
   if (filename) readconfig(ads,filename);
 }
 
+static void readconfigenvtext(adns_state ads, const char *envvar) {
+  const char *textdata;
+
+  if (ads->iflags & adns_if_noenv) {
+    adns__debug(ads,-1,0,"not checking environment variable `%s'",envvar);
+    return;
+  }
+  textdata= instrum_getenv(ads,envvar);
+  if (textdata) readconfigtext(ads,textdata,envvar);
+}
+
 
 int adns__setnonblock(adns_state ads, int fd) {
   int r;
@@ -306,7 +393,7 @@ static int init_begin(adns_state *ads_r, adns_initflags flags, FILE *diagfile) {
   ads->udpsocket= ads->tcpsocket= -1;
   adns__vbuf_init(&ads->tcpsend);
   adns__vbuf_init(&ads->tcprecv);
-  ads->nservers= ads->tcpserver= 0;
+  ads->nservers= ads->nsortlist= ads->tcpserver= 0;
   ads->tcpstate= server_disconnected;
   timerclear(&ads->tcptimeout);
 
@@ -322,7 +409,7 @@ static int init_finish(adns_state ads) {
   if (!ads->nservers) {
     if (ads->diagfile && ads->iflags & adns_if_debug)
       fprintf(ads->diagfile,"adns: no nameservers, using localhost\n");
-    ia.s_addr= INADDR_LOOPBACK;
+    ia.s_addr= htonl(INADDR_LOOPBACK);
     addserver(ads,ia);
   }
 
@@ -358,6 +445,9 @@ int adns_init(adns_state *ads_r, adns_initflags flags, FILE *diagfile) {
   readconfig(ads,"/etc/resolv.conf");
   readconfigenv(ads,"RES_CONF");
   readconfigenv(ads,"ADNS_RES_CONF");
+
+  readconfigenvtext(ads,"RES_CONF_TEXT");
+  readconfigenvtext(ads,"ADNS_RES_CONF_TEXT");
 
   ccf_options(ads,"RES_OPTIONS",-1,res_options);
   ccf_options(ads,"ADNS_RES_OPTIONS",-1,adns_res_options);

@@ -245,15 +245,30 @@ static adns_status pa_inaddr(const parseinfo *pai, int cbyte, int max, void *dat
   return adns_s_ok;
 }
 
-static int dip_inaddr(struct in_addr a, struct in_addr b) {
-  /* fixme implement sortlist */
-  return 0;
+static int search_sortlist(adns_state ads, struct in_addr ad) {
+  const struct sortlist *slp;
+  int i;
+  
+  for (i=0, slp=ads->sortlist;
+       i<ads->nsortlist && !((ad.s_addr & slp->mask.s_addr) == slp->base.s_addr);
+       i++, slp++);
+  return i;
 }
 
-static int di_inaddr(const void *datap_a, const void *datap_b) {
+static int dip_inaddr(adns_state ads, struct in_addr a, struct in_addr b) {
+  int ai, bi;
+  
+  if (!ads->nsortlist) return 0;
+
+  ai= search_sortlist(ads,a);
+  bi= search_sortlist(ads,b);
+  return bi<ai;
+}
+
+static int di_inaddr(adns_state ads, const void *datap_a, const void *datap_b) {
   const struct in_addr *ap= datap_a, *bp= datap_b;
 
-  return dip_inaddr(*ap,*bp);
+  return dip_inaddr(ads,*ap,*bp);
 }
 
 static adns_status cs_inaddr(vbuf *vb, const void *datap) {
@@ -281,12 +296,18 @@ static adns_status pa_addr(const parseinfo *pai, int cbyte, int max, void *datap
   return adns_s_ok;
 }
 
-static int di_addr(const void *datap_a, const void *datap_b) {
+static int di_addr(adns_state ads, const void *datap_a, const void *datap_b) {
   const adns_rr_addr *ap= datap_a, *bp= datap_b;
 
   assert(ap->addr.sa.sa_family == AF_INET);
-  return dip_inaddr(ap->addr.inet.sin_addr,bp->addr.inet.sin_addr);
+  return dip_inaddr(ads, ap->addr.inet.sin_addr, bp->addr.inet.sin_addr);
 }
+
+static int div_addr(void *context, const void *datap_a, const void *datap_b) {
+  const adns_state ads= context;
+
+  return di_addr(ads, datap_a, datap_b);
+}		     
 
 static adns_status csp_addr(vbuf *vb, const adns_rr_addr *rrp) {
   const char *ia;
@@ -386,7 +407,8 @@ static adns_status pap_findaddrs(const parseinfo *pai, adns_rr_hostaddr *ha,
     ha->naddrs= naddrs;
     ha->astatus= adns_s_ok;
 
-    adns__isort(ha->addrs, naddrs, sizeof(adns_rr_addr), pai->qu->vb.buf, di_addr);
+    adns__isort(ha->addrs, naddrs, sizeof(adns_rr_addr), pai->qu->vb.buf,
+		div_addr, pai->ads);
   }
   return adns_s_ok;
 }
@@ -461,19 +483,21 @@ static adns_status pa_hostaddr(const parseinfo *pai, int cbyte, int max, void *d
   return adns_s_ok;
 }
 
-static int dip_hostaddr(const adns_rr_hostaddr *ap, const adns_rr_hostaddr *bp) {
+static int dip_hostaddr(adns_state ads, const adns_rr_hostaddr *ap, const adns_rr_hostaddr *bp) {
   if (ap->astatus != bp->astatus) return ap->astatus;
   if (ap->astatus) return 0;
 
   assert(ap->addrs[0].addr.sa.sa_family == AF_INET);
   assert(bp->addrs[0].addr.sa.sa_family == AF_INET);
-  return dip_inaddr(ap->addrs[0].addr.inet.sin_addr, bp->addrs[0].addr.inet.sin_addr);
+  return dip_inaddr(ads,
+		    ap->addrs[0].addr.inet.sin_addr,
+		    bp->addrs[0].addr.inet.sin_addr);
 }
 
-static int di_hostaddr(const void *datap_a, const void *datap_b) {
+static int di_hostaddr(adns_state ads, const void *datap_a, const void *datap_b) {
   const adns_rr_hostaddr *ap= datap_a, *bp= datap_b;
 
-  return dip_hostaddr(ap,bp);
+  return dip_hostaddr(ads, ap,bp);
 }
 
 static void mfp_hostaddr(adns_query qu, adns_rr_hostaddr *rrp) {
@@ -538,7 +562,7 @@ static adns_status pa_mx_raw(const parseinfo *pai, int cbyte, int max, void *dat
   return adns_s_ok;
 }
 
-static int di_mx_raw(const void *datap_a, const void *datap_b) {
+static int di_mx_raw(adns_state ads, const void *datap_a, const void *datap_b) {
   const adns_rr_intstr *ap= datap_a, *bp= datap_b;
 
   if (ap->i < bp->i) return 0;
@@ -566,12 +590,12 @@ static adns_status pa_mx(const parseinfo *pai, int cbyte, int max, void *datap) 
   return adns_s_ok;
 }
 
-static int di_mx(const void *datap_a, const void *datap_b) {
+static int di_mx(adns_state ads, const void *datap_a, const void *datap_b) {
   const adns_rr_inthostaddr *ap= datap_a, *bp= datap_b;
 
   if (ap->i < bp->i) return 0;
   if (ap->i > bp->i) return 1;
-  return dip_hostaddr(&ap->ha,&bp->ha);
+  return dip_hostaddr(ads, &ap->ha, &bp->ha);
 }
 
 /*

@@ -30,6 +30,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+/* All struct in_addr anywhere in adns are in NETWORK byte order. */
+
 typedef struct adns__state *adns_state;
 typedef struct adns__query *adns_query;
 

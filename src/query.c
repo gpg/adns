@@ -300,7 +300,9 @@ void adns__query_done(adns_query qu) {
       return;
     }
     adns__isort(ans->rrs.bytes, ans->nrrs, ans->rrsz,
-		qu->vb.buf, qu->typei->diff_needswap);
+		qu->vb.buf,
+		(int(*)(void*, const void*, const void*))qu->typei->diff_needswap,
+		qu->ads);
   }
 
   parent= qu->parent;

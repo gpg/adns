@@ -39,7 +39,8 @@ typedef unsigned char byte;
 /* Configuration and constants */
 
 #define MAXSERVERS 5
-#define UDPMAXRETRIES /*15*/5
+#define MAXSORTLIST 15
+#define UDPMAXRETRIES /*15 fixme*/5
 #define UDPRETRYMS 2000
 #define TCPMS 30000
 #define LOCALRESOURCEMS 20
@@ -115,7 +116,7 @@ typedef struct {
    * nsstart is the offset of the authority section.
    */
 
-  int (*diff_needswap)(const void *datap_a, const void *datap_b);
+  int (*diff_needswap)(adns_state ads, const void *datap_a, const void *datap_b);
   /* Returns !0 if RR a should be strictly after RR b in the sort order,
    * 0 otherwise.  Must not fail.
    */
@@ -243,12 +244,15 @@ struct adns__state {
   struct { adns_query head, tail; } timew, childw, output;
   int nextid, udpsocket, tcpsocket;
   vbuf tcpsend, tcprecv;
-  int nservers, tcpserver;
+  int nservers, nsortlist, tcpserver;
   enum adns__tcpstate { server_disconnected, server_connecting, server_ok } tcpstate;
   struct timeval tcptimeout;
   struct server {
     struct in_addr addr;
   } servers[MAXSERVERS];
+  struct sortlist {
+    struct in_addr base, mask;
+  } sortlist[MAXSORTLIST];
 };
 
 /* From setup.c: */
@@ -289,7 +293,8 @@ const char *adns__diag_domain(adns_state ads, int serv, adns_query qu,
  */
   
 void adns__isort(void *array, int nobjs, int sz, void *tempbuf,
-		 int (*needswap)(const void *a, const void *b));
+		 int (*needswap)(void *context, const void *a, const void *b),
+		 void *context);
 /* Does an insertion sort of array which must contain nobjs objects
  * each sz bytes long.  tempbuf must point to a buffer at least
  * sz bytes long.  needswap should return !0 if a>b (strictly, ie
