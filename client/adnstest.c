@@ -135,7 +135,7 @@ int main(int argc, char *const *argv) {
   for (qi=0; qi<qc; qi++) {
     fdom_split(fdomlist[qi],&domain,&qflags);
     for (ti=0; ti<tc; ti++) {
-      fprintf(stdout,"%s type %d flags %d",domain,types[ti],qflags);
+      fprintf(stdout,"%s flags %d type %d",domain,qflags,types[ti]);
       r= adns_submit(ads,domain,types[ti],qflags,0,&qus[qi*tc+ti]);
       if (r == adns_s_unknownrrtype) {
 	fprintf(stdout," not implemented\n");
@@ -164,10 +164,10 @@ int main(int argc, char *const *argv) {
       if (gettimeofday(&now,0)) { perror("gettimeofday"); exit(3); }
       
       ri= adns_rr_info(ans->type, &rrtn,&fmtn,&len, 0,0);
-      fprintf(stdout, "%s type ",domain);
+      fprintf(stdout, "%s flags %d type ",domain,qflags);
       dumptype(ri,rrtn,fmtn);
-      fprintf(stdout, " flags %d: %s; nrrs=%d; cname=%s; owner=%s; ttl=%ld\n",
-	      qflags, adns_strerror(ans->status),
+      fprintf(stdout, ": %s; nrrs=%d; cname=%s; owner=%s; ttl=%ld\n",
+	      adns_strerror(ans->status),
 	      ans->nrrs,
 	      ans->cname ? ans->cname : "$",
 	      ans->owner ? ans->owner : "$",
