@@ -21,18 +21,20 @@ WARNS=	-Wall -Wmissing-prototypes -Wwrite-strings -Wstrict-prototypes \
 	-Wcast-qual -Wpointer-arith
 WERROR=-Werror
 
-HCPPFLAGS= \
- -Dsocket=Hsocket -Dfcntl=Hfcntl -Dgettimeofday=Hgettimeofday \
- -Dsendto=Hsendto -Drecvfrom=Hrecvfrom -Dselect=Hselect -Dconnect=Hconnect \
- -Dread=Hread -Dwrite=Hwrite -Dclose=Hclose
+HCPPFLAGS:= $(foreach F,		\
+	gettimeofday select		\
+	socket fcntl connect close	\
+	sendto recvfrom read write	\
+, -D$F=H$F)
 
 LIBOBJS=	types.o event.o query.o reply.o general.o setup.o transmit.o parse.o
 HARNLOBJS=	$(addsuffix _d.o, $(basename $(LIBOBJS)))
-ALLOBJS=	$(LIBOBJS) $(HARNLOBJS) dtest.o harness.o
+ALLOBJS=	$(LIBOBJS) $(HARNLOBJS) dtest.o hrecord.o hplayback.o hcommon.o
 
-all:		dtest
+all:		dtest hrecord
+# hplayback
 
-harness:	harness.o $(HARNLOBJS)
+hrecord:	dtest.o hrecord.o hcommon.o $(HARNLOBJS)
 
 dtest:		dtest.o $(LIBOBJS)
 
