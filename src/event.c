@@ -537,7 +537,7 @@ int adns_processany(adns_state ads) {
 		 now,&r);
 
   adns__consistency(ads,0,cc_entex);
-  return r;
+  return 0;
 }
 
 void adns__autosys(adns_state ads, struct timeval now) {
