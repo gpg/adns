@@ -14,6 +14,7 @@ adns (0.2) experimental; urgency=low
 
   Other changes:
   * Added COPYING (copy of the GPL).
+  * Regression test failure output improved.
 
  --
 
