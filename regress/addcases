@@ -1,5 +1,5 @@
 #!/bin/sh
-# usage: ./a1test <casename> ...
+# usage: ./addcases <casename> ...
 
 set -e
 
