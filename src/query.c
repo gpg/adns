@@ -374,6 +374,7 @@ void adns__transfer_interim(adns_query from, adns_query to, void *block, size_t 
   LIST_UNLINK(from->allocations,an);
   LIST_LINK_TAIL(to->allocations,an);
 
+  sz= MEM_ROUND(sz);
   from->interim_allocd -= sz;
   to->interim_allocd += sz;
 
