@@ -21,7 +21,7 @@ adns (0.5) unstable; urgency=medium
   * adns_rr_hostaddr naddrs is -1 on temporary failure (as documented).
   * Reject TXT RRs with no strings.
   * Correct error messages for qname CNAME foo, foo CNAME bar.
-  * ands_processany actually does something.
+  * adns_processany actually does something.
   * Fixed typos in adns.h.
 
   General improvements:
