@@ -289,10 +289,10 @@ struct adns__state {
     server_ok, server_broken
   } tcpstate;
   struct timeval tcptimeout;
-  /* This will have tv_sec==0 if it is not valid.
-   * It will always be valid if tcpstate _connecting.
-   * When _ok, it will be nonzero if we are idle
-   * (ie, tcpw queue is empty) and counting down.
+  /* This will have tv_sec==0 if it is not valid.  It will always be
+   * valid if tcpstate _connecting.  When _ok, it will be nonzero if
+   * we are idle (ie, tcpw queue is empty), in which case it is the
+   * absolute time when we will close the connection.
    */
   struct sigaction stdsigpipe;
   sigset_t stdsigmask;

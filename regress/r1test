@@ -42,13 +42,20 @@ do
 	then
 		:
 	else
-		failed=true
+		failwhy="$failwhy WRONG OUTPUT"
 	fi
 done
 
-if $failed
+cat >"$ocase.leftover"
+if egrep . /dev/null "$ocase.leftover"
 then
-	echo >&2 "FAILED $case - WRONG OUTPUT - lines of syscall remaining `wc -l`"
+	failwhy="$failwhy EXITED EARLY"
+fi
+
+if [ "x$failwhy" != x ]
+then
+	scremain="`wc -l <\"$ocase.leftover\"`"
+	echo >&2 "FAILED $case -$failwhy - lines of syscall remaining $scremain"
 	mrc=2
 	exit
 fi

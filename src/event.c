@@ -143,6 +143,17 @@ void adns__must_gettimeofday(adns_state ads, const struct timeval **now_io,
   return;
 }
 
+static void inter_immed(struct timeval **tv_io, struct timeval *tvbuf) {
+  struct timeval *rbuf;
+
+  if (!tv_io) return;
+
+  rbuf= *tv_io;
+  if (!rbuf) { *tv_io= rbuf= tvbuf; }
+
+  timerclear(rbuf);
+}
+    
 static void inter_maxto(struct timeval **tv_io, struct timeval *tvbuf,
 			struct timeval maxto) {
   struct timeval *rbuf;
@@ -185,12 +196,7 @@ static void timeouts_queue(adns_state ads, int act,
     if (!timercmp(&now,&qu->timeout,>)) {
       inter_maxtoabs(tv_io,tvbuf,now,qu->timeout);
     } else {
-      if (!act) {
-	tvbuf->tv_sec= 0;
-	tvbuf->tv_usec= 0;
-	*tv_io= tvbuf;
-	return;
-      }
+      if (!act) { inter_immed(tv_io,tvbuf); return; }
       LIST_UNLINK(*queue,qu);
       if (qu->state != query_tosend) {
 	adns__query_fail(qu,adns_s_timeout);
@@ -210,6 +216,7 @@ static void tcp_events(adns_state ads, int act,
   for (;;) {
     switch (ads->tcpstate) {
     case server_broken:
+      if (!act) { inter_immed(tv_io,tvbuf); return; }
       for (qu= ads->tcpw.head; qu; qu= nqu) {
 	nqu= qu->next;
 	assert(qu->state == query_tcpw);
@@ -221,6 +228,7 @@ static void tcp_events(adns_state ads, int act,
       ads->tcpstate= server_disconnected;
     case server_disconnected: /* fall through */
       if (!ads->tcpw.head) return;
+      if (!act) { inter_immed(tv_io,tvbuf); return; }
       adns__tcp_tryconnect(ads,now);
       break;
     case server_ok:
@@ -231,7 +239,7 @@ static void tcp_events(adns_state ads, int act,
 	timevaladd(&ads->tcptimeout,TCPIDLEMS);
       }
     case server_connecting: /* fall through */
-      if (!timercmp(&now,&ads->tcptimeout,>)) {
+      if (!act || !timercmp(&now,&ads->tcptimeout,>)) {
 	inter_maxtoabs(tv_io,tvbuf,now,ads->tcptimeout);
 	return;
       } {
@@ -253,6 +261,7 @@ static void tcp_events(adns_state ads, int act,
       abort();
     }
   }
+  return;
 }
 
 void adns__timeouts(adns_state ads, int act,
@@ -665,6 +674,7 @@ int adns_wait(adns_state ads,
     maxfd= 0; tvp= 0;
     FD_ZERO(&readfds); FD_ZERO(&writefds); FD_ZERO(&exceptfds);
     adns_beforeselect(ads,&maxfd,&readfds,&writefds,&exceptfds,&tvp,&tvbuf,0);
+    assert(tvp);
     rsel= select(maxfd,&readfds,&writefds,&exceptfds,tvp);
     if (rsel==-1) {
       if (errno == EINTR) {

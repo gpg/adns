@@ -78,6 +78,7 @@ static void Tensureinputfile(void) {
     fd= atoi(fdstr);
     Tinputfile= fdopen(fd,"r"); if (!Tinputfile) Tfailed("fdopen ADNS_TEST_IN_FD");
   }
+  setvbuf(Tinputfile,0,_IONBF,0);
 
   if (!adns__vbuf_ensure(&vb2,1000)) Tnomem();
   fgets(vb2.buf,vb2.avail,Tinputfile); Pcheckinput();

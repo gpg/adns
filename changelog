@@ -1,13 +1,26 @@
 uadns (0.8) BETA; urgency=low
 
+  Bugfixes:
   * Spurious `server failure on unidentifiable query' warning suppressed.
-  * install-sh (from autoconf 2.12 Debian r13) included.
   * adnslogres: cast chars to unsigned char before using ctype.h macros.
+  * In _beforeselect, global failure now means zero timeout, and in
+    tcp_events, really never try to do anything with the TCP connection if
+    act is zero.  This might possibly cause an infinite delay (ie, lockup)
+    if things go badly wrong *and* a really unlikely race happens.
+  * Test suite `lines of syscall left' value is correct; !0 is failure.
+
+  Portability fixes:
+  * install-sh (from autoconf 2.12 Debian r13) included.
+
+  Documentation improvements:
   * Security/performance note added, about local nameservers and DNSSEC.
   * Documented that adns_rr_info _rr_hostaddr ( ) for address list
     means permanent failure, and ? means temporary failure.
   * Typo (*now for now in _beforeselect description) in adns.h fixed.
-  * In _beforeselect, global system failure now produces zero timeout.
+  
+  Changes to produce more defensive code:
+  * In adns_wait, assert that the timeout is not infinite.
+  * Make qu->id start out as -2 when initially allocated.
 
  --
 
