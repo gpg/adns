@@ -5,6 +5,8 @@ adns (0.2) experimental; urgency=low
   * Don't use GCC union assignment feature (.rrs=0 => .rrs.untyped=0).
   * Explictly cast things to [const] struct sockaddr* in syscall args.
   * Check whether we need -lsocket.
+  * Include <sys/times.h> in a few more files.
+  * Include <unistd.h> and <sys/time.h> for select.
 
  --
 
