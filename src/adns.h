@@ -105,6 +105,7 @@ typedef enum {
   adns_s_norecurse,
   adns_s_serverfaulty,
   adns_s_unknownreply,
+  adns_s_invaliddata,
   adns_s_max_tempfail= 99,
   adns_s_inconsistent, /* PTR gives domain whose A does not match */
   adns_s_cname, /* CNAME found where data eg A expected (not if _qf_loosecname) */
