@@ -517,7 +517,7 @@ static void init_abort(adns_state ads) {
   free(ads);
 }
 
-int adns_init(adns_state *ads_r, int flags, FILE *diagfile) {
+int adns_init(adns_state *ads_r, adns_initflags flags, FILE *diagfile) {
   adns_state ads;
   const char *res_options, *adns_res_options;
   int r;
@@ -557,7 +557,7 @@ int adns_init(adns_state *ads_r, int flags, FILE *diagfile) {
   return 0;
 }
 
-int adns_init_strcfg(adns_state *ads_r, int flags,
+int adns_init_strcfg(adns_state *ads_r, adns_initflags flags,
 		     FILE *diagfile, const char *configtext) {
   adns_state ads;
   int r;

@@ -14,6 +14,7 @@ adns (0.6) unstable; urgency=high
   * New adns_if_logpid option (functionality suggested by Tony Finch).
   * Better control of adnshost output and error messages (new -F options).
   * New fanftest test program from Tony Finch.
+  * Declare flags parameters as enums again, not ints.
 
  --
 
