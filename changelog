@@ -3,9 +3,11 @@ adns (0.10) unstable; urgency=low
   Bugfixes:
   * Fix incorrect `compressed datagram contains loop' error.
   * Actually compile shared libraries by default !
+  * Fix adnsresfilter usage message to include correct default timeout.
 
   General Improvements:
-  * adnshost and adnslogres have options for overriding configuration.
+  * adnshost, adnslogres, adnsresfilter have options for config override. 
+  * adnsresfilter has --debug option.
   * Improvements to adnslogres (incl. new -c option) from Tony Finch.
   * Regression tests now include `adnshost' invocations.
   * Test cancellation both before and after query completion.
