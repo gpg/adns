@@ -39,6 +39,7 @@ static const adns_rrtype defaulttypes[]= {
   adns_r_ns_raw,
   adns_r_cname,
   adns_r_ptr_raw,
+  adns_r_txt,
   adns_r_none
 };
 
@@ -80,12 +81,13 @@ int main(int argc, const char *const *argv) {
       if (r) failure("wait",r);
 
       ri= adns_rr_info(ans->type, &rrtn,&fmtn,&len, 0,0);
-      fprintf(stdout, "%s: %s; nrrs=%d; cname=%s; ",
-	      argv[qi], adns_strerror(ans->status),
-	      ans->nrrs, ans->cname ? ans->cname : "$");
-      fprintf(stdout, "type %s(%s) %s\n",
+      fprintf(stdout, "%s type %s(%s)%s%s: ",
+	      argv[qi],
 	      ri ? "?" : rrtn, ri ? "?" : fmtn ? fmtn : "-",
-	      adns_strerror(ri));
+	      ri ? " " : "", ri ? adns_strerror(ri) : "");
+      fprintf(stdout, "%s; nrrs=%d; cname=%s\n",
+	      adns_strerror(ans->status),
+	      ans->nrrs, ans->cname ? ans->cname : "$");
       if (ans->nrrs) {
 	assert(!ri);
 	for (i=0; i<ans->nrrs; i++) {

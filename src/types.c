@@ -20,6 +20,8 @@
  *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
  */
 
+#include <stdlib.h>
+
 #include <arpa/inet.h>
 
 #include "internal.h"
@@ -71,20 +73,55 @@ static adns_status pa_domain_raw(adns_query qu, int serv,
   return st;
 }
 
+static adns_status pa_txt(adns_query qu, int serv,
+			  const byte *dgram, int dglen, int cbyte, int max,
+			  void *store_r) {
+  vbuf vb;
+
+  adns__vbuf_init(&vb);
+
+  while (dg
+  char *bp;
+
+  max-= cbyte;
+  dgram+= cbyte;
+  
+  bp= adns__alloc_interim(qu,max+1); if (!bp) return adns_s_nolocalmem;
+  bp[max]= 0;
+  memcpy(bp,dgram,max);
+  *(char**)store_r= bp;
+  return adns_s_ok;
+}
+
 static void mf_str(adns_query qu, void *data) {
   char **ddp= data;
 
   adns__makefinal_str(qu,ddp);
 }
 
-static adns_status cs_str(vbuf *vb, const void *data) {
-  const char *const *ddp= data;
-  const char *dp= *ddp;
+static int csp_qstring(vbuf *vb, const char *dp) {
+  unsigned char ch;
+  char buf[10];
+
+  if (!adns__vbuf_append(vb,"\"",1)) return 0;
+
+  while ((ch= *dp++)) {
+    if (ch >= 32 && ch <= 126 && ch != '"' && ch != '\\') {
+      if (!adns__vbuf_append(vb,&ch,1)) return 0;
+    } else {
+      sprintf(buf,"\\%02x",ch);
+      if (!adns__vbuf_appendstr(vb,buf)) return 0;
+    }
+  }
   
-  return (adns__vbuf_append(vb,"\"",1) &&
-	  adns__vbuf_appendstr(vb,dp) &&
-	  adns__vbuf_append(vb,"\"",1))
-    ? adns_s_ok : adns_s_nolocalmem;
+  if (!adns__vbuf_append(vb,"\"",1)) return 0;
+  return 1;
+}
+
+static adns_status cs_str(vbuf *vb, const void *data) {
+  const char *const *dpp= data;
+
+  return csp_qstring(vb,*dpp) ? adns_s_ok : adns_s_nolocalmem;
 }
 
 static void mf_flat(adns_query qu, void *data) { }
@@ -119,7 +156,9 @@ static const typeinfo typeinfos[] = {
 #if 0 /*fixme*/
   { adns_r_hinfo,   "HINFO", 0,        DEEP_MEMB(strpair),   pa_hinfo       },
   { adns_r_mx_raw,  "MX",   "raw",     DEEP_MEMB(intstr),    pa_mx_raw      },
+#endif
   { adns_r_txt,     "TXT",   0,        DEEP_MEMB(str),       pa_txt         },
+#if 0 /*fixme*/
   { adns_r_rp_raw,  "RP",   "raw",     DEEP_MEMB(strpair),   pa_rp          },
    		      	                                  		   
   { adns_r_ns,      "NS",   "+addr",   DEEP_MEMB(dmaddr),    pa_dmaddr      },
