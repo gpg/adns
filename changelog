@@ -10,7 +10,7 @@ adns (0.10) unstable; urgency=low
   * adnsresfilter has --debug option.
   * Improvements to adnslogres (incl. new -c option) from Tony Finch.
   * adnslogres has --help option.
-  * Documentation improved somewhat.
+  * Documentation improved somewhat, including new GPL-vs-LGPL file.
   * Do not install adnstest test utility.
 
   Regression test improvements:
