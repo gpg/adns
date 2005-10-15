@@ -112,15 +112,23 @@ DPKG_CACHED_TRY_COMPILE(inlines,dpkg_cv_c_inline,,
  AC_DEFINE(HAVE_INLINE),
  AC_MSG_RESULT(no))
 
-ADNS_C_GCCATTRIB
-
 AC_SUBST(WARNS)
 
 if test "${GCC-no}" = yes; then
 	WARNS="-Wall -Wmissing-prototypes -Wwrite-strings -Wstrict-prototypes -Wcast-qual -Wpointer-arith"
+	saved_cflags="$CFLAGS"
+	CFLAGS="$CFLAGS -Wno-pointer-sign"
+	DPKG_CACHED_TRY_COMPILE(-Wno-pointer-sign,adns_cv_c_wnoptrsign,,
+	 [],
+	 AC_MSG_RESULT(yes)
+	 WARNS="$WARNS -Wno-pointer-sign",
+	 AC_MSG_RESULT(no))
+	CFLAGS="$saved_cflags"
 else
 	WARNS=
 fi
+
+ADNS_C_GCCATTRIB
 
 AC_SUBST(SHLIBCC)
 AC_SUBST(MKSHLIB_1)
