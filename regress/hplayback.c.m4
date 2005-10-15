@@ -69,7 +69,7 @@ static void Pcheckinput(void) {
   if (feof(Tinputfile)) Psyntax("eof at syscall reply");
 }
 
-static void Tensureinputfile(void) {
+void Tensurerecordfile(void) {
   const char *fdstr;
   int fd;
   int chars;
@@ -261,7 +261,7 @@ void Q_vb(void) {
   int r;
   const char *nl;
 
-  Tensureinputfile();
+  Tensurerecordfile();
   if (!adns__vbuf_ensure(&vb2,vb.used+2)) Tnomem();
   r= fread(vb2.buf,1,vb.used+2,Tinputfile);
   if (feof(Tinputfile)) {

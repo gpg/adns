@@ -15,6 +15,8 @@ int Hpoll(	struct pollfd *fds , int nfds , int timeout 	);
 int Hsocket(	int domain , int type , int protocol 	);
 int Hfcntl(	int fd , int cmd , ... 	);
 int Hconnect(	int fd , const struct sockaddr *addr , int addrlen 	);
+int Hbind(	int fd , const struct sockaddr *addr , int addrlen 	);
+int Hlisten(	int fd , int backlog 	);
 int Hclose(	int fd 	);
 int Hsendto(	int fd , const void *msg , int msglen , unsigned int flags , const struct sockaddr *addr , int addrlen 	);
 int Hrecvfrom(	int fd , void *buf , int buflen , unsigned int flags , struct sockaddr *addr , int *addrlen 	);

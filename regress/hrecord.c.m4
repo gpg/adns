@@ -45,7 +45,7 @@ static void R_recordtime(void) {
   int r;
   struct timeval tv, tvrel;
 
-  Tensureoutputfile();
+  Tensurerecordfile();
   r= gettimeofday(&tv,0); if (r) Tfailed("gettimeofday syscallbegin");
   tvrel.tv_sec= tv.tv_sec - currenttime.tv_sec;
   tvrel.tv_usec= tv.tv_usec - currenttime.tv_usec;
@@ -54,7 +54,7 @@ static void R_recordtime(void) {
   currenttime= tv;
 }
 
-void Tensureoutputfile(void) {
+void Tensurerecordfile(void) {
   const char *fdstr;
   int fd, r;
 
@@ -74,7 +74,7 @@ void Tensureoutputfile(void) {
 
 void Q_vb(void) {
   if (!adns__vbuf_append(&vb,"",1)) Tnomem();
-  Tensureoutputfile();
+  Tensurerecordfile();
   if (fprintf(Toutputfile," %s\n",vb.buf) == EOF) Toutputerr();
   if (fflush(Toutputfile)) Toutputerr();
 }

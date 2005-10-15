@@ -34,6 +34,7 @@ const struct Terrno Terrnos[]= {
 };
 static vbuf vbw;
 int Hgettimeofday(struct timeval *tv, struct timezone *tz) {
+  Tensurerecordfile();
   Tmust("gettimeofday","tz",!tz);
   *tv= currenttime;
   return 0;
@@ -90,6 +91,20 @@ void Qconnect(	int fd , const struct sockaddr *addr , int addrlen 	) {
  Tvba("connect");
 	Tvbf(" fd=%d",fd); 
 	Tvba(" addr="); Tvbaddr(addr,addrlen); 
+  Q_vb();
+}
+void Qbind(	int fd , const struct sockaddr *addr , int addrlen 	) {
+ vb.used= 0;
+ Tvba("bind");
+	Tvbf(" fd=%d",fd); 
+	Tvba(" addr="); Tvbaddr(addr,addrlen); 
+  Q_vb();
+}
+void Qlisten(	int fd , int backlog 	) {
+ vb.used= 0;
+ Tvba("listen");
+	Tvbf(" fd=%d",fd); 
+	Tvbf(" backlog=%d",backlog); 
   Q_vb();
 }
 void Qclose(	int fd 	) {

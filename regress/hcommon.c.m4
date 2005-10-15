@@ -61,12 +61,14 @@ const struct Terrno Terrnos[]= {
   { "ECONNRESET",                ECONNRESET                   },
   { "ECONNREFUSED",              ECONNREFUSED                 },
   { "EPIPE",                     EPIPE                        },
+  { "ENOTSOCK",                  ENOTSOCK                     },
   {  0,                          0                            }
 };
 
 static vbuf vbw;
 
 int Hgettimeofday(struct timeval *tv, struct timezone *tz) {
+  Tensurerecordfile();
   Tmust("gettimeofday","tz",!tz);
   *tv= currenttime;
   return 0;

@@ -51,7 +51,7 @@ void Tfailed(const char *why);
 void Toutputerr(void);
 void Tnomem(void);
 void Tfsyscallr(const char *fmt, ...) PRINTFFORMAT(1,2);
-void Tensureoutputfile(void);
+void Tensurerecordfile(void);
 void Tmust(const char *call, const char *arg, int cond);
 
 void Tvbf(const char *fmt, ...) PRINTFFORMAT(1,2);

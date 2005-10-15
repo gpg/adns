@@ -89,6 +89,18 @@ hm_syscall(
 ')
 
 hm_syscall(
+	bind, `hm_rv_succfail', `
+	hm_arg_fd(fd) hm_na
+	hm_arg_addr_in(addr,addrlen) hm_na
+')
+
+hm_syscall(
+	listen, `hm_rv_succfail', `
+	hm_arg_fd(fd) hm_na
+	hm_arg_int(backlog) hm_na
+')
+
+hm_syscall(
 	close, `hm_rv_succfail', `
 	hm_arg_fd(fd) hm_na
 ')

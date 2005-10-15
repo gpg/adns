@@ -11,6 +11,11 @@ adns (1.2); urgency=medium
     updated).
   * Add documentation comment by definition of adns_r_ptr_raw type enum.
   * Add -Wno-pointer-sign if GCC has that option.
+  * Call Tensurerecordfile in Hgettimeofday (Tensurerecordfile was
+    Tensureinputfile/Tensureoutputfile).
+  * Add bind(2) and listen(2) to test harness (for epithet's benefit, but
+    harmless in adns).
+  * Add missing ENOTSOCK to hcommon.c.m4 (was already in hcommon.c!)
 
  --
 
