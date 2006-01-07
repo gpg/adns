@@ -1,4 +1,4 @@
-adns (1.2); urgency=medium
+adns (1.1.999.0.1); urgency=medium
 
   * Fix error in prototype in definition of adns__parse_domain.
   * New LICENCE.WAIVERS file for GPL-incompatility workarounds.
@@ -16,6 +16,8 @@ adns (1.2); urgency=medium
   * Add bind(2) and listen(2) to test harness (for epithet's benefit, but
     harmless in adns).
   * Add missing ENOTSOCK to hcommon.c.m4 (was already in hcommon.c!)
+  * New adns_init_logfn etc. for having logging done with a callback
+    function.
 
  --
 

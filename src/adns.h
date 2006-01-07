@@ -58,6 +58,7 @@
 #define ADNS_H_INCLUDED
 
 #include <stdio.h>
+#include <stdarg.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -359,6 +360,19 @@ int adns_init(adns_state *newstate_r, adns_initflags flags,
 
 int adns_init_strcfg(adns_state *newstate_r, adns_initflags flags,
 		     FILE *diagfile /*0=>discard*/, const char *configtext);
+
+typedef void adns_logcallbackfn(adns_state ads, void *logfndata,
+				const char *fmt, va_list al);
+  /* Will be called perhaps several times for each message; when the
+   * message is complete, the string implied by fmt and al will end in
+   * a newline.  Log messages start with `adns debug:' or `adns
+   * warning:' or `adns:' (for errors), or `adns debug [PID]:'
+   * etc. if adns_if_logpid is set. */
+
+int adns_init_logfn(adns_state *newstate_r, adns_initflags flags,
+		    const char *configtext /*0=>use default config files*/,
+		    adns_logcallbackfn *logfn /*0=>logfndata is a FILE* */,
+		    void *logfndata /*0 with logfn==0 => discard*/);
 
 /* Configuration:
  *  adns_init reads /etc/resolv.conf, which is expected to be (broadly
@@ -672,10 +686,10 @@ void adns_beforeselect(adns_state ads, int *maxfd, fd_set *readfds,
  * for adns_firsttimeout.  readfds, writefds, exceptfds and maxfd_io may
  * not be 0.
  *
- * If now is not 0 then this will never actually do any I/O, or change
- * the fds that adns is using or the timeouts it wants.  In any case
- * it won't block, and it will set the timeout to zero if a query
- * finishes in _beforeselect.
+ * If tv_mod is 0 on entry then this will never actually do any I/O,
+ * or change the fds that adns is using or the timeouts it wants.  In
+ * any case it won't block, and it will set the timeout to zero if a
+ * query finishes in _beforeselect.
  */
 
 void adns_afterselect(adns_state ads, int maxfd, const fd_set *readfds,
