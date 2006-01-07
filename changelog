@@ -19,7 +19,7 @@ adns (1.1.999.0.1); urgency=medium
   * New adns_init_logfn etc. for having logging done with a callback
     function.
 
- --
+ -- Ian Jackson <ian@davenant.greenend.org.uk>  Sat,  7 Jan 2006 17:10:11 +0000
 
 adns (1.1); urgency=medium
 
