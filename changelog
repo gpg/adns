@@ -1,4 +1,12 @@
-adns (1.3); urgency=medium
+
+
+THIS BRANCH IS NOW CLOSED
+
+  EVERYTHING HAS BEEN MERGED TO THE TRUNK
+   (at CVS tag mergepoint-logcallbackfn)
+
+  DO NOT EDIT
+  
 
   * New adns_init_logfn etc. for having logging done with a callback
     function.
