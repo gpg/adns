@@ -77,7 +77,18 @@ static void failure_status(const char *what, adns_status st) {
 
 static void failure_errno(const char *what, int errnoval) NONRETURNING;
 static void failure_errno(const char *what, int errnoval) {
-  fprintf(stderr,"adns failure: %s: errno=%d\n",what,errnoval);
+  switch (errnoval) {
+#define CE(e) \
+  case e: fprintf(stderr,"adns failure: %s: errno=" #e "\n",what); break
+  CE(EINVAL);
+  CE(EINTR);
+  CE(ESRCH);
+  CE(EAGAIN);
+  CE(ENOSYS);
+  CE(ERANGE);
+#undef CE
+  default: fprintf(stderr,"adns failure: %s: errno=%d\n",what,errnoval); break;
+  }
   quitnow(2);
 }
 
