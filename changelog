@@ -3,6 +3,9 @@ adns (1.1.999.0.2); urgency=medium
   * Include reference to Peter Simons's Haskell bindings
     in README.html.
 
+  Patches from Bernd Eckenfels, the Debian maintainer:
+  * Correct type of various printf arguments: ptrdiff_t != int.
+
  --
 
 adns (1.1.999.0.1); urgency=medium

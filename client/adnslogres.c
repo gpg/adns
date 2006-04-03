@@ -115,10 +115,10 @@ retry:
     }
   }
   sprintf(buf, "%.*s.%.*s.%.*s.%.*s.in-addr.arpa.",
-	  ptrs[4]-ptrs[3]-1, ptrs[3],
-	  ptrs[3]-ptrs[2]-1, ptrs[2],
-	  ptrs[2]-ptrs[1]-1, ptrs[1],
-	  ptrs[1]-ptrs[0]-1, ptrs[0]);
+	  (int)(ptrs[4]-ptrs[3]-1), ptrs[3],
+	  (int)(ptrs[3]-ptrs[2]-1), ptrs[2],
+	  (int)(ptrs[2]-ptrs[1]-1), ptrs[1],
+	  (int)(ptrs[1]-ptrs[0]-1), ptrs[0]);
   *addr= ptrs[0];
   *rest= ptrs[4]-1;
   return buf;
@@ -126,7 +126,7 @@ retry:
 
 static void printline(FILE *outf, char *start, char *addr, char *rest, char *domain) {
   if (domain)
-    fprintf(outf, "%.*s%s%s", addr - start, start, domain, rest);
+    fprintf(outf, "%.*s%s%s", (int)(addr - start), start, domain, rest);
   else
     fputs(start, outf);
   if (ferror(outf)) aargh("write output");
