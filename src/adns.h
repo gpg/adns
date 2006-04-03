@@ -75,7 +75,8 @@ extern "C" { /* I really dislike this - iwj. */
 typedef struct adns__state *adns_state;
 typedef struct adns__query *adns_query;
 
-typedef enum {
+typedef enum { /* In general, or together the desired flags: */
+ adns_if_none=        0x0000,/* no flags.  nicer than 0 for some compilers */
  adns_if_noenv=       0x0001,/* do not look at environment */
  adns_if_noerrprint=  0x0002,/* never print to stderr (_debug overrides) */
  adns_if_noserverwarn=0x0004,/* do not warn to stderr about duff servers etc */
@@ -88,7 +89,8 @@ typedef enum {
  adns_if_checkc_freq= 0x0300 /* consistency checks very frequently (slow!) */
 } adns_initflags;
 
-typedef enum {
+typedef enum { /* In general, or together the desired flags: */
+ adns_qf_none=           0x00000000,/* no flags */
  adns_qf_search=         0x00000001,/* use the searchlist */
  adns_qf_usevc=          0x00000002,/* use a virtual circuit (TCP conn) */
  adns_qf_owner=          0x00000004,/* fill in the owner field in the answer */

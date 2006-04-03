@@ -3,10 +3,12 @@ adns (1.1.999.0.2); urgency=medium
   * Include reference to Peter Simons's Haskell bindings
     in README.html.
 
-  Fixes from Bernd Eckenfels, the Debian maintainer:
+  Fixes from or suggested by Bernd Eckenfels, the Debian maintainer:
   * Correct type of various printf arguments: ptrdiff_t != int.
   * Do not print size of leaked blocks of memory (this causes
-    a spurious regression test failure).
+    a spurious regression test failure on some platforms)
+  * Provide adns_if_none and adns_qf_none (which will help with compilers
+    which complain about plain `0' being passed where an enum is wanted).
 
  --
 
