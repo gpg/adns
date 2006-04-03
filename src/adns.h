@@ -340,7 +340,8 @@ typedef struct {
  *
  *  For _init, _init_strcfg, _submit and _synchronous, system errors
  *  (eg, failure to create sockets, malloc failure, etc.) return errno
- *  values.
+ *  values.  EINVAL from _init et al means the configuration file
+ *  is erroneous and cannot be parsed.
  * 
  *  For _wait and _check failures are reported in the answer
  *  structure, and only 0, ESRCH or (for _check) EAGAIN is

@@ -9,6 +9,7 @@ adns (1.1.999.0.2); urgency=medium
   * adnstest converts some errno values to EFOOBAR: all of the ones
     mentioned in adns.h, at least.  This makes the regression test
     more portable (fixes problem noticed by Bernd Eckenfels).
+  * Document in adns.h EINVAL from adns_init meaning bad configuration.
 
   Fixes from or suggested by Bernd Eckenfels, the Debian maintainer:
   * Correct type of various printf arguments: ptrdiff_t != int.
