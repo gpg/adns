@@ -289,7 +289,7 @@ void Hexit(int rv) {
   if (mallocedlist.head) {
     fprintf(stderr,"adns test harness: memory leaked:");
     for (loopnode=mallocedlist.head; loopnode; loopnode=loopnode->next)
-      fprintf(stderr," %lu(%lu)",loopnode->count,(unsigned long)loopnode->sz);
+      fprintf(stderr," %lu",loopnode->count);
     putc('\n',stderr);
     if (ferror(stderr)) exit(-1);
   }
