@@ -59,6 +59,7 @@ ADNSDIR=	$(srcdir)/../src/
 all:		$(TARGETS)
 
 install:	$(TARG_INSTALL)
+		mkdir -p $(bin_dir)
 		set -xe; for f in $(TARG_INSTALL); \
 			do $(INSTALL_PROGRAM) $$f $(bin_dir)/$$f; done
 

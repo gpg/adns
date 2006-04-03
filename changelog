@@ -2,6 +2,9 @@ adns (1.1.999.0.2); urgency=medium
 
   * Include reference to Peter Simons's Haskell bindings
     in README.html.
+  * Create $(bin_dir) and $(lib_dir) on `make install', and also
+    make a libadns.so.1 -> libadns.so.1.<minor> link.  (Suggestions
+    and patch from Nix of esperi.org.uk.)
 
   Fixes from or suggested by Bernd Eckenfels, the Debian maintainer:
   * Correct type of various printf arguments: ptrdiff_t != int.

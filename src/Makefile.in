@@ -29,6 +29,7 @@ include		$(srcdir)/../settings.make
 include		adns.make
 
 install:
+		mkdir -p $(lib_dir) $(include_dir)
 		set -xe; for f in $(TARGETS); \
 			do $(INSTALL_DATA) $$f $(lib_dir)/$$f; done
 		$(INSTALL_DATA) $(srcdir)/../src/adns.h $(include_dir)/adns.h
