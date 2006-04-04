@@ -90,6 +90,7 @@ void of_type(const struct optioninfo *oi, const char *arg, const char *arg2) {
     { adns_r_ptr,    "ptr"    },
     { adns_r_mx,     "mx"     },
     { adns_r_rp,     "rp"     },
+    { adns_r_srv,    "srv"    },
     { adns_r_addr,   "addr"   },
     
     /* types with only one version */
@@ -104,6 +105,7 @@ void of_type(const struct optioninfo *oi, const char *arg, const char *arg2) {
     { adns_r_ptr_raw,  "ptr-" },
     { adns_r_mx_raw,   "mx-"  },
     { adns_r_rp_raw,   "rp-"  },
+    { adns_r_srv_raw,  "srv-" },
 
     { adns_r_none, 0 }
   };

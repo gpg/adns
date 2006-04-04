@@ -63,9 +63,11 @@
  * _mailbox                   (pap +pap_mailbox822)
  * _rp                        (pa)
  * _soa                       (pa,mf,cs)
+ * _srv*                      (qdpl,(pap),pa,mf,di,(csp),cs,postsort)
  * _flat                      (mf)
  *
  * within each section:
+ *    qdpl_*
  *    pap_*
  *    pa_*
  *    dip_*
@@ -74,6 +76,7 @@
  *    mf_*
  *    csp_*
  *    cs_*
+ *    postsort_*
  */
 
 /*
@@ -1033,6 +1036,99 @@ static adns_status qdpl_srv(adns_state ads,
   return adns_s_ok;
 }
 
+static adns_status pap_srv_begin(const parseinfo *pai, int cbyte, int max,
+				 adns_rr_srvraw *rrp
+				   /* might be adns_rr_srvha* */) {
+  const byte *dgram= pai->dgram;
+  int ti;
+  if (cbyte+6 > max) return adns_s_invaliddata;
+  
+  rrp->priority= GET_W(cbyte, ti);
+  rrp->weight=   GET_W(cbyte, ti);
+  rrp->port=     GET_W(cbyte, ti);
+  return adns_s_ok;
+}
+
+static adns_status pa_srvraw(const parseinfo *pai, int cbyte,
+			     int max, void *datap) {
+  adns_rr_srvraw *rrp= datap;
+  adns_status st;
+
+  st= pap_srv_begin(pai,cbyte,max,datap);
+  if (st) return st;
+  
+  st= pap_domain(pai, &cbyte, max, &rrp->host,
+		 pai->qu->flags & adns_qf_quoteok_anshost ? pdf_quoteok : 0);
+  if (st) return st;
+  
+  if (cbyte != max) return adns_s_invaliddata;
+  return adns_s_ok;
+}
+
+static adns_status pa_srvha(const parseinfo *pai, int cbyte,
+			    int max, void *datap) {
+  adns_rr_srvha *rrp= datap;
+  adns_status st;
+
+  st= pap_srv_begin(pai,cbyte,max,datap);        if (st) return st;
+  st= pap_hostaddr(pai, &cbyte, max, &rrp->ha);  if (st) return st;
+  if (cbyte != max) return adns_s_invaliddata;
+  return adns_s_ok;
+}
+
+static void mf_srvraw(adns_query qu, void *datap) {
+  adns_rr_srvraw *rrp= datap;
+  adns__makefinal_str(qu, &rrp->host);
+}
+
+static void mf_srvha(adns_query qu, void *datap) {
+  adns_rr_srvha *rrp= datap;
+  mfp_hostaddr(qu,&rrp->ha);
+}
+
+static int di_srv(adns_state ads, const void *datap_a, const void *datap_b) {
+  const adns_rr_srvraw *ap= datap_a, *bp= datap_b;
+    /* might be const adns_rr_svhostaddr* */
+
+  if (ap->priority < bp->priority) return 0;
+  if (ap->priority > bp->priority) return 1;
+  return 0;
+}
+
+static adns_status csp_srv_begin(vbuf *vb, const adns_rr_srvraw *rrp
+				   /* might be adns_rr_srvha* */) {
+  char buf[30];
+  sprintf(buf,"%u %u %u ", rrp->priority, rrp->weight, rrp->port);
+  CSP_ADDSTR(buf);
+  return adns_s_ok;
+}
+
+static adns_status cs_srvraw(vbuf *vb, const void *datap) {
+  const adns_rr_srvraw *rrp= datap;
+  adns_status st;
+  
+  st= csp_srv_begin(vb,rrp);  if (st) return st;
+  return csp_domain(vb,rrp->host);
+}
+
+static adns_status cs_srvha(vbuf *vb, const void *datap) {
+  const adns_rr_srvha *rrp= datap;
+  adns_status st;
+
+  st= csp_srv_begin(vb,datap);  if (st) return st;
+  return csp_hostaddr(vb,&rrp->ha);
+}
+
+static void postsort_srv(adns_state ads, void *array, int nobjs,
+			 const struct typeinfo *typei) {
+  fprintf(stderr,"(postsort_srv)\n");
+  /* tests:
+   *  dig -t srv _srv._tcp.test.iwj.relativity.greenend.org.uk.
+   *   ./adnshost_s -t srv- _sip._udp.voip.net.cam.ac.uk.
+   *   ./adnshost_s -t srv- _jabber._tcp.jabber.org
+   */
+}
+
 /*
  * _flat   (mf)
  */
@@ -1071,19 +1167,15 @@ DEEP_TYPE(hinfo,  "HINFO", 0, intstrpair,pa_hinfo,   0,        cs_hinfo      ),
 DEEP_TYPE(mx_raw, "MX",   "raw",intstr,  pa_mx_raw,  di_mx_raw,cs_inthost    ),
 DEEP_TYPE(txt,    "TXT",   0,   manyistr,pa_txt,     0,        cs_txt        ),
 DEEP_TYPE(rp_raw, "RP",   "raw",strpair, pa_rp,      0,        cs_rp         ),
-#if 0
 XTRA_TYPE(srv_raw,"SRV",  "raw",srvraw , pa_srvraw,  di_srv,   cs_srvraw,
 	                                               qdpl_srv, postsort_srv),
-#endif
 
 FLAT_TYPE(addr,   "A",  "addr", addr,    pa_addr,    di_addr,  cs_addr       ),
 DEEP_TYPE(ns,     "NS", "+addr",hostaddr,pa_hostaddr,di_hostaddr,cs_hostaddr ),
 DEEP_TYPE(ptr,    "PTR","checked",str,   pa_ptr,     0,        cs_domain     ),
 DEEP_TYPE(mx,     "MX", "+addr",inthostaddr,pa_mx,   di_mx,    cs_inthostaddr),
-#if 0
-XTRA_TYPE(srv,    "SRV","+addr",srvhostaddr,pa_srvaddr,di_srv, cs_srvhostaddr,
+XTRA_TYPE(srv,    "SRV","+addr",srvha,   pa_srvha,   di_srv,   cs_srvha,
           	                                       qdpl_srv, postsort_srv),
-#endif
 
 DEEP_TYPE(soa,    "SOA","822",  soa,     pa_soa,     0,        cs_soa        ),
 DEEP_TYPE(rp,     "RP", "822",  strpair, pa_rp,      0,        cs_rp         ),
