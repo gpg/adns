@@ -113,7 +113,7 @@ typedef struct {
   struct timeval now;
 } parseinfo;
 
-typedef struct {
+typedef struct typeinfo {
   adns_rrtype type;
   const char *rrtname;
   const char *fmtname;
@@ -147,7 +147,33 @@ typedef struct {
   /* Returns !0 if RR a should be strictly after RR b in the sort order,
    * 0 otherwise.  Must not fail.
    */
+
+  adns_status (*qdparselabel)(adns_state ads,
+			      const char **p_io, const char *pe, int labelnum,
+			      char label_r[DNS_MAXDOMAIN], int *ll_io,
+			      adns_queryflags flags,
+			      const struct typeinfo *typei);
+  /* Parses one label from the query domain string.  On entry, *p_io
+   * points to the next character to parse and *ll_io is the size of
+   * the buffer.  pe points just after the end of the query domain
+   * string.  On successful return, label_r[] and *ll_io are filled in
+   * and *p_io points to *pe or just after the label-ending `.'.  */
+
+  void (*postsort)(adns_state ads, void *array, int nobjs,
+		   const struct typeinfo *typei);
+  /* Called immediately after the RRs have been sorted, and may rearrange
+   * them.  (This is really for the benefit of SRV's bizarre weighting
+   * stuff.)  May be 0 to mean nothing needs to be done.
+   */
 } typeinfo;
+
+adns_status adns__qdpl_normal(adns_state ads,
+			      const char **p_io, const char *pe, int labelnum,
+			      char label_r[], int *ll_io,
+			      adns_queryflags flags,
+			      const typeinfo *typei);
+  /* implemented in transmit.c, used by types.c as default
+   * and as part of implementation for some fancier types */
 
 typedef struct allocnode {
   struct allocnode *next, *back;

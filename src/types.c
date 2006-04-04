@@ -1001,6 +1001,39 @@ static adns_status cs_soa(vbuf *vb, const void *datap) {
 }
 
 /*
+ * _srv*  (pa*2,di,cs*2,qdpl,postsort)
+ */
+
+static adns_status qdpl_srv(adns_state ads,
+			    const char **p_io, const char *pe, int labelnum,
+			    char label_r[DNS_MAXDOMAIN], int *ll_io,
+			    adns_queryflags flags,
+			    const typeinfo *typei) {
+  int useflags;
+  const char *p_orig;
+  adns_status st;
+
+  if (labelnum < 2 && !(flags & adns_qf_quoteok_query)) {
+    useflags= adns_qf_quoteok_query;
+    p_orig= *p_io;
+  } else {
+    useflags= flags;
+    p_orig= 0;
+  }
+  st= adns__qdpl_normal(ads, p_io,pe, labelnum,label_r, ll_io, useflags,typei);
+  if (st) return st;
+
+  if (p_orig) {
+    int ll= *ll_io;
+    if (!ll || label_r[0]!='_')
+      return adns_s_querydomaininvalid;
+    if (memchr(p_orig+1, '\\', pe - (p_orig+1)))
+      return adns_s_querydomaininvalid;
+  }
+  return adns_s_ok;
+}
+
+/*
  * _flat   (mf)
  */
 
@@ -1015,10 +1048,15 @@ static void mf_flat(adns_query qu, void *data) { }
 #define DEEP_MEMB(memb) TYPESZ_M(memb), mf_##memb, cs_##memb
 #define FLAT_MEMB(memb) TYPESZ_M(memb), mf_flat, cs_##memb
 
-#define DEEP_TYPE(code,rrt,fmt,memb,parser,comparer,printer) \
- { adns_r_##code, rrt,fmt,TYPESZ_M(memb), mf_##memb, printer,parser,comparer }
-#define FLAT_TYPE(code,rrt,fmt,memb,parser,comparer,printer) \
- { adns_r_##code, rrt,fmt,TYPESZ_M(memb), mf_flat,   printer,parser,comparer }
+#define DEEP_TYPE(code,rrt,fmt,memb,parser,comparer,printer)	\
+ { adns_r_##code, rrt,fmt,TYPESZ_M(memb), mf_##memb,		\
+      printer,parser,comparer, adns__qdpl_normal,0 }
+#define FLAT_TYPE(code,rrt,fmt,memb,parser,comparer,printer)	\
+ { adns_r_##code, rrt,fmt,TYPESZ_M(memb), mf_flat,		\
+     printer,parser,comparer, adns__qdpl_normal,0 }
+#define XTRA_TYPE(code,rrt,fmt,memb,parser,comparer,printer,qdpl,postsort) \
+ { adns_r_##code, rrt,fmt,TYPESZ_M(memb), mf_##memb,			   \
+    printer,parser,comparer,qdpl,postsort }
 
 static const typeinfo typeinfos[] = {
 /* Must be in ascending order of rrtype ! */
@@ -1033,12 +1071,20 @@ DEEP_TYPE(hinfo,  "HINFO", 0, intstrpair,pa_hinfo,   0,        cs_hinfo      ),
 DEEP_TYPE(mx_raw, "MX",   "raw",intstr,  pa_mx_raw,  di_mx_raw,cs_inthost    ),
 DEEP_TYPE(txt,    "TXT",   0,   manyistr,pa_txt,     0,        cs_txt        ),
 DEEP_TYPE(rp_raw, "RP",   "raw",strpair, pa_rp,      0,        cs_rp         ),
+#if 0
+XTRA_TYPE(srv_raw,"SRV",  "raw",srvraw , pa_srvraw,  di_srv,   cs_srvraw,
+	                                               qdpl_srv, postsort_srv),
+#endif
 
 FLAT_TYPE(addr,   "A",  "addr", addr,    pa_addr,    di_addr,  cs_addr       ),
 DEEP_TYPE(ns,     "NS", "+addr",hostaddr,pa_hostaddr,di_hostaddr,cs_hostaddr ),
 DEEP_TYPE(ptr,    "PTR","checked",str,   pa_ptr,     0,        cs_domain     ),
 DEEP_TYPE(mx,     "MX", "+addr",inthostaddr,pa_mx,   di_mx,    cs_inthostaddr),
- 		     	                                   		      
+#if 0
+XTRA_TYPE(srv,    "SRV","+addr",srvhostaddr,pa_srvaddr,di_srv, cs_srvhostaddr,
+          	                                       qdpl_srv, postsort_srv),
+#endif
+
 DEEP_TYPE(soa,    "SOA","822",  soa,     pa_soa,     0,        cs_soa        ),
 DEEP_TYPE(rp,     "RP", "822",  strpair, pa_rp,      0,        cs_rp         ),
 };

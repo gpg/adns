@@ -315,7 +315,7 @@ typedef struct {
 typedef struct {
   int priority, weight, port;
   adns_rr_hostaddr ha;
-} adns_rr_srvaddr;
+} adns_rr_srvhostaddr;
 
 typedef struct {
   adns_status status;
@@ -338,7 +338,7 @@ typedef struct {
     adns_rr_intstr *intstr;          /* mx_raw */
     adns_rr_soa *soa;                /* soa, soa_raw */
     adns_rr_srvraw *srvraw;          /* srv_raw */
-    adns_rr_srvaddr *srvaddr;        /* srv */
+    adns_rr_srvhostaddr *srvhostaddr;/* srv */
   } rrs;
 } adns_answer;
 
