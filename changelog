@@ -18,6 +18,8 @@ adns (1.1.999.0.2); urgency=medium
   * Provide adns_if_none and adns_qf_none (which will help with compilers
     which complain about plain `0' being passed where an enum is wanted).
 
+ * WIP support for SRV RRs.
+
  --
 
 adns (1.1.999.0.1); urgency=medium

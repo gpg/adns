@@ -105,8 +105,8 @@ typedef enum { /* In general, or together the desired flags: */
 
 typedef enum {
  adns__rrt_typemask=0x0ffff,
- adns__qtf_deref=   0x10000, /* dereference domains; perhaps get extra data */
- adns__qtf_mail822= 0x20000, /* return mailboxes in RFC822 rcpt field fmt   */
+ adns__qtf_deref=    0x10000,/* dereference domains; perhaps get extra data */
+ adns__qtf_mail822=  0x20000,/* return mailboxes in RFC822 rcpt field fmt   */
  		     
  adns_r_none=             0,
  		     
@@ -132,6 +132,12 @@ typedef enum {
  		     
  adns_r_rp_raw=          17,
  adns_r_rp=                  adns_r_rp_raw|adns__qtf_mail822,
+
+ /* For SRV records, query domain without _qf_quoteok_query must look
+  * as expected from SRV RFC with hostname-like Name.  _With_
+  * _quoteok_query, any query domain is allowed. */
+ adns_r_srv_raw=         33,
+ adns_r_srv=                 adns_r_srv_raw|adns__qtf_deref,
 		     
  adns_r_addr=                adns_r_a|adns__qtf_deref
  
@@ -302,6 +308,16 @@ typedef struct {
 } adns_rr_soa;
 
 typedef struct {
+  int priority, weight, port;
+  char *host;
+} adns_rr_srvraw;
+
+typedef struct {
+  int priority, weight, port;
+  adns_rr_hostaddr ha;
+} adns_rr_srvaddr;
+
+typedef struct {
   adns_status status;
   char *cname; /* always NULL if query was for CNAME records */
   char *owner; /* only set if req'd in query flags; maybe 0 on error anyway */
@@ -321,6 +337,8 @@ typedef struct {
     adns_rr_inthostaddr *inthostaddr;/* mx */
     adns_rr_intstr *intstr;          /* mx_raw */
     adns_rr_soa *soa;                /* soa, soa_raw */
+    adns_rr_srvraw *srvraw;          /* srv_raw */
+    adns_rr_srvaddr *srvaddr;        /* srv */
   } rrs;
 } adns_answer;
 
