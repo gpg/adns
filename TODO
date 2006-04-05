@@ -18,3 +18,17 @@ WISHLIST:
 * `Nameserver sent bad response' should produce a hexdump in the log
   (see eg mail to ian@davenant Mon, 25 Oct 2004 14:19:46 +0100 re
   `compressed datagram contains loop')
+
+
+
+
+static void postsort_srv(adns_state ads, void *array, int nobjs,
+			 const struct typeinfo *typei) {
+  fprintf(stderr,"(postsort_srv)\n");
+  /* tests:
+   *  dig -t srv _srv._tcp.test.iwj.relativity.greenend.org.uk.
+   *   ./adnshost_s -t srv- _sip._udp.voip.net.cam.ac.uk.
+   *   ./adnshost_s -t srv- _jabber._tcp.jabber.org
+   */
+}
+
