@@ -1036,12 +1036,14 @@ static adns_status qdpl_srv(adns_state ads,
   return adns_s_ok;
 }
 
-static adns_status pap_srv_begin(const parseinfo *pai, int cbyte, int max,
+static adns_status pap_srv_begin(const parseinfo *pai, int *cbyte_io, int max,
 				 adns_rr_srvraw *rrp
 				   /* might be adns_rr_srvha* */) {
   const byte *dgram= pai->dgram;
-  int ti;
-  if (cbyte+6 > max) return adns_s_invaliddata;
+  int ti, cbyte;
+
+  cbyte= *cbyte_io;
+  if ((*cbyte_io += 6) > max) return adns_s_invaliddata;
   
   rrp->priority= GET_W(cbyte, ti);
   rrp->weight=   GET_W(cbyte, ti);
@@ -1054,7 +1056,7 @@ static adns_status pa_srvraw(const parseinfo *pai, int cbyte,
   adns_rr_srvraw *rrp= datap;
   adns_status st;
 
-  st= pap_srv_begin(pai,cbyte,max,datap);
+  st= pap_srv_begin(pai,&cbyte,max,datap);
   if (st) return st;
   
   st= pap_domain(pai, &cbyte, max, &rrp->host,
@@ -1070,7 +1072,7 @@ static adns_status pa_srvha(const parseinfo *pai, int cbyte,
   adns_rr_srvha *rrp= datap;
   adns_status st;
 
-  st= pap_srv_begin(pai,cbyte,max,datap);        if (st) return st;
+  st= pap_srv_begin(pai,&cbyte,max,datap);       if (st) return st;
   st= pap_hostaddr(pai, &cbyte, max, &rrp->ha);  if (st) return st;
   if (cbyte != max) return adns_s_invaliddata;
   return adns_s_ok;
