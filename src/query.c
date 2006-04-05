@@ -537,6 +537,9 @@ void adns__query_done(adns_query qu) {
 		  qu->typei->diff_needswap,
 		qu->ads);
   }
+  if (ans->nrrs && qu->typei->postsort) {
+    qu->typei->postsort(qu->ads, ans->rrs.bytes, ans->nrrs, qu->typei);
+  }
 
   ans->expires= qu->expires;
   parent= qu->parent;

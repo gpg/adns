@@ -159,6 +159,12 @@ typedef struct typeinfo {
    * string.  On successful return, label_r[] and *ll_io are filled in
    * and *p_io points to *pe or just after the label-ending `.'.  */
 
+  void (*postsort)(adns_state ads, void *array, int nobjs,
+		   const struct typeinfo *typei);
+  /* Called immediately after the RRs have been sorted, and may rearrange
+   * them.  (This is really for the benefit of SRV's bizarre weighting
+   * stuff.)  May be 0 to mean nothing needs to be done.
+   */
 } typeinfo;
 
 adns_status adns__qdpl_normal(adns_state ads,
