@@ -1143,8 +1143,6 @@ static void postsort_srv(adns_state ads, void *array, int nrrs,
 	 workend < arrayend && (rr=(void*)workend)->priority == cpriority;
 	 workend += typei->rrsz) {
       totalweight += rr->weight;
-fprintf(stderr,"(postsort_srv priority %d weight %d)\n",
-	cpriority, rr->weight);
     }
 
     /* Now workbegin..(workend-1) incl. are exactly all of the RRs of
@@ -1159,12 +1157,6 @@ fprintf(stderr,"(postsort_srv priority %d weight %d)\n",
       
       randval= nrand48(ads->rand48xsubi);
       randval %= (totalweight + 1);
-fprintf(stderr,"(postsort_srv totalweight %d randval %ld  %ld..%ld<%ld)\n",
-	totalweight,randval,
-	(unsigned long)(workbegin - (char*)array) / typei->rrsz,
-	(unsigned long)(workend - (char*)array) / typei->rrsz,
-	(unsigned long)(arrayend - (char*)array) / typei->rrsz
-	);
         /* makes it into 0..totalweight inclusive; with 2^10 RRs,
 	 * totalweight must be <= 2^26 so probability nonuniformity is
 	 * no worse than 1 in 2^(31-26) ie 1 in 2^5, ie
@@ -1174,10 +1166,6 @@ fprintf(stderr,"(postsort_srv totalweight %d randval %ld  %ld..%ld<%ld)\n",
       for (search=workbegin, runtotal=0;
 	   (runtotal += (rr=(void*)search)->weight) < randval;
 	   search += typei->rrsz);
-fprintf(stderr,"(postsort_srv search %ld runtotal %d)\n",
-	(unsigned long)(search - (char*)array) / typei->rrsz,
-	runtotal
-	);
       assert(search < arrayend);
       totalweight -= rr->weight;
       if (search != workbegin) {
