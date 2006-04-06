@@ -107,6 +107,21 @@ typedef enum {
  adns__rrt_typemask=0x0ffff,
  adns__qtf_deref=    0x10000,/* dereference domains; perhaps get extra data */
  adns__qtf_mail822=  0x20000,/* return mailboxes in RFC822 rcpt field fmt   */
+
+ adns_r_unknown=     0x40000,
+   /* To use this, ask for records of type   <rr-type-code>|adns_r_unknown.
+    * adns will not process the RDATA at all - you'll get intstr's, where
+    * the int is the length and the char* points to the data.  String
+    * representation of the RR data is as in RFC3597.  adns_rr_info
+    * will not return the type name in *rrtname_r (due to memory management
+    * problems); *fmtname_r will be set to "unknown".
+    *
+    * Do not specify adns_r_unknown along with a known RR type which
+    * requires domain name uncompression.  Domain names will not be
+    * uncompressed and the resulting data will be useless.  Asking for
+    * meta-RR types via adns_r_unknown will not work properly either
+    * and may make adns complain about server misbehaviour.
+    */
  		     
  adns_r_none=             0,
  		     
@@ -335,7 +350,7 @@ typedef struct {
     adns_rr_intstrpair *intstrpair;  /* hinfo */
     adns_rr_strpair *strpair;        /* rp, rp_raw */
     adns_rr_inthostaddr *inthostaddr;/* mx */
-    adns_rr_intstr *intstr;          /* mx_raw */
+    adns_rr_intstr *intstr;          /* mx_raw, ...|unknown */
     adns_rr_soa *soa;                /* soa, soa_raw */
     adns_rr_srvraw *srvraw;          /* srv_raw */
     adns_rr_srvha *srvha;/* srv */
