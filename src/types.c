@@ -1037,8 +1037,8 @@ static adns_status qdpl_srv(adns_state ads,
 }
 
 static adns_status pap_srv_begin(const parseinfo *pai, int *cbyte_io, int max,
-				 adns_rr_srvraw *rrp
-				   /* might be adns_rr_srvha* */) {
+				 adns_rr_srvha *rrp
+				   /* might be adns_rr_srvraw* */) {
   const byte *dgram= pai->dgram;
   int ti, cbyte;
 
@@ -1097,8 +1097,8 @@ static int di_srv(adns_state ads, const void *datap_a, const void *datap_b) {
   return 0;
 }
 
-static adns_status csp_srv_begin(vbuf *vb, const adns_rr_srvraw *rrp
-				   /* might be adns_rr_srvha* */) {
+static adns_status csp_srv_begin(vbuf *vb, const adns_rr_srvha *rrp
+				   /* might be adns_rr_srvraw* */) {
   char buf[30];
   sprintf(buf,"%u %u %u ", rrp->priority, rrp->weight, rrp->port);
   CSP_ADDSTR(buf);
@@ -1109,7 +1109,7 @@ static adns_status cs_srvraw(vbuf *vb, const void *datap) {
   const adns_rr_srvraw *rrp= datap;
   adns_status st;
   
-  st= csp_srv_begin(vb,rrp);  if (st) return st;
+  st= csp_srv_begin(vb,(const void*)rrp);  if (st) return st;
   return csp_domain(vb,rrp->host);
 }
 
@@ -1117,13 +1117,76 @@ static adns_status cs_srvha(vbuf *vb, const void *datap) {
   const adns_rr_srvha *rrp= datap;
   adns_status st;
 
-  st= csp_srv_begin(vb,datap);  if (st) return st;
+  st= csp_srv_begin(vb,(const void*)datap);  if (st) return st;
   return csp_hostaddr(vb,&rrp->ha);
 }
 
-static void postsort_srv(adns_state ads, void *array, int nobjs,
+static void postsort_srv(adns_state ads, void *array, int nrrs,
 			 const struct typeinfo *typei) {
-  fprintf(stderr,"(postsort_srv)\n");
+  /* we treat everything in the array as if it were an adns_rr_srvha
+   * even though the array might be of adns_rr_srvraw.  That's OK
+   * because they have the same prefix, which is all we access.
+   * We use typei->rrsz, too, rather than naive array indexing, of course.
+   */
+  char *workbegin, *workend, *search, *arrayend;
+  const adns_rr_srvha *rr;
+  union { adns_rr_srvha ha; adns_rr_srvraw raw; } rrtmp;
+  int cpriority, totalweight, runtotal;
+  long randval;
+
+  for (workbegin= array, arrayend= workbegin + typei->rrsz * nrrs;
+       workbegin < arrayend;
+       workbegin= workend) {
+    cpriority= (rr=(void*)workbegin)->priority;
+    
+    for (workend= workbegin, totalweight= 0;
+	 workend < arrayend && (rr=(void*)workend)->priority == cpriority;
+	 workend += typei->rrsz) {
+      totalweight += rr->weight;
+fprintf(stderr,"(postsort_srv priority %d weight %d)\n",
+	cpriority, rr->weight);
+    }
+
+    /* Now workbegin..(workend-1) incl. are exactly all of the RRs of
+     * cpriority.  From now on, workbegin points to the `remaining'
+     * records: we select one record at a time (RFC2782 `Usage rules'
+     * and `Format of the SRV RR' subsection `Weight') to place at
+     * workbegin (swapping with the one that was there, and then
+     * advance workbegin. */
+    for (;
+	 workbegin + typei->rrsz < workend; /* don't bother if just one */
+	 workbegin += typei->rrsz) {
+      
+      randval= nrand48(ads->rand48xsubi);
+      randval %= (totalweight + 1);
+fprintf(stderr,"(postsort_srv totalweight %d randval %ld  %ld..%ld<%ld)\n",
+	totalweight,randval,
+	(unsigned long)(workbegin - (char*)array) / typei->rrsz,
+	(unsigned long)(workend - (char*)array) / typei->rrsz,
+	(unsigned long)(arrayend - (char*)array) / typei->rrsz
+	);
+        /* makes it into 0..totalweight inclusive; with 2^10 RRs,
+	 * totalweight must be <= 2^26 so probability nonuniformity is
+	 * no worse than 1 in 2^(31-26) ie 1 in 2^5, ie
+	 *  abs(log(P_intended(RR_i) / P_actual(RR_i)) <= log(2^-5).
+	 */
+
+      for (search=workbegin, runtotal=0;
+	   (runtotal += (rr=(void*)search)->weight) < randval;
+	   search += typei->rrsz);
+fprintf(stderr,"(postsort_srv search %ld runtotal %d)\n",
+	(unsigned long)(search - (char*)array) / typei->rrsz,
+	runtotal
+	);
+      assert(search < arrayend);
+      totalweight -= rr->weight;
+      if (search != workbegin) {
+	memcpy(&rrtmp, workbegin, typei->rrsz);
+	memcpy(workbegin, search, typei->rrsz);
+	memcpy(search, &rrtmp, typei->rrsz);
+      }
+    }
+  }
   /* tests:
    *  dig -t srv _srv._tcp.test.iwj.relativity.greenend.org.uk.
    *   ./adnshost_s -t srv- _sip._udp.voip.net.cam.ac.uk.

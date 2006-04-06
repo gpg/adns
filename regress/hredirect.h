@@ -31,6 +31,8 @@
 #define writev Hwritev
 #undef gettimeofday
 #define gettimeofday Hgettimeofday
+#undef getpid
+#define getpid Hgetpid
 #undef malloc
 #define malloc Hmalloc
 #undef free

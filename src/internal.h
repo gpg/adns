@@ -159,7 +159,7 @@ typedef struct typeinfo {
    * string.  On successful return, label_r[] and *ll_io are filled in
    * and *p_io points to *pe or just after the label-ending `.'.  */
 
-  void (*postsort)(adns_state ads, void *array, int nobjs,
+  void (*postsort)(adns_state ads, void *array, int nrrs,
 		   const struct typeinfo *typei);
   /* Called immediately after the RRs have been sorted, and may rearrange
    * them.  (This is really for the benefit of SRV's bizarre weighting
@@ -337,6 +337,7 @@ struct adns__state {
     struct in_addr base, mask;
   } sortlist[MAXSORTLIST];
   char **searchlist;
+  unsigned short rand48xsubi[3];
 };
 
 /* From setup.c: */

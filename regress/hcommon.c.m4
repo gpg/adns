@@ -315,3 +315,8 @@ void Hexit(int rv) {
   }
   exit(rv);
 }
+
+pid_t Hgetpid(void) {
+  return 2264; /* just some number */
+}
+

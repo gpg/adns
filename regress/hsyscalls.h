@@ -24,6 +24,7 @@ int Hread(	int fd , void *buf , size_t buflen 	);
 int Hwrite(	int fd , const void *buf , size_t len 	);
 int Hwritev(int fd, const struct iovec *vector, size_t count);
 int Hgettimeofday(struct timeval *tv, struct timezone *tz);
+pid_t Hgetpid(void);
 void* Hmalloc(size_t sz);
 void Hfree(void *ptr);
 void* Hrealloc(void *op, size_t nsz);

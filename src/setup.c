@@ -509,6 +509,7 @@ int adns__setnonblock(adns_state ads, int fd) {
 static int init_begin(adns_state *ads_r, adns_initflags flags,
 		      adns_logcallbackfn *logfn, void *logfndata) {
   adns_state ads;
+  pid_t pid;
   
   ads= malloc(sizeof(*ads)); if (!ads) return errno;
 
@@ -531,6 +532,11 @@ static int init_begin(adns_state *ads_r, adns_initflags flags,
   ads->tcpstate= server_disconnected;
   timerclear(&ads->tcptimeout);
   ads->searchlist= 0;
+
+  pid= getpid();
+  ads->rand48xsubi[0]= pid;
+  ads->rand48xsubi[1]= (unsigned long)pid >> 16;
+  ads->rand48xsubi[2]= pid ^ ((unsigned long)pid >> 16);
 
   *ads_r= ads;
   return 0;

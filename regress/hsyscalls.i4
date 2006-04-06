@@ -135,6 +135,7 @@ hm_syscall(
 
 hm_specsyscall(int, writev, `int fd, const struct iovec *vector, size_t count')
 hm_specsyscall(int, gettimeofday, `struct timeval *tv, struct timezone *tz')
+hm_specsyscall(pid_t, getpid, `void')
 
 hm_specsyscall(void*, malloc, `size_t sz')
 hm_specsyscall(void, free, `void *ptr')
