@@ -9,7 +9,6 @@ WISHLIST:
 * IPv6 transport.
 * Threadsafe version/mode.
 * Caching in the library.
-* SRV RRs.
 * Make port configurable in config file.
 * `Nameserver sent bad response' should produce a hexdump in the log
   (see eg mail to ian@davenant Mon, 25 Oct 2004 14:19:46 +0100 re
