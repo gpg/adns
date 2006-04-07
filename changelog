@@ -19,7 +19,7 @@ adns (1.1.999.0.2); urgency=medium
     which complain about plain `0' being passed where an enum is wanted).
 
   * Support for SRV RRs.
-  * Support for unknown RR types (according to RFC3597).
+  * Support for unknown RR types (according to RFC3597) via adns_r_unknown.
 
  --
 

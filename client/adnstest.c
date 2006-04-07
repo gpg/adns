@@ -136,7 +136,7 @@ static const adns_rrtype defaulttypes[]= {
 
 static void dumptype(adns_status ri, const char *rrtn, const char *fmtn) {
   fprintf(stdout, "%s(%s)%s%s",
-	  rrtn ? "?" : rrtn, ri ? "?" : fmtn ? fmtn : "-",
+	  (!ri && rrtn) ? rrtn : "?", ri ? "?" : fmtn ? fmtn : "-",
 	  ri ? " " : "", ri ? adns_strerror(ri) : "");
 }
 
