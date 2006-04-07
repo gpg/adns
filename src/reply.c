@@ -187,7 +187,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
       continue;
     }
     if (rrtype == adns_r_cname &&
-	(qu->typei->type & adns__rrt_typemask) != adns_r_cname) {
+	(qu->answer->type & adns_rrt_typemask) != adns_r_cname) {
       if (qu->flags & adns_qf_cname_forbid) {
 	adns__query_fail(qu,adns_s_prohibitedcname);
 	return;
@@ -230,7 +230,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
 	 * it contains the relevant info.
 	 */
       }
-    } else if (rrtype == (qu->typei->type & adns__rrt_typemask)) {
+    } else if (rrtype == (qu->answer->type & adns_rrt_typemask)) {
       wantedrrs++;
     } else {
       adns__debug(ads,serv,qu,"ignoring answer RR"
@@ -339,7 +339,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
 		     &ownermatched);
     assert(!st); assert(rrtype != -1);
     if (rrclass != DNS_CLASS_IN ||
-	rrtype != (qu->typei->type & adns__rrt_typemask) ||
+	rrtype != (qu->answer->type & adns_rrt_typemask) ||
 	!ownermatched)
       continue;
     adns__update_expires(qu,ttl,now);
@@ -373,7 +373,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
   if (qu->cname_dgram) {
     st= adns__mkquery_frdgram(qu->ads,&qu->vb,&qu->id,
 			      qu->cname_dgram,qu->cname_dglen,qu->cname_begin,
-			      qu->typei->type, qu->flags);
+			      qu->answer->type, qu->flags);
     if (st) { adns__query_fail(qu,st); return; }
     
     newquery= realloc(qu->query_dgram,qu->vb.used);

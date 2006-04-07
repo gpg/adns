@@ -37,7 +37,8 @@
 
 #include "internal.h"
 
-static adns_query query_alloc(adns_state ads, const typeinfo *typei,
+static adns_query query_alloc(adns_state ads,
+			      const typeinfo *typei, adns_rrtype type,
 			      adns_queryflags flags, struct timeval now) {
   /* Allocate a virgin query and return it. */
   adns_query qu;
@@ -79,7 +80,7 @@ static adns_query query_alloc(adns_state ads, const typeinfo *typei,
 
   qu->answer->status= adns_s_ok;
   qu->answer->cname= qu->answer->owner= 0;
-  qu->answer->type= typei->type;
+  qu->answer->type= type;
   qu->answer->expires= -1;
   qu->answer->nrrs= 0;
   qu->answer->rrs.untyped= 0;
@@ -115,7 +116,7 @@ adns_status adns__internal_submit(adns_state ads, adns_query *query_r,
 				  const qcontext *ctx) {
   adns_query qu;
 
-  qu= query_alloc(ads,typei,flags,now);
+  qu= query_alloc(ads,typei,typei->typekey,flags,now);
   if (!qu) { adns__vbuf_free(qumsg_vb); return adns_s_nomemory; }
   *query_r= qu;
 
@@ -133,7 +134,8 @@ static void query_simple(adns_state ads, adns_query qu,
   int id;
   adns_status stat;
 
-  stat= adns__mkquery(ads,&qu->vb,&id, owner,ol, typei,flags);
+  stat= adns__mkquery(ads,&qu->vb,&id, owner,ol,
+		      typei,qu->answer->type, flags);
   if (stat) {
     if (stat == adns_s_querydomaintoolong && (flags & adns_qf_search)) {
       adns__search_next(ads,qu,now);
@@ -225,7 +227,7 @@ int adns_submit(adns_state ads,
   if (!typei) return ENOSYS;
 
   r= gettimeofday(&now,0); if (r) goto x_errno;
-  qu= query_alloc(ads,typei,flags,now); if (!qu) goto x_errno;
+  qu= query_alloc(ads,typei,type,flags,now); if (!qu) goto x_errno;
   
   qu->ctx.ext= context;
   qu->ctx.callback= 0;

@@ -114,7 +114,7 @@ typedef struct {
 } parseinfo;
 
 typedef struct typeinfo {
-  adns_rrtype type;
+  adns_rrtype typekey;
   const char *rrtname;
   const char *fmtname;
   int rrsz;
@@ -404,7 +404,8 @@ void adns__sigpipe_unprotect(adns_state);
 
 adns_status adns__mkquery(adns_state ads, vbuf *vb, int *id_r,
 			  const char *owner, int ol,
-			  const typeinfo *typei, adns_queryflags flags);
+			  const typeinfo *typei, adns_rrtype type,
+			  adns_queryflags flags);
 /* Assembles a query packet in vb.  A new id is allocated and returned.
  */
 

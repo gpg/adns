@@ -108,6 +108,12 @@ void ensure_adns_init(void);
 void query_do(const char *domain);
 void query_done(struct query_node *qun, adns_answer *answer);
 
+void type_info(adns_rrtype type, const char **typename_r,
+	       const void *datap, char **data_r);
+  /* wrapper for adns_rr_info which uses a static buffer to provide
+   * *typename_r for adns_r_unknown */
+
+
 /* declarations related to main program and useful utility functions */
 
 void sysfail(const char *what, int errnoval) NONRETURNING;

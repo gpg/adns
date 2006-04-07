@@ -111,6 +111,14 @@ void of_type(const struct optioninfo *oi, const char *arg, const char *arg2) {
   };
 
   const struct typename *tnp;
+  unsigned long unknowntype;
+  char *ep;
+
+  if (strlen(arg) > 4 && !memcmp(arg,"type",4) &&
+      (unknowntype= strtoul(arg+4, &ep, 10), !*ep) && unknowntype < 65536) {
+    ov_type= unknowntype | adns_r_unknown;
+    return;
+  }
 
   for (tnp=typenames;
        tnp->type && strcmp(arg,tnp->desc);

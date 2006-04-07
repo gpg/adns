@@ -64,6 +64,8 @@
  * _rp                        (pa)
  * _soa                       (pa,mf,cs)
  * _srv*                      (qdpl,(pap),pa,mf,di,(csp),cs,postsort)
+ * _byteblock                 (mf)
+ * _opaque                    (pa,cs)
  * _flat                      (mf)
  *
  * within each section:
@@ -908,7 +910,7 @@ static adns_status pap_mailbox822(const parseinfo *pai,
 
 static adns_status pap_mailbox(const parseinfo *pai, int *cbyte_io, int max,
 			       char **mb_r) {
-  if (pai->qu->typei->type & adns__qtf_mail822) {
+  if (pai->qu->typei->typekey & adns__qtf_mail822) {
     return pap_mailbox822(pai, cbyte_io, max, mb_r);
   } else {
     return pap_domain(pai, cbyte_io, max, mb_r, pdf_quoteok);
@@ -1183,6 +1185,56 @@ static void postsort_srv(adns_state ads, void *array, int nrrs,
 }
 
 /*
+ * _byteblock   (mf)
+ */
+
+static void mf_byteblock(adns_query qu, void *datap) {
+  adns_rr_byteblock *rrp= datap;
+  void *bytes= rrp->data;
+  adns__makefinal_block(qu,&bytes,rrp->len);
+  rrp->data= bytes;
+}
+
+/*
+ * _opaque   (pa,cs)
+ */
+
+static adns_status pa_opaque(const parseinfo *pai, int cbyte,
+			     int max, void *datap) {
+  adns_rr_byteblock *rrp= datap;
+
+  rrp->len= max - cbyte;
+  rrp->data= adns__alloc_interim(pai->qu, rrp->len);
+  if (!rrp->data) R_NOMEM;
+  memcpy(rrp->data, pai->dgram + cbyte, rrp->len);
+  return adns_s_ok;
+}
+
+static adns_status cs_opaque(vbuf *vb, const void *datap) {
+  const adns_rr_byteblock *rrp= datap;
+  char buf[10];
+  int l;
+  unsigned char *p;
+
+  sprintf(buf,"\\# %d",rrp->len);
+  CSP_ADDSTR(buf);
+  
+  for (l= rrp->len, p= rrp->data;
+       l>=4;
+       l -= 4, p += 4) {
+    sprintf(buf," %02x%02x%02x%02x",p[0],p[1],p[2],p[3]);
+    CSP_ADDSTR(buf);
+  }
+  for (;
+       l>0;
+       l--, p++) {
+    sprintf(buf," %02x",*p);
+    CSP_ADDSTR(buf);
+  }
+  return adns_s_ok;
+}
+  
+/*
  * _flat   (mf)
  */
 
@@ -1234,15 +1286,20 @@ DEEP_TYPE(soa,    "SOA","822",  soa,     pa_soa,     0,        cs_soa        ),
 DEEP_TYPE(rp,     "RP", "822",  strpair, pa_rp,      0,        cs_rp         ),
 };
 
+static const typeinfo typeinfo_unknown=
+DEEP_TYPE(unknown,0, "unknown",byteblock,pa_opaque,  0,        cs_opaque     );
+
 const typeinfo *adns__findtype(adns_rrtype type) {
   const typeinfo *begin, *end, *mid;
+
+  if (type & adns_r_unknown) return &typeinfo_unknown;
 
   begin= typeinfos;  end= typeinfos+(sizeof(typeinfos)/sizeof(typeinfo));
 
   while (begin < end) {
     mid= begin + ((end-begin)>>1);
-    if (mid->type == type) return mid;
-    if (type > mid->type) begin= mid+1;
+    if (mid->typekey == type) return mid;
+    if (type > mid->typekey) begin= mid+1;
     else end= mid;
   }
   return 0;

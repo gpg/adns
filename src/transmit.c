@@ -67,7 +67,7 @@ static adns_status mkquery_footer(vbuf *vb, adns_rrtype type) {
   byte *rqp;
 
   MKQUERY_START(vb);
-  MKQUERY_ADDW(type & adns__rrt_typemask); /* QTYPE */
+  MKQUERY_ADDW(type & adns_rrt_typemask); /* QTYPE */
   MKQUERY_ADDW(DNS_CLASS_IN); /* QCLASS=IN */
   MKQUERY_STOP(vb);
   assert(vb->used <= vb->avail);
@@ -121,7 +121,8 @@ adns_status adns__qdpl_normal(adns_state ads,
 
 adns_status adns__mkquery(adns_state ads, vbuf *vb, int *id_r,
 			  const char *owner, int ol,
-			  const typeinfo *typei, adns_queryflags flags) {
+			  const typeinfo *typei, adns_rrtype type,
+			  adns_queryflags flags) {
   int labelnum, ll, nbytes;
   byte label[255];
   byte *rqp;
@@ -150,7 +151,7 @@ adns_status adns__mkquery(adns_state ads, vbuf *vb, int *id_r,
 
   MKQUERY_STOP(vb);
   
-  st= mkquery_footer(vb,typei->type);
+  st= mkquery_footer(vb,type);
   
   return adns_s_ok;
 }
