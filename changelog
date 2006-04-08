@@ -1,4 +1,4 @@
-adns (1.1.999.0.3); urgency=medium
+adns (1.2); urgency=medium
 
   New features:
   * Support for SRV RRs.
@@ -44,7 +44,7 @@ adns (1.1.999.0.3); urgency=medium
   * Hgettimeofday calls Tensurerecordfile (was Tensureinput/outputfile).
   * Add bind(2) and listen(2) wrappers (for epithet, but harmless in adns).
 
- -- Ian Jackson <ian@davenant.greenend.org.uk>  Sat,  7 Jan 2006 17:10:11 +0000
+ -- Ian Jackson <ian@davenant.greenend.org.uk>  Sat,  8 Apr 2006 15:41:28 +0100
 
 adns (1.1); urgency=medium
 
