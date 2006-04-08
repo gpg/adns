@@ -32,7 +32,8 @@ adns (1.1.999.0.3); urgency=medium
   * Copyright notices updated.
 
   Packaging changes:
-  * Update MINOR to 2 because of adns_init_logfn.
+  * Update MINOR to 2 and ADNS_VERSION_STRING to 1.2.
+  * Reran autoconf/autoheader (autoconf Debian 2.13-54).
   * Create $(bin_dir) and $(lib_dir) on `make install', and also
     make a libadns.so.1 -> libadns.so.1.<minor> link.  (Suggestions
     and patch from Nix of esperi.org.uk.)
