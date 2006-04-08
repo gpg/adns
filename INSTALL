@@ -101,9 +101,9 @@ details for adns.  It is
  Copyright (C) 1997-2000 Ian Jackson <ian@davenant.greenend.org.uk>
 
 adns is
- Copyright (C) 1997-2005 Ian Jackson <ian@davenant.greenend.org.uk>
- Copyright (C) 1999-2004 Tony Finch <dot@dotat.at>         [1]
- Copyright (C) 1991 Massachusetts Institute of Technology  [2]
+ Copyright (C) 1997-2000,2003,2006 Ian Jackson <ian@davenant.greenend.org.uk>
+ Copyright (C) 1999-2000,2003,2006 Tony Finch <dot@dotat.at>         [1]
+ Copyright (C) 1991 Massachusetts Institute of Technology            [2]
 
 adns is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free
