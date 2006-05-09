@@ -3,6 +3,8 @@ adns (1.3); urgency=low
   Bugfixes:
   * In configure.in, quote macro name argument to define() to
     suppress spurious autoconf error.  (Report from Mihai Ibanescu.)
+  * Cast ptrdiff_t to int for %.*s length in adnsheloex and adnslogres,
+    as is required.  (Report from Jim Meyering.)
 
  --
 
