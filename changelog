@@ -5,6 +5,9 @@ adns (1.3); urgency=low
     suppress spurious autoconf error.  (Report from Mihai Ibanescu.)
   * Cast ptrdiff_t to int for %.*s length in adnsheloex and adnslogres,
     as is required.  (Report from Jim Meyering.)
+  * Use autoconf's values for {bin,lib,include}_dir rather than inventing
+    our own from @exec_prefix@, making configure --libdir work.
+    (Patch from Mihai Ibanescu.)
 
  --
 

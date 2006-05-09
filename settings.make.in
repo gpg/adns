@@ -47,9 +47,9 @@ MKSHLIB_3=	@MKSHLIB_3@
 
 prefix=		@prefix@
 exec_prefix=	@exec_prefix@
-bin_dir=	$(exec_prefix)/bin
-lib_dir=	$(exec_prefix)/lib
-include_dir=	$(prefix)/include
+bin_dir=	@bindir@
+lib_dir=	@libdir@
+include_dir=	@includedir@
 
 AC_INSTALL=	@INSTALL@
 ifeq ($(AC_INSTALL),./install-sh -c)
