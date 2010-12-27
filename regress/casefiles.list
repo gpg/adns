@@ -1,0 +1,88 @@
+casefiles  = case-1stservbroken.sys case-1stservbroken.out case-1stservbroken.err
+casefiles += case-1stservtotcp.sys case-1stservtotcp.out case-1stservtotcp.err
+casefiles += case-2ndservok.sys case-2ndservok.out case-2ndservok.err
+casefiles += case-2ndservtcp.sys case-2ndservtcp.out case-2ndservtcp.err
+casefiles += case-abbrev.sys case-abbrev.out case-abbrev.err
+casefiles += case-abbrevto.sys case-abbrevto.out case-abbrevto.err
+casefiles += case-adh-cancel.sys case-adh-cancel.out case-adh-cancel.err
+casefiles += case-adh-cancel2.sys case-adh-cancel2.out case-adh-cancel2.err
+casefiles += case-adh-cancel3.sys case-adh-cancel3.out case-adh-cancel3.err
+casefiles += case-adh-norm.sys case-adh-norm.out case-adh-norm.err
+casefiles += case-adh-pipe.sys case-adh-pipe.out case-adh-pipe.err
+casefiles += case-alr-norm.sys case-alr-norm.out case-alr-norm.err \
+             case-alr-norm.in  
+casefiles += case-alr-slow.sys case-alr-slow.out case-alr-slow.err \
+             case-alr-slow.in
+casefiles += case-arf-norm.sys case-arf-norm.out case-arf-norm.err
+casefiles += case-arf-text.sys case-arf-text.out case-arf-text.err
+casefiles += case-brokenmail.sys case-brokenmail.out case-brokenmail.err
+casefiles += case-child.sys case-child.out case-child.err
+casefiles += case-cnametocname.sys case-cnametocname.out case-cnametocname.err
+casefiles += case-comprinf.sys case-comprinf.out case-comprinf.err
+casefiles += case-connfail.sys case-connfail.out case-connfail.err
+casefiles += case-datapluscname.sys case-datapluscname.out \
+             case-datapluscname.err
+casefiles += case-datapluscnamewait.sys case-datapluscnamewait.out \
+             case-datapluscnamewait.err
+casefiles += case-flags10.sys case-flags10.out case-flags10.err
+casefiles += case-flags9.sys case-flags9.out case-flags9.err
+casefiles += case-formerr.sys case-formerr.out case-formerr.err
+casefiles += case-lockup.sys case-lockup.out case-lockup.err
+casefiles += case-longdom0.sys case-longdom0.out case-longdom0.err
+casefiles += case-longdom1.sys case-longdom1.out case-longdom1.err
+casefiles += case-longdomsrch0.sys case-longdomsrch0.out case-longdomsrch0.err
+casefiles += case-longdomsrch1.sys case-longdomsrch1.out case-longdomsrch1.err
+casefiles += case-longdomsrch1b.sys case-longdomsrch1b.out \
+             case-longdomsrch1b.err
+casefiles += case-longdomsrch2.sys case-longdomsrch2.out case-longdomsrch2.err
+casefiles += case-longlab0.sys case-longlab0.out case-longlab0.err
+casefiles += case-longlab1.sys case-longlab1.out case-longlab1.err
+casefiles += case-mailboxes.sys case-mailboxes.out case-mailboxes.err
+casefiles += case-manya.sys case-manya.out case-manya.err
+casefiles += case-manyptrwrong.sys case-manyptrwrong.out case-manyptrwrong.err
+casefiles += case-manyptrwrongrem.sys case-manyptrwrongrem.out \
+             case-manyptrwrongrem.err
+casefiles += case-manyptrwrongrst.sys case-manyptrwrongrst.out \
+             case-manyptrwrongrst.err
+casefiles += case-manyptrwrongrty.sys case-manyptrwrongrty.out \
+             case-manyptrwrongrty.err
+casefiles += case-ndots-as.sys case-ndots-as.out case-ndots-as.err
+casefiles += case-ndots.sys case-ndots.out case-ndots.err
+casefiles += case-ndotsbad.sys case-ndotsbad.out case-ndotsbad.err
+casefiles += case-noinfto.sys case-noinfto.out case-noinfto.err
+casefiles += case-norecurse.sys case-norecurse.out case-norecurse.err
+casefiles += case-norecurse2.sys case-norecurse2.out case-norecurse2.err
+casefiles += case-norecurse3.sys case-norecurse3.out case-norecurse3.err
+casefiles += case-norm.sys case-norm.out case-norm.err
+casefiles += case-owner.sys case-owner.out case-owner.err
+casefiles += case-poll.sys case-poll.out case-poll.err
+casefiles += case-polltimeout.sys case-polltimeout.out case-polltimeout.err
+casefiles += case-ptrbaddom.sys case-ptrbaddom.out case-ptrbaddom.err
+casefiles += case-quote.sys case-quote.out case-quote.err
+casefiles += case-rootquery.sys case-rootquery.out case-rootquery.err
+casefiles += case-rootqueryall-as.sys case-rootqueryall-as.out \
+             case-rootqueryall-as.err
+casefiles += case-rootqueryall.sys case-rootqueryall.out case-rootqueryall.err
+casefiles += case-search-as.sys case-search-as.out case-search-as.err
+casefiles += case-search.sys case-search.out case-search.err
+casefiles += case-searchabs.sys case-searchabs.out case-searchabs.err
+casefiles += case-sillyrp.sys case-sillyrp.out case-sillyrp.err
+casefiles += case-srvbaddom.sys case-srvbaddom.out case-srvbaddom.err
+casefiles += case-srvha.sys case-srvha.out case-srvha.err
+casefiles += case-srvok.sys case-srvok.out case-srvok.err
+casefiles += case-srvqudom.sys case-srvqudom.out case-srvqudom.err
+casefiles += case-srvsort.sys case-srvsort.out case-srvsort.err
+casefiles += case-tcpallfail.sys case-tcpallfail.out case-tcpallfail.err
+casefiles += case-tcpblock.sys case-tcpblock.out case-tcpblock.err
+casefiles += case-tcpblockbrk.sys case-tcpblockbrk.out case-tcpblockbrk.err
+casefiles += case-tcpblockwr.sys case-tcpblockwr.out case-tcpblockwr.err
+casefiles += case-tcpbreakin.sys case-tcpbreakin.out case-tcpbreakin.err
+casefiles += case-tcpmultipart.sys case-tcpmultipart.out case-tcpmultipart.err
+casefiles += case-tcpptr.sys case-tcpptr.out case-tcpptr.err
+casefiles += case-timeout.sys case-timeout.out case-timeout.err
+casefiles += case-trunc.sys case-trunc.out case-trunc.err
+casefiles += case-unknown2.sys case-unknown2.out case-unknown2.err
+casefiles += case-unknown33.sys case-unknown33.out case-unknown33.err
+casefiles += case-unknown5.sys case-unknown5.out case-unknown5.err
+casefiles += case-unknownq.sys case-unknownq.out case-unknownq.err
+

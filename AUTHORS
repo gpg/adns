@@ -1,0 +1,15 @@
+Library: adns
+Maintainer: Werner Koch <wk@gnupg.org>
+Bug reports: <bug-adns@g10code.com>
+Security related bug reports: <security@g10code.com>
+
+   NOTE: This version has been modified by g10 Code and thus the
+         original author should not be bothered with problems
+         introduced with this version.  We took the step of
+         distributing our own version due to a lack of response by the
+         original author.  We hope to solve this problem asap.
+
+
+See INSTALL for more.
+
+

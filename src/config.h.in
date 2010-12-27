@@ -1,0 +1,154 @@
+/* src/config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Version of this library */
+#undef ADNS_VERSION_STRING
+
+/* Define if we want to include rpc/types.h. Crap BSDs put INADDR_LOOPBACK
+   there. */
+#undef HAVEUSE_RPCTYPES_H
+
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
+
+/* Define to 1 if you have the `gettimeofday' function. */
+#undef HAVE_GETTIMEOFDAY
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Define to 1 if you have the `poll' function. */
+#undef HAVE_POLL
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the `tsearch' function. */
+#undef HAVE_TSEARCH
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Define to 1 if your C compiler doesn't accept -c and -o together. */
+#undef NO_MINUS_C_MINUS_O
+
+/* Name of package */
+#undef PACKAGE
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Version number of package */
+#undef VERSION
+
+/* Enable GNU extensions on systems that have them.  */
+#ifndef _GNU_SOURCE
+# undef _GNU_SOURCE
+#endif
+
+/* Define to empty if `const' does not conform to ANSI C. */
+#undef const
+
+/* Define to `__inline__' or `__inline' if that's what the C compiler
+   calls it, or to nothing if 'inline' is not supported under any name.  */
+#ifndef __cplusplus
+#undef inline
+#endif
+
+
+/* Use the definitions: */
+
+#ifdef HAVE_POLL
+#include <sys/poll.h>
+#else
+/* kludge it up */
+struct pollfd { int fd; short events; short revents; };
+#define POLLIN  1
+#define POLLPRI 2
+#define POLLOUT 4
+#endif
+
+#ifdef __GNUC__
+# define ADNS_GCC_VERSION (__GNUC__ * 10000 \
+                           + __GNUC_MINOR__ * 100 \
+                           + __GNUC_PATCHLEVEL__)
+#else
+# define ADNS_GCC_VERSION 0
+#endif
+
+/* GNU C attributes. */
+#ifndef FUNCATTR
+# if ADNS_GCC_VERSION >= 20500
+#  define FUNCATTR(x) __attribute__(x)
+# else
+#  define FUNCATTR(x)
+# endif
+#endif
+
+/* GNU C printf formats, or null. */
+#ifndef ATTRPRINTF
+# if ADNS_GCC_VERSION >= 20500
+#  define ATTRPRINTF(si,tc) format (printf,si,tc)
+# else
+#  define ATTRPRINTF(si,tc)
+# endif
+#endif
+#ifndef PRINTFFORMAT
+# define PRINTFFORMAT(si,tc) FUNCATTR((ATTRPRINTF(si,tc)))
+#endif
+
+
+/* GNU C nonreturning functions, or null. */
+#ifndef ATTRNORETURN
+# if ADNS_GCC_VERSION >= 20500
+#  define ATTRNORETURN  noreturn
+# else
+#  define ATTRNORETURN
+# endif
+#endif
+#ifndef NONRETURNING
+#define NONRETURNING FUNCATTR((ATTRNORETURN))
+#endif
+
+/* Combination of both the above. */
+#ifndef NONRETURNPRINTFFORMAT
+#define NONRETURNPRINTFFORMAT(si,tc) FUNCATTR((ATTRPRINTF(si,tc),ATTRNORETURN))
+#endif
+
+
+#ifdef HAVEUSE_RPCTYPES_H
+#include <rpc/types.h>
+#endif
+

@@ -1,0 +1,72 @@
+2008-05-08  Werner Koch  <wk@g10code.com>
+
+	Release 1.4-g10-2.		
+
+	* configure.ac: Disable use of tsearch under W32. 
+
+2008-04-30  Werner Koch  <wk@g10code.com>
+
+	Release 1.4-g10-1.		
+	
+	* configure.ac: Set bug reporting address to bug-adns.g10code.com.
+
+	* Makefile.am (EXTRA_DIST): Distribute the Debian changelog. 
+
+2008-04-24  Werner Koch  <wk@g10code.com>
+
+	* src/w32support.c (adns__inet_aton): Rewritten to make it
+	actually work.
+
+2008-04-24  Werner Koch  <wk@g10code.com>
+
+	Change build system to use automake and libtool.
+	Create all Makefile.am.  Remove old build system.
+
+	* src/adns.h [W32]: Include Windows socket header.
+	(adns_free): Add prototype.
+	* src/platform.h: New.
+	* src/internal.h: Include patform.h.
+	(adns__state) [W32]: Remove stdsigpipe and stdsigmask.
+	* src/libadns.def: New.
+	* src/libadns.vers: New.
+	* src/general.c: Do not include socket headers under W32.
+	(adns_free): New.
+	(adns__sigpipe_protect, adns__sigpipe_unprotect) [W32]: Make them
+	a stub.
+	(adns__vbuf_init, adns__vbuf_ensure, adns__vbuf_appendq)
+	(adns__vbuf_append, adns__vbuf_appendstr, adns__vbuf_free): Factor
+	out to ..
+	* src/vbuf.c: .. this new file.
+	* src/event.c: Do not include socket headers under W32.  Replace
+	all socket related functions by adns__sock_foo macros.
+	* src/poll.c (adns_beforepoll, adns_wait_poll): Return ENOSYS when
+	not supported.
+	* src/setup.c: Include windows specific headers for W32.  Replace
+	inet_aton by adns__inet_aton and use the usual socket fucntion
+	wrappers.
+	(adns__setnonblock) [W32]: Add Windows implementation.
+	(read_w32_init_files) [W32]: New.
+	(init_files) [W32]: Call read_w32_init_files.
+	* src/transmit.c: Do not include sys/uio under W32.  Use the
+	socket wrappers.
+	* src/types.c [W32]: Do not include the socket headers.
+	* src/versioninfo.rc.in: New.
+	* src/w32extra.c: New.
+	* src/w32support.c: New.
+
+	* client/adh-query.c (inet_aton) [W32]: New.  Taken from the 1.0
+	W32 port of adns.
+	(ensure_adns_init) [W32]: Do not call signal.
+	* client/adnsheloex.c [W32]: Do not include socket headers.
+	* client/adnshost.h [W32]: Ditto.
+	* client/client.h (ADNS_VERSION_STRING): Remove.
+
+	* regress/casefiles.list, regress/initfiles.list: New.
+	* regress/checkall, regress/r1test: Take $srcdir in account.
+	* regress/hcommon.c.m4: Undef malloc, free, realloc and exit to
+	avoid infinite recursion.
+	* regress/m4-to-c.rule: New.
+
+
+  Older entries are in the file changelog.Debian.
+

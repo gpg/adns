@@ -1,0 +1,4 @@
+	$(M4) -P -I$(srcdir) $< >$@-a.new
+	sed -e 's/hm_comma/,/g; s/hm_squote/'\''/g; /^[	 ]*$$/d' \
+            <$@-a.new >$@-b.new
+	@mv -f $@-b.new $@; rm -f $@-a.new

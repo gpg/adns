@@ -1,0 +1,12 @@
+initfiles  = init-1stservbroken.text
+initfiles += init-1stservto.text
+initfiles += init-2ndserver.text
+initfiles += init-anarres.text
+initfiles += init-default.text
+initfiles += init-manyptrwrong.text
+initfiles += init-ncipher.text
+initfiles += init-ndots.text
+initfiles += init-ndots100.text
+initfiles += init-ndotsbad.text
+initfiles += init-noserver.text
+initfiles += init-tunnel.text

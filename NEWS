@@ -1,0 +1,30 @@
+Noteworthy changes in version 1.4-g10-2 (2008-05-08)
+----------------------------------------------------
+
+ * [W32] Do not use tsearch.
+
+
+Noteworthy changes in version 1.4-g10-1 (2008-04-30)
+----------------------------------------------------
+
+  The old Windows port of adns did not worked very well (tcp
+  connections have probably never been used) and it was not possible
+  to build it from a POSIX box.  To make the porting and maintaining
+  easier the build system has been updated to make use of automake and
+  libtool.  Adding a bit of windows support was then easy.
+
+  The package is available at: ftp://ftp.g10code.com/g10code/adns/.
+
+
+ * New function adns_free which is nothing but a wrapper around free.
+   Only needed under Windows in certain settings.  It does not harm to
+   use it always.
+
+ * Symbol versioning is now implemented.
+
+ * When updating the regression test suite new tests need to be added
+   to one of the new automake include files.
+
+ * New files ChangeLog, AUTHORS and NEWS as demanded by GNU standards.
+   The old changelog has been renamed to changelog.Debian.
+
