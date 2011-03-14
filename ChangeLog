@@ -1,16 +1,26 @@
+2011-03-14  Werner Koch  <wk@g10code.com>
+
+	* client/adnslogres.c: Change license to GPLv3.
+
+	* client/adnslogres.c (rol, struct, rmd160_init, transform)
+	(rmd160_write, rmd160_final, rmd160_hash_buffer): New.  Taken from
+	GnuPG git master.
+	(printline): Add arg OPTS.  Obfuscate DNS name.
+	(main): Add options -P and -S.
+
 2008-05-08  Werner Koch  <wk@g10code.com>
 
-	Release 1.4-g10-2.		
+	Release 1.4-g10-2.
 
-	* configure.ac: Disable use of tsearch under W32. 
+	* configure.ac: Disable use of tsearch under W32.
 
 2008-04-30  Werner Koch  <wk@g10code.com>
 
-	Release 1.4-g10-1.		
-	
+	Release 1.4-g10-1.
+
 	* configure.ac: Set bug reporting address to bug-adns.g10code.com.
 
-	* Makefile.am (EXTRA_DIST): Distribute the Debian changelog. 
+	* Makefile.am (EXTRA_DIST): Distribute the Debian changelog.
 
 2008-04-24  Werner Koch  <wk@g10code.com>
 
@@ -69,4 +79,3 @@
 
 
   Older entries are in the file changelog.Debian.
-
