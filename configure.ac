@@ -41,6 +41,7 @@ ADNS_CONFIG_API_VERSION=1
 AC_CONFIG_SRCDIR([src/adns.h])
 AM_INIT_AUTOMAKE
 AM_CONFIG_HEADER(src/config.h)
+AC_CONFIG_MACRO_DIR([m4])
 AC_CANONICAL_HOST
 AC_GNU_SOURCE
 
@@ -175,7 +176,7 @@ AC_C_CONST
 #
 AC_CHECK_FUNCS([poll tsearch gettimeofday])
 AM_CONDITIONAL(HAVE_TSEARCH, test "x$ac_cv_func_tsearch" = "xyes"  \
-                             -a test "x$use_tsearch" = "xyes")
+                             -a "x$use_tsearch" = "xyes")
 
 # fixme: we should check for nrand48 and use a replace function if it
 # is not there.  src/w32misc.c has such an replacement.
