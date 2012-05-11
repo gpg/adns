@@ -1,22 +1,22 @@
 # configure.ac - for adns
 # Copyright (C) 2008 g10 Code GmbH
-# 
+#
 # This file is part of adns, which is
 #    Copyright (C) 1997-2000,2003,2006  Ian Jackson
 #    Copyright (C) 1999-2000,2003,2006  Tony Finch
 #    Copyright (C) 1991 Massachusetts Institute of Technology
 #  (See the file INSTALL for full details.)
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2, or (at your option)
 # any later version.
-#  
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, see <http://www.gnu.org/licenses/>.
 
@@ -24,7 +24,28 @@
 AC_PREREQ(2.61)
 min_automake_version="1.10"
 
-AC_INIT([adns], [1.4-g10-2], [bug-adns@g10code.com])
+# To build a release you need to create a tag with the version number
+# (git tag -s gnupg-2.n.m) and run "./autogen.sh --force".  Please
+# bump the version number immediately *after* the release and do
+# another commit and push so that the git magic is able to work.
+# See below for the LT version numbers.
+m4_define([mym4_version], [1.4-g10-3])
+
+# Below is m4 magic to extract and compute the git revision number,
+# the decimalized short revision number, a beta version string and a
+# flag indicating a development version (mym4_isgit).  Note that the
+# m4 processing is done by autoconf and not during the configure run.
+m4_define([mym4_revision], m4_esyscmd([git branch -v 2>/dev/null \
+          | awk '/^\* / {printf "%s",$3}']))
+m4_define([mym4_revision_dec],
+          m4_esyscmd_s([echo $((0x$(echo ]mym4_revision[|head -c 4)))]))
+m4_define([mym4_betastring],
+          m4_esyscmd_s([git describe --match 'adns-1.4-g10-*[0-9]' --long|\
+                        awk -F- '$5!=0{print"-beta"$5}']))
+m4_define([mym4_isgit],m4_if(mym4_betastring,[],[no],[yes]))
+m4_define([mym4_full_version],[mym4_version[]mym4_betastring])
+
+AC_INIT([adns], [mym4_full_version], [bug-adns@g10code.com])
 
 # LT Version numbers: Remember to change them just *before* a release.
 #   (Interfaces removed:    CURRENT++, AGE=0, REVISION=0)
@@ -34,6 +55,7 @@ AC_INIT([adns], [1.4-g10-2], [bug-adns@g10code.com])
 ADNS_LT_CURRENT=4
 ADNS_LT_AGE=3
 ADNS_LT_REVISION=0
+
 # If the API is changed in an incompatible way: increment this counter.
 ADNS_CONFIG_API_VERSION=1
 
@@ -70,8 +92,8 @@ AC_PROG_MAKE_SET
 AC_CHECK_PROGS(M4, m4)
 AC_C_INLINE
 
-# 
-# Libtool stuff 
+#
+# Libtool stuff
 #
 AC_LIBTOOL_WIN32_DLL
 AC_LIBTOOL_RC
@@ -120,7 +142,7 @@ case "${host}" in
       have_w32_system=yes
       # We need to pass HAVE_W32_SYSTEM on the command line because
       # config.h is not always included first but we need to include
-      # some header files conditionally.  Note that in the public 
+      # some header files conditionally.  Note that in the public
       # header file (adns.h) we need to use the _WIN32 macro despite
       # that it is very questionable whether Windows is win.
       PLATFORMCPPFLAGS="-DHAVE_W32_SYSTEM"
@@ -136,7 +158,7 @@ AC_SUBST(PLATFORMCPPFLAGS)
 AM_CONDITIONAL(HAVE_W32_SYSTEM, test "$have_w32_system" = yes)
 
 
-# For some systems we know that we have ld_version scripts.  
+# For some systems we know that we have ld_version scripts.
 # Use it then as default.
 have_ld_version_script=no
 case "${host}" in
@@ -209,7 +231,7 @@ fi
 fi
 
 
-# Check for required network libraries. 
+# Check for required network libraries.
 if test "$have_w32_system" = yes; then
   LIBS="$LIBS -lws2_32 -liphlpapi"
 else
@@ -232,19 +254,18 @@ AM_CONDITIONAL(CROSS_COMPILING, test x$cross_compiling = xyes)
 
 # Generate extended version information for W32.
 if test "$have_w32_system" = yes; then
+   BUILD_REVISION=mym4_revision
    BUILD_TIMESTAMP=`date --iso-8601=minutes`
-   changequote(,)dnl 
-   BUILD_FILEVERSION=`echo "$PACKAGE_VERSION" \ 
-                      | sed 's/\([0-9.]*\).*/\1./;s/\./,/g'`
+   changequote(,)dnl
+   BUILD_FILEVERSION=`echo "$PACKAGE_VERSION" \
+                      | sed 's/\([0-9.]*\)-g10-\([0-9]*\).*/\1.\2./;s/\./,/g'`
    changequote([,])dnl
-   BUILD_REVISION=0
-   BUILD_FILEVERSION="${BUILD_FILEVERSION}${BUILD_REVISION}"
+   BUILD_FILEVERSION="${BUILD_FILEVERSION}mym4_revision_dec"
 fi
 AC_SUBST(BUILD_REVISION)
 AC_SUBST(BUILD_TIMESTAMP)
 AC_SUBST(BUILD_FILEVERSION)
-#needed? AC_DEFINE_UNQUOTED(BUILD_REVISION, "$BUILD_REVISION", 
-#                   [Subversion revision used to build this package])
+
 
 
 #
@@ -331,7 +352,8 @@ AC_OUTPUT
 
 echo "
         adns v${PACKAGE_VERSION} has been configured as follows:
-        
+
+        Revision:  mym4_revision  (mym4_revision_dec)
         Platform:  $host
 
 "
