@@ -9,20 +9,20 @@
  *    Copyright (C) 1999-2000,2003,2006  Tony Finch
  *    Copyright (C) 1991 Massachusetts Institute of Technology
  *  (See the file INSTALL for full details.)
- *  
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2, or (at your option)
  *  any later version.
- *  
+ *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software Foundation,
- *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
+ *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
 #include <stdlib.h>
@@ -51,14 +51,14 @@ static void readconfig(adns_state ads, const char *filename, int warnmissing);
 static void addserver(adns_state ads, struct in_addr addr) {
   int i;
   struct server *ss;
-  
+
   for (i=0; i<ads->nservers; i++) {
     if (ads->servers[i].addr.s_addr == addr.s_addr) {
       adns__debug(ads,-1,0,"duplicate nameserver %s ignored",inet_ntoa(addr));
       return;
     }
   }
-  
+
   if (ads->nservers>=MAXSERVERS) {
     adns__diag(ads,-1,0,"too many nameservers, ignoring %s",inet_ntoa(addr));
     return;
@@ -113,7 +113,7 @@ static int nextword(const char **bufp_io, const char **word_r, int *l_r) {
 static void ccf_nameserver(adns_state ads, const char *fn,
 			   int lno, const char *buf) {
   struct in_addr ia;
-  
+
   if (!adns__inet_aton(buf,&ia)) {
     configparseerr(ads,fn,lno,"invalid nameserver address `%s'",buf);
     return;
@@ -164,7 +164,7 @@ static void ccf_sortlist(adns_state ads, const char *fn,
   unsigned long initial, baselocal;
 
   if (!buf) return;
-  
+
   ads->nsortlist= 0;
   while (nextword(&buf,&word,&l)) {
     if (ads->nsortlist >= MAXSORTLIST) {
@@ -177,11 +177,11 @@ static void ccf_sortlist(adns_state ads, const char *fn,
       configparseerr(ads,fn,lno,"sortlist entry `%.*s' too long",l,word);
       continue;
     }
-    
+
     memcpy(tbuf,word,l); tbuf[l]= 0;
     slash= strchr(tbuf,'/');
     if (slash) *slash++= 0;
-    
+
     if (!adns__inet_aton(tbuf,&base)) {
       configparseerr(ads,fn,lno,"invalid address `%s' in sortlist",tbuf);
       continue;
@@ -343,7 +343,7 @@ static int gl_file(adns_state ads, getline_ctx *src_io, const char *filename,
   p= buf;
   buflen--;
   i= 0;
-    
+
   for (;;) { /* loop over chars */
     if (i == buflen) {
       adns__diag(ads,-1,0,"%s:%d: line too long, ignored",filename,lno);
@@ -395,7 +395,7 @@ static int gl_text(adns_state ads, getline_ctx *src_io, const char *filename,
     saveerr(ads,EINVAL);
     return -2;
   }
-    
+
   memcpy(buf,cp,l);
   buf[l]= 0;
   return l;
@@ -452,7 +452,7 @@ static const char *instrum_getenv(adns_state ads, const char *envvar) {
 
 static void readconfig(adns_state ads, const char *filename, int warnmissing) {
   getline_ctx gl_ctx;
-  
+
   gl_ctx.file= fopen(filename,"r");
   if (!gl_ctx.file) {
     if (errno == ENOENT) {
@@ -468,18 +468,18 @@ static void readconfig(adns_state ads, const char *filename, int warnmissing) {
   }
 
   readconfiggeneric(ads,filename,gl_file,gl_ctx);
-  
+
   fclose(gl_ctx.file);
 }
 
 static void readconfigtext(adns_state ads, const char *text,
 			   const char *showname) {
   getline_ctx gl_ctx;
-  
+
   gl_ctx.text= text;
   readconfiggeneric(ads,showname,gl_text,gl_ctx);
 }
-  
+
 static void readconfigenv(adns_state ads, const char *envvar) {
   const char *filename;
 
@@ -563,7 +563,7 @@ static int init_finish(adns_state ads) {
   struct in_addr ia;
   struct protoent *proto;
   int r;
-  
+
   if (!ads->nservers) {
     if (ads->logfn && ads->iflags & adns_if_debug)
       adns__lprintf(ads,"adns: no nameservers, using localhost\n");
@@ -577,7 +577,7 @@ static int init_finish(adns_state ads) {
 
   r= adns__setnonblock(ads,ads->udpsocket);
   if (r) { r= errno; goto x_closeudp; }
-  
+
   return 0;
 
  x_closeudp:
@@ -638,11 +638,11 @@ read_w32_init_files (adns_state ads) {
     }
   else {
     for(pip = &(network_info->DnsServerList); pip; pip = pip->Next) {
-      adns__debug (ads,-1,0,"network_info->DnsServer = `%s'", 
+      adns__debug (ads,-1,0,"network_info->DnsServer = `%s'",
                    pip->IpAddress.String);
       addr.s_addr = inet_addr(pip->IpAddress.String);
       if ((addr.s_addr != INADDR_ANY) && (addr.s_addr != INADDR_NONE))
-        addserver(ads, addr); 
+        addserver(ads, addr);
     }
   }
 }
@@ -654,10 +654,10 @@ static int init_files(adns_state *ads_r, adns_initflags flags,
   adns_state ads;
   const char *res_options, *adns_res_options;
   int r;
-  
+
   r= init_begin(&ads, flags, logfn, logfndata);
   if (r) return r;
-  
+
   res_options= instrum_getenv(ads,"RES_OPTIONS");
   adns_res_options= instrum_getenv(ads,"ADNS_RES_OPTIONS");
   ccf_options(ads,"RES_OPTIONS",-1,res_options);
@@ -766,7 +766,7 @@ void adns_forallqueries_begin(adns_state ads) {
     ads->childw.head ? ads->childw.head :
     ads->output.head;
 }
-  
+
 adns_query adns_forallqueries_next(adns_state ads, void **context_r) {
   adns_query qu, nqu;
 

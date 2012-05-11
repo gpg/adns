@@ -8,20 +8,20 @@
  *    Copyright (C) 1999-2000,2003,2006  Tony Finch
  *    Copyright (C) 1991 Massachusetts Institute of Technology
  *  (See the file INSTALL for full details.)
- *  
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2, or (at your option)
  *  any later version.
- *  
+ *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software Foundation,
- *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
+ *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
 #include <stdlib.h>
@@ -100,17 +100,17 @@ static adns_status pap_qstring(const parseinfo *pai, int *cbyte_io, int max,
   if (cbyte >= max) return adns_s_invaliddata;
   GET_B(cbyte,l);
   if (cbyte+l > max) return adns_s_invaliddata;
-  
+
   str= adns__alloc_interim(pai->qu, l+1);
   if (!str) R_NOMEM;
-  
+
   str[l]= 0;
   memcpy(str,dgram+cbyte,l);
 
   *len_r= l;
   *str_r= str;
   *cbyte_io= cbyte+l;
-  
+
   return adns_s_ok;
 }
 
@@ -134,7 +134,7 @@ static adns_status csp_qstring(vbuf *vb, const char *dp, int len) {
     }
   }
   CSP_ADDSTR("\"");
-  
+
   return adns_s_ok;
 }
 
@@ -208,7 +208,7 @@ static adns_status pa_txt(const parseinfo *pai, int cbyte,
 
   te->i= -1;
   te->str= 0;
-  
+
   *rrp= table;
   return adns_s_ok;
 }
@@ -247,7 +247,7 @@ static adns_status cs_hinfo(vbuf *vb, const void *datap) {
 static adns_status pa_inaddr(const parseinfo *pai, int cbyte,
 			     int max, void *datap) {
   struct in_addr *storeto= datap;
-  
+
   if (max-cbyte != 4) return adns_s_invaliddata;
   memcpy(storeto, pai->dgram + cbyte, 4);
   return adns_s_ok;
@@ -256,7 +256,7 @@ static adns_status pa_inaddr(const parseinfo *pai, int cbyte,
 static int search_sortlist(adns_state ads, struct in_addr ad) {
   const struct sortlist *slp;
   int i;
-  
+
   for (i=0, slp=ads->sortlist;
        i<ads->nsortlist &&
 	 !((ad.s_addr & slp->mask.s_addr) == slp->base.s_addr);
@@ -266,7 +266,7 @@ static int search_sortlist(adns_state ads, struct in_addr ad) {
 
 static int dip_inaddr(adns_state ads, struct in_addr a, struct in_addr b) {
   int ai, bi;
-  
+
   if (!ads->nsortlist) return 0;
 
   ai= search_sortlist(ads,a);
@@ -318,7 +318,7 @@ static int div_addr(void *context, const void *datap_a, const void *datap_b) {
   const adns_state ads= context;
 
   return di_addr(ads, datap_a, datap_b);
-}		     
+}
 
 static adns_status csp_addr(vbuf *vb, const adns_rr_addr *rrp) {
   const char *ia;
@@ -353,7 +353,7 @@ static adns_status pap_domain(const parseinfo *pai, int *cbyte_io, int max,
 			      char **domain_r, parsedomain_flags flags) {
   adns_status st;
   char *dm;
-  
+
   st= adns__parse_domain(pai->qu->ads, pai->serv, pai->qu, &pai->qu->vb, flags,
 			 pai->dgram,pai->dglen, cbyte_io, max);
   if (st) return st;
@@ -364,7 +364,7 @@ static adns_status pap_domain(const parseinfo *pai, int *cbyte_io, int max,
 
   dm[pai->qu->vb.used]= 0;
   memcpy(dm,pai->qu->vb.buf,pai->qu->vb.used);
-  
+
   *domain_r= dm;
   return adns_s_ok;
 }
@@ -387,7 +387,7 @@ static adns_status pa_dom_raw(const parseinfo *pai, int cbyte,
 
   st= pap_domain(pai, &cbyte, max, rrp, pdf_quoteok);
   if (st) return st;
-  
+
   if (cbyte != max) return adns_s_invaliddata;
   return adns_s_ok;
 }
@@ -404,7 +404,7 @@ static adns_status pa_host_raw(const parseinfo *pai, int cbyte,
   st= pap_domain(pai, &cbyte, max, rrp,
 		 pai->qu->flags & adns_qf_quoteok_anshost ? pdf_quoteok : 0);
   if (st) return st;
-  
+
   if (cbyte != max) return adns_s_invaliddata;
   return adns_s_ok;
 }
@@ -419,7 +419,7 @@ static adns_status pap_findaddrs(const parseinfo *pai, adns_rr_hostaddr *ha,
   int type, class, rdlen, rdstart, ownermatched;
   unsigned long ttl;
   adns_status st;
-  
+
   for (rri=0, naddrs=-1; rri<count; rri++) {
     st= adns__findrr_anychk(pai->qu, pai->serv, pai->dgram,
 			    pai->dglen, cbyte_io,
@@ -510,10 +510,10 @@ static adns_status pap_hostaddr(const parseinfo *pai, int *cbyte_io,
   ctx.ext= 0;
   ctx.callback= icb_hostaddr;
   ctx.info.hostaddr= rrp;
-  
+
   nflags= adns_qf_quoteok_query;
   if (!(pai->qu->flags & adns_qf_cname_loose)) nflags |= adns_qf_cname_forbid;
-  
+
   st= adns__internal_submit(pai->ads, &nqu, adns__findtype(adns_r_addr),
 			    &pai->qu->vb, id, nflags, pai->now, &ctx);
   if (st) return st;
@@ -589,7 +589,7 @@ static adns_status csp_hostaddr(vbuf *vb, const adns_rr_hostaddr *rrp) {
 
   errstr= adns_strerror(rrp->astatus);
   st= csp_qstring(vb,errstr,strlen(errstr));  if (st) return st;
-  
+
   if (rrp->naddrs >= 0) {
     CSP_ADDSTR(" (");
     for (i=0; i<rrp->naddrs; i++) {
@@ -626,7 +626,7 @@ static adns_status pa_mx_raw(const parseinfo *pai, int cbyte,
   st= pap_domain(pai, &cbyte, max, &rrp->str,
 		 pai->qu->flags & adns_qf_quoteok_anshost ? pdf_quoteok : 0);
   if (st) return st;
-  
+
   if (cbyte != max) return adns_s_invaliddata;
   return adns_s_ok;
 }
@@ -655,7 +655,7 @@ static adns_status pa_mx(const parseinfo *pai, int cbyte,
   rrp->i= pref;
   st= pap_hostaddr(pai, &cbyte, max, &rrp->ha);
   if (st) return st;
-  
+
   if (cbyte != max) return adns_s_invaliddata;
   return adns_s_ok;
 }
@@ -739,7 +739,7 @@ static void icb_ptr(adns_query parent, adns_query child) {
 static adns_status pa_ptr(const parseinfo *pai, int dmstart,
 			  int max, void *datap) {
   static const char *const (expectdomain[])= { DNS_INADDR_ARPA };
-  
+
   char **rrp= datap;
   adns_status st;
   adns_rr_addr *ap;
@@ -781,7 +781,7 @@ static adns_status pa_ptr(const parseinfo *pai, int dmstart,
     }
     st= adns__findlabel_next(&fls,&lablen,0); assert(!st);
     if (lablen) return adns_s_querydomainwrong;
-    
+
     ap->len= sizeof(struct sockaddr_in);
     memset(&ap->addr,0,sizeof(ap->addr.inet));
     ap->addr.inet.sin_family= AF_INET;
@@ -845,7 +845,7 @@ static adns_status pa_hinfo(const parseinfo *pai, int cbyte,
   }
 
   if (cbyte != max) return adns_s_invaliddata;
-  
+
   return adns_s_ok;
 }
 
@@ -950,7 +950,7 @@ static adns_status cs_rp(vbuf *vb, const void *datap) {
   st= csp_domain(vb,rrp->array[1]);  if (st) return st;
 
   return adns_s_ok;
-}  
+}
 
 /*
  * _soa   (pa,mf,cs)
@@ -971,7 +971,7 @@ static adns_status pa_soa(const parseinfo *pai, int cbyte,
   if (st) return st;
 
   if (cbyte+20 != max) return adns_s_invaliddata;
-  
+
   for (i=0; i<5; i++) {
     GET_W(cbyte,msw);
     GET_W(cbyte,lsw);
@@ -993,7 +993,7 @@ static adns_status cs_soa(vbuf *vb, const void *datap) {
   char buf[20];
   int i;
   adns_status st;
-  
+
   st= csp_domain(vb,rrp->mname);  if (st) return st;
   CSP_ADDSTR(" ");
   st= csp_mailbox(vb,rrp->rname);  if (st) return st;
@@ -1047,7 +1047,7 @@ static adns_status pap_srv_begin(const parseinfo *pai, int *cbyte_io, int max,
 
   cbyte= *cbyte_io;
   if ((*cbyte_io += 6) > max) return adns_s_invaliddata;
-  
+
   rrp->priority= GET_W(cbyte, ti);
   rrp->weight=   GET_W(cbyte, ti);
   rrp->port=     GET_W(cbyte, ti);
@@ -1061,11 +1061,11 @@ static adns_status pa_srvraw(const parseinfo *pai, int cbyte,
 
   st= pap_srv_begin(pai,&cbyte,max,datap);
   if (st) return st;
-  
+
   st= pap_domain(pai, &cbyte, max, &rrp->host,
 		 pai->qu->flags & adns_qf_quoteok_anshost ? pdf_quoteok : 0);
   if (st) return st;
-  
+
   if (cbyte != max) return adns_s_invaliddata;
   return adns_s_ok;
 }
@@ -1111,7 +1111,7 @@ static adns_status csp_srv_begin(vbuf *vb, const adns_rr_srvha *rrp
 static adns_status cs_srvraw(vbuf *vb, const void *datap) {
   const adns_rr_srvraw *rrp= datap;
   adns_status st;
-  
+
   st= csp_srv_begin(vb,(const void*)rrp);  if (st) return st;
   return csp_domain(vb,rrp->host);
 }
@@ -1141,7 +1141,7 @@ static void postsort_srv(adns_state ads, void *array, int nrrs,
        workbegin < arrayend;
        workbegin= workend) {
     cpriority= (rr=(void*)workbegin)->priority;
-    
+
     for (workend= workbegin, totalweight= 0;
 	 workend < arrayend && (rr=(void*)workend)->priority == cpriority;
 	 workend += typei->rrsz) {
@@ -1157,7 +1157,7 @@ static void postsort_srv(adns_state ads, void *array, int nrrs,
     for (;
 	 workbegin + typei->rrsz < workend; /* don't bother if just one */
 	 workbegin += typei->rrsz) {
-      
+
       randval= nrand48(ads->rand48xsubi);
       randval %= (totalweight + 1);
         /* makes it into 0..totalweight inclusive; with 2^10 RRs,
@@ -1219,7 +1219,7 @@ static adns_status cs_opaque(vbuf *vb, const void *datap) {
 
   sprintf(buf,"\\# %d",rrp->len);
   CSP_ADDSTR(buf);
-  
+
   for (l= rrp->len, p= rrp->data;
        l>=4;
        l -= 4, p += 4) {
@@ -1234,7 +1234,7 @@ static adns_status cs_opaque(vbuf *vb, const void *datap) {
   }
   return adns_s_ok;
 }
-  
+
 /*
  * _flat   (mf)
  */

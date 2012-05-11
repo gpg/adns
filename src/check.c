@@ -8,20 +8,20 @@
  *    Copyright (C) 1999-2000,2003,2006  Tony Finch
  *    Copyright (C) 1991 Massachusetts Institute of Technology
  *  (See the file INSTALL for full details.)
- *  
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2, or (at your option)
  *  any later version.
- *  
+ *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software Foundation,
- *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
+ *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
 #include "internal.h"
@@ -76,14 +76,14 @@ static void checkc_notcpbuf(adns_state ads) {
 
 static void checkc_global(adns_state ads) {
   int i;
-  
+
   assert(ads->udpsocket >= 0);
 
   for (i=0; i<ads->nsortlist; i++)
     assert(!(ads->sortlist[i].base.s_addr & ~ads->sortlist[i].mask.s_addr));
 
   assert(ads->tcpserver >= 0 && ads->tcpserver < ads->nservers);
-  
+
   switch (ads->tcpstate) {
   case server_connecting:
     assert(ads->tcpsocket >= 0);
@@ -107,7 +107,7 @@ static void checkc_global(adns_state ads) {
 
 static void checkc_queue_udpw(adns_state ads) {
   adns_query qu;
-  
+
   DLIST_CHECK(ads->udpw, qu, , {
     assert(qu->state==query_tosend);
     assert(qu->retries <= UDPMAXRETRIES);
@@ -120,7 +120,7 @@ static void checkc_queue_udpw(adns_state ads) {
 
 static void checkc_queue_tcpw(adns_state ads) {
   adns_query qu;
-  
+
   DLIST_CHECK(ads->tcpw, qu, , {
     assert(qu->state==query_tcpw);
     assert(!qu->children.head && !qu->children.tail);
@@ -147,7 +147,7 @@ static void checkc_queue_childw(adns_state ads) {
 
 static void checkc_queue_output(adns_state ads) {
   adns_query qu;
-  
+
   DLIST_CHECK(ads->output, qu, , {
     assert(qu->state == query_done);
     assert(!qu->children.head && !qu->children.tail);
@@ -159,7 +159,7 @@ static void checkc_queue_output(adns_state ads) {
 
 void adns__consistency(adns_state ads, adns_query qu, consistency_checks cc) {
   adns_query search;
-  
+
   switch (cc) {
   case cc_user:
     break;
