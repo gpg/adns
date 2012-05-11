@@ -337,7 +337,13 @@ struct adns__state {
     struct in_addr addr;
   } servers[MAXSERVERS];
   struct sortlist {
-    struct in_addr base, mask;
+    struct {
+      union {
+        struct in_addr v4;
+        struct in6_addr v6;
+      } u;
+      char is_v6;
+    } base, mask;
   } sortlist[MAXSORTLIST];
   char **searchlist;
   unsigned short rand48xsubi[3];
@@ -760,6 +766,7 @@ static inline int errno_resources(int e) { return e==ENOMEM || e==ENOBUFS; }
 		       (tv)|=(GETIL_B((cb))<<8),	\
 		       (tv)|=GETIL_B(cb),		\
 		       (tv) )
+
 
 
 

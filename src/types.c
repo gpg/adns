@@ -253,14 +253,18 @@ static adns_status pa_inaddr(const parseinfo *pai, int cbyte,
   return adns_s_ok;
 }
 
+/* Find the first match of AD in the sortlist of the ADS state and
+   return its index.  If not found the size of the sortlist is
+   returned.  This is the v4 version.  */
 static int search_sortlist(adns_state ads, struct in_addr ad) {
   const struct sortlist *slp;
   int i;
 
-  for (i=0, slp=ads->sortlist;
-       i<ads->nsortlist &&
-	 !((ad.s_addr & slp->mask.s_addr) == slp->base.s_addr);
-       i++, slp++);
+  for (i=0, slp=ads->sortlist; i < ads->nsortlist; i++, slp++)
+    if (!slp->mask.is_v6
+        && ((ad.s_addr & slp->mask.u.v4.s_addr) == slp->base.u.v4.s_addr))
+      break;
+
   return i;
 }
 
@@ -289,6 +293,72 @@ static adns_status cs_inaddr(vbuf *vb, const void *datap) {
   CSP_ADDSTR(ia);
   return adns_s_ok;
 }
+
+/*
+ * _in6addr   (pa,dip,di)
+ */
+
+static adns_status pa_in6addr(const parseinfo *pai, int cbyte,
+                              int max, void *datap) {
+  struct in6_addr *storeto= datap;
+
+  if (max-cbyte != 16)
+    return adns_s_invaliddata;
+  memcpy (storeto, pai->dgram + cbyte, 16);
+  return adns_s_ok;
+}
+
+/* Find the first match of AD in the sortlist of the ADS state and
+   return its index.  If not found the size of the sortlist is
+   returned.  This is the v6 version.  */
+static int search_sortlist6(adns_state ads, const struct in6_addr *ad) {
+  const struct sortlist *slp;
+  int i, j;
+
+  for (i=0, slp=ads->sortlist; i < ads->nsortlist; i++, slp++)
+    {
+      if (slp->mask.is_v6)
+        {
+          for (j=0; j < 16 && ((ad->s6_addr[j] & slp->mask.u.v6.s6_addr[j])
+                               == slp->base.u.v6.s6_addr[j]); j++)
+            ;
+          if (j==16)
+            break;
+        }
+    }
+
+  return i;
+}
+
+static int dip_in6addr(adns_state ads,
+                       const struct in6_addr *a, const struct in6_addr *b) {
+  int ai, bi;
+
+  if (!ads->nsortlist)
+    return 0;
+
+  ai = search_sortlist6 (ads, a);
+  bi = search_sortlist6 (ads, b);
+  return bi < ai;
+}
+
+static int di_in6addr(adns_state ads,
+                      const void *datap_a, const void *datap_b) {
+  const struct in6_addr *ap = datap_a;
+  const struct in6_addr *bp = datap_b;
+
+  return dip_in6addr (ads, ap, bp);
+}
+
+static adns_status cs_in6addr(vbuf *vb, const void *datap) {
+  char buffer[INET6_ADDRSTRLEN];
+
+  inet_ntop (AF_INET6, datap,  buffer, sizeof buffer);
+
+  CSP_ADDSTR(buffer);
+  return adns_s_ok;
+}
+
 
 /*
  * _addr   (pa,di,csp,cs)
@@ -1273,6 +1343,7 @@ DEEP_TYPE(hinfo,  "HINFO", 0, intstrpair,pa_hinfo,   0,        cs_hinfo      ),
 DEEP_TYPE(mx_raw, "MX",   "raw",intstr,  pa_mx_raw,  di_mx_raw,cs_inthost    ),
 DEEP_TYPE(txt,    "TXT",   0,   manyistr,pa_txt,     0,        cs_txt        ),
 DEEP_TYPE(rp_raw, "RP",   "raw",strpair, pa_rp,      0,        cs_rp         ),
+FLAT_TYPE(aaaa,   "AAAA",  0,   in6addr, pa_in6addr, di_in6addr,cs_in6addr   ),
 XTRA_TYPE(srv_raw,"SRV",  "raw",srvraw , pa_srvraw,  di_srv,   cs_srvraw,
 	                                               qdpl_srv, postsort_srv),
 

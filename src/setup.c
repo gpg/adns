@@ -222,8 +222,10 @@ static void ccf_sortlist(adns_state ads, const char *fn,
       }
     }
 
-    ads->sortlist[ads->nsortlist].base= base;
-    ads->sortlist[ads->nsortlist].mask= mask;
+    ads->sortlist[ads->nsortlist].base.is_v6 = 0;
+    ads->sortlist[ads->nsortlist].base.u.v4 = base;
+    ads->sortlist[ads->nsortlist].mask.is_v6 = 0;
+    ads->sortlist[ads->nsortlist].mask.u.v4 = mask;
     ads->nsortlist++;
   }
 }
