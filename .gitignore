@@ -28,6 +28,7 @@ regress/fanftest_record
 regress/harness.h
 regress/hredirect.h
 regress/hsyscalls.h
+regress/output-*
 src/stamp-h1
 src/adns-config
 src/libadns.la
