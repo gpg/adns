@@ -52,7 +52,7 @@ if test "$1" = "--build-w32"; then
     echo "Using $w32root as standard install directory" >&2
 
     crossbindir=
-    for host in i586-mingw32msvc i386-mingw32msvc i686-w64-mingw32 mingw32; do
+    for host in i686-w64-mingw32 i586-mingw32msvc i386-mingw32msvc mingw32; do
         if ${host}-gcc --version >/dev/null 2>&1 ; then
             crossbindir=/usr/${host}/bin
             conf_CC="CC=${host}-gcc"
@@ -75,7 +75,7 @@ if test "$1" = "--build-w32"; then
         fi
     fi
 
-    ./configure --enable-maintainer-mode  --prefix=${w32root}  \
+    $tsdir/configure --enable-maintainer-mode  --prefix=${w32root}  \
             --host=${host} --build=${build}
 
     exit $?
