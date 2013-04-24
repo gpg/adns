@@ -1,3 +1,11 @@
+2013-04-24  Werner Koch  <wk@gnupg.org>
+
+	* src/w32inet.c: New.  Taken from gnulib lib/inet_ntop.c.
+	Modified for Windows only use.
+	(inet_ntop): Rename to adns__inet_ntop.
+	* src/Makefile.am (w32src): Add file.
+	* src/types.c (cs_in6addr) [W32]: Use adns__inet_ntop.
+
 2012-05-11  Werner Koch  <wk@gnupg.org>
 
 	* src/adns.h (adns_rrtype): Add adns_r_aaaa.

@@ -86,9 +86,12 @@ int gettimeofday (struct timeval *__restrict__ tp, void *__restrict__ tzp);
 #endif
 long int nrand48 (unsigned short int xsubi[3]);
 
-#else 
+/* w32inet.c:  */
+const char *adns__inet_ntop (int af, const void *src, char *dst, socklen_t cnt);
+
+#else
 /*
-    Generic POSIX platform. 
+    Generic POSIX platform.
  */
 
 

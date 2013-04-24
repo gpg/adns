@@ -353,7 +353,11 @@ static int di_in6addr(adns_state ads,
 static adns_status cs_in6addr(vbuf *vb, const void *datap) {
   char buffer[INET6_ADDRSTRLEN];
 
+#ifdef HAVE_W32_SYSTEM
+  adns__inet_ntop (AF_INET6, datap,  buffer, sizeof buffer);
+#else
   inet_ntop (AF_INET6, datap,  buffer, sizeof buffer);
+#endif
 
   CSP_ADDSTR(buffer);
   return adns_s_ok;

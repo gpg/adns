@@ -52,7 +52,7 @@ adns_res_ldflag = -Wl,.libs/versioninfo.o
 no_undefined = -no-undefined
 export_symbols = -export-symbols $(srcdir)/libadns.def
 adns_deps = $(ksba_res) libadns.def
-w32src = w32support.c w32extra.c
+w32src = w32support.c w32extra.c w32inet.c
 
 install-def-file:
 	$(INSTALL) $(srcdir)/libadns.def $(DESTDIR)$(libdir)/libadns.def
