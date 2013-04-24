@@ -1,5 +1,11 @@
 2013-04-24  Werner Koch  <wk@gnupg.org>
 
+	Release 1.4-g10-3.
+
+	* configure.ac: Set LT version to C4/A3/R1.
+
+2013-04-24  Werner Koch  <wk@gnupg.org>
+
 	* src/w32inet.c: New.  Taken from gnulib lib/inet_ntop.c.
 	Modified for Windows only use.
 	(inet_ntop): Rename to adns__inet_ntop.

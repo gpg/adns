@@ -1,9 +1,9 @@
-Noteworthy changes in version 1.4-g10-3 (unreleased)
+Noteworthy changes in version 1.4-g10-3 (2013-04-24)
 ----------------------------------------------------
 
- * Add support AAAA records.
+ * Basic support for AAAA records.
 
- *
+ * Added a privacy mode to adnslogres (options -P and -S).
 
 
 Noteworthy changes in version 1.4-g10-2 (2008-05-08)
