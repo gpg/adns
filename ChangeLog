@@ -1,3 +1,18 @@
+2012-05-11  Werner Koch  <wk@gnupg.org>
+
+	* src/adns.h (adns_rrtype): Add adns_r_aaaa.
+	(adns_answer): Add member in6addr.
+	* src/internal.h (adns__state): Change sortlist struct to allow
+	for v6 addresses.
+	* src/check.c (checkc_global): Fix for v6 sortlist.
+	* src/setup.c (ccf_sortlist): Mark entries as v4.
+	* src/types.c (search_sortlist): Ignore v6 addresses.
+	(pa_in6addr, search_sortlist6, dip_in6addr, di_in6addr)
+	(cs_in6addr): New.
+	(typeinfos): Add description for the AAAA record.
+
+	* src/setup.c (ccf_sortlist): Fix class A detection.
+
 2011-03-14  Werner Koch  <wk@g10code.com>
 
 	* client/adnslogres.c: Change license to GPLv3.
