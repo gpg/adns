@@ -43,6 +43,7 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <stdint.h>
+#include <assert.h>
 
 #include "config.h"
 #include "adns.h"
@@ -60,10 +61,15 @@
 /* maximum length of a line */
 #define MAXLINE 2048
 
+/* Max length of a truncated IP string.
+   "nnnn:nnnn:n000::"  or "nnn.nnn.0.0"  */
+#define TRUNCIPLEN 16
+
 /* option flags */
 #define OPT_DEBUG 1
 #define OPT_POLL 2
 #define OPT_PRIVACY 4
+#define OPT_VHOST 8
 
 static const char *const progname= "adnslogres";
 static const char *config_text;
@@ -488,43 +494,195 @@ rmd160_hash_buffer (void *outbuf, const void *buffer, size_t length)
 }
 
 
-/*
- * Parse the IP address and convert to a reverse domain name.
- */
-static char *ipaddr2domain(char *start, char **addr, char **rest) {
-  static char buf[30]; /* "123.123.123.123.in-addr.arpa.\0" */
-  char *ptrs[5];
-  int i;
+/* Expand an IPv6 address string by inserting missing '0', changing
+   letters to lowercase, and removing the the colons.  Returns a
+   pointer to a static buffer or NULL on error.  Example:
+   "2001:aA8:fff1:2100::60" gives
+   "20010aa8fff121000000000000000060".  */
+static char *
+expand_v6 (const char *addrstr)
+{
+  static char buffer[32+1];
+  char tmpbuf[4];
+  int tmpidx, idx, i;
+  const char *s;
+  int ncolon;
 
-  ptrs[0]= start;
-retry:
-  while (!sensible_ctype(isdigit,*ptrs[0]))
-    if (!*ptrs[0]++) {
-      strcpy(buf, "invalid.");
-      *addr= *rest= NULL;
-      return buf;
+  for (s=addrstr, ncolon=0; *s && !sensible_ctype (isspace, *s); s++)
+    {
+      if (*s == ':')
+        ncolon++;
     }
-  for (i= 1; i < 5; i++) {
-    ptrs[i]= ptrs[i-1];
-    while (sensible_ctype(isdigit,*ptrs[i]++));
-    if ((i == 4 && !sensible_ctype(isspace,ptrs[i][-1])) ||
-	(i != 4 && ptrs[i][-1] != '.') ||
-	(ptrs[i]-ptrs[i-1] > 4)) {
-      ptrs[0]= ptrs[i]-1;
-      goto retry;
+  if (ncolon > 8)
+    return NULL;  /* Oops.  */
+
+  memset (buffer, '0', 32);
+  buffer[32] = 0;
+  idx = tmpidx = 0;
+  for (s=addrstr; *s && !sensible_ctype (isspace, *s); s++)
+    {
+      if (*s == ':')
+        {
+          idx += 4 - tmpidx;
+          for (i=0; i < tmpidx; i++)
+            {
+              if (idx >= sizeof buffer)
+                return NULL;
+              buffer[idx++] = tmpbuf[i];
+            }
+          tmpidx = 0;
+          if (s[1] == ':') /* Double colon.  */
+            {
+              s++;
+              if (!ncolon || s[1] == ':')
+                return NULL;  /* More than one double colon. */
+              idx += 4*(8 - ncolon);
+              ncolon = 0;
+            }
+        }
+      else if (tmpidx > 3)
+        return NULL;  /* Invalid address.  */
+      else if (!sensible_ctype (isxdigit, *s))
+        return NULL;  /* Invalid character.  */
+      else
+        tmpbuf[tmpidx++] = sensible_ctype (tolower, *s);
     }
-  }
-  sprintf(buf, "%.*s.%.*s.%.*s.%.*s.in-addr.arpa.",
-	  (int)(ptrs[4]-ptrs[3]-1), ptrs[3],
-	  (int)(ptrs[3]-ptrs[2]-1), ptrs[2],
-	  (int)(ptrs[2]-ptrs[1]-1), ptrs[1],
-	  (int)(ptrs[1]-ptrs[0]-1), ptrs[0]);
-  *addr= ptrs[0];
-  *rest= ptrs[4]-1;
+
+  idx += 4 - tmpidx;
+  for (i=0; i < tmpidx; i++)
+    {
+      if (idx >= sizeof buffer)
+        return NULL;
+      buffer[idx++] = tmpbuf[i];
+    }
+
+  return buffer;
+}
+
+
+/*
+ * Parse the IP address and convert to a reverse domain name.  ON
+ * return a truncated IP address is stored at TRUNCIP which is
+ * expected to be a buffer of at least TRUNCIPLEN+1 bytes.
+ */
+static char *
+ipaddr2domain(char *start, char **addr, char **rest, char *truncip,
+              int *r_is_v6, int opts)
+{
+  /* Sample values BUF needs to hold:
+   * "123.123.123.123.in-addr.arpa."
+   * "0.6.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.2.1.f.f.f.8.a.a.0.1.0.0.2.ip6.arpa."
+   */
+  static char buf[74];
+  int i;
+  char *endp;
+  int ndots = 0;
+
+  *r_is_v6 = 0;
+
+  /* Better skip leading spaces which might have been create by some
+     log processing scripts.  */
+  while (sensible_ctype(isspace, *start))
+    start++;
+
+  if ((opts & OPT_VHOST))
+    {
+      while (!sensible_ctype(isspace, *start))
+        start++;
+      while (sensible_ctype(isspace, *start))
+        start++;
+    }
+
+  for (endp = start; !sensible_ctype(isspace, *endp); endp++)
+    {
+      if (*endp == ':')
+        *r_is_v6 = 1;
+      else if (*endp == '.')
+        ndots++;
+    }
+  if (endp == start)
+    {
+      strcpy (buf, "invalid");
+      *addr = *rest = NULL;
+      goto leave;
+    }
+
+  if (*r_is_v6)
+    {
+      const char *exp = expand_v6 (start);
+      const char *s;
+      char *p;
+      size_t len;
+
+      if (!exp)
+        {
+          strcpy (buf, "invalid_v6");
+          *addr = *rest = NULL;
+          goto leave;
+        }
+
+      len = strlen (exp);
+      assert (len + 9 + 1 <= sizeof buf);
+      p = buf;
+      for (s = exp + len - 1; s >= exp; s--)
+        {
+          *p++ = *s;
+          *p++ = '.';
+        }
+      strcpy (p, "ip6.arpa.");
+      snprintf (truncip, TRUNCIPLEN+1, "%.4s:%.4s:%.1s000::",
+                exp, exp+4, exp+8);
+      *addr = start;
+      *rest = endp;
+    }
+  else /* v4 */
+    {
+      char *ptrs[5];
+
+      /* Largest expected string is "255.255.255.255".  */
+      if ((endp - start) > 15 || ndots != 3)
+        {
+          strcpy (buf, "invalid_v4");
+          *addr = *rest = NULL;
+          goto leave;
+        }
+      ptrs[0] = start;
+      for (i = 1; i < 5; i++)
+        {
+          ptrs[i] = ptrs[i-1];
+          while (sensible_ctype (isdigit, *ptrs[i]++))
+            ;
+          if ((i == 4 && !sensible_ctype (isspace, ptrs[i][-1]))
+              || (i != 4 && ptrs[i][-1] != '.')
+              || (ptrs[i]-ptrs[i-1] > 4)
+              || (i!=4 && !sensible_ctype (isdigit, ptrs[i][0])))
+            {
+              strcpy (buf, "invalid_v4");
+              *addr = *rest = NULL;
+              goto leave;
+            }
+        }
+
+      snprintf (buf, sizeof buf, "%.*s.%.*s.%.*s.%.*s.in-addr.arpa.",
+                (int)(ptrs[4]-ptrs[3]-1), ptrs[3],
+                (int)(ptrs[3]-ptrs[2]-1), ptrs[2],
+                (int)(ptrs[2]-ptrs[1]-1), ptrs[1],
+                (int)(ptrs[1]-ptrs[0]-1), ptrs[0]);
+      snprintf (truncip, TRUNCIPLEN+1, "%.*s.%.*s.0.0",
+                (int)(ptrs[1]-ptrs[0]-1), ptrs[0],
+                (int)(ptrs[2]-ptrs[1]-1), ptrs[1]);
+      *addr= ptrs[0];
+      *rest= ptrs[4]-1;
+    }
+
+ leave:
   return buf;
 }
 
-static void printline(FILE *outf, char *start, char *addr, char *rest, char *domain, int opts) {
+static void
+printline(FILE *outf, char *start, char *addr, char *rest, char *domain,
+          const char *truncip, int is_v6, int opts)
+{
   if (domain)
     {
       char *p;
@@ -539,11 +697,13 @@ static void printline(FILE *outf, char *start, char *addr, char *rest, char *dom
           fprintf(outf, "%.*sp", (int)(addr - start), start);
           for (i=0; i < 4; i++)
             fprintf (outf, "%02x", hash[i]);
-          fprintf(outf, "%s%s", p, rest);
+          fprintf(outf, "%c%s%s", is_v6? '6':'4', p, rest);
         }
       else
         fprintf(outf, "%.*s%s%s", (int)(addr - start), start, domain, rest);
     }
+  else if ((opts & OPT_PRIVACY))
+    fprintf(outf, "%.*s%s%s", (int)(addr - start), start, truncip, rest);
   else
     fputs(start, outf);
   if (ferror(outf)) aargh("write output");
@@ -552,6 +712,8 @@ static void printline(FILE *outf, char *start, char *addr, char *rest, char *dom
 typedef struct logline {
   struct logline *next;
   char *start, *addr, *rest;
+  char truncip[TRUNCIPLEN+1];
+  int is_v6;
   adns_query query;
 } logline;
 
@@ -566,11 +728,16 @@ static logline *readline(FILE *inf, adns_state adns, int opts) {
     line= (logline*)str;
     line->next= NULL;
     line->start= str+sizeof(logline);
+    line->is_v6 = 0;
+    *line->truncip = 0;
     strcpy(line->start, buf);
-    str= ipaddr2domain(line->start, &line->addr, &line->rest);
+    str= ipaddr2domain(line->start, &line->addr, &line->rest, line->truncip,
+                       &line->is_v6, opts);
     if (opts & OPT_DEBUG)
       msg("submitting %.*s -> %s", (int)(line->rest-line->addr), guard_null(line->addr), str);
-    if (adns_submit(adns, str, adns_r_ptr,
+    /* Note: ADNS does not yet support "ptr" for IPv6.  */
+    if (adns_submit(adns, str,
+                    line->is_v6? adns_r_ptr_raw : adns_r_ptr,
 		    adns_qf_quoteok_cname|adns_qf_cname_loose,
 		    NULL, &line->query))
       aargh("adns_submit");
@@ -616,7 +783,8 @@ static void proclog(FILE *inf, FILE *outf, int maxpending, int opts) {
 	exit(1);
       }
       printline(outf, head->start, head->addr, head->rest,
-		answer->status == adns_s_ok ? *answer->rrs.str : NULL, opts);
+		answer->status == adns_s_ok ? *answer->rrs.str : NULL,
+                head->truncip, head->is_v6, opts);
       line= head; head= head->next;
       free(line);
       free(answer);
@@ -643,8 +811,13 @@ static void printhelp(FILE *file) {
 	"         -p                use poll(2) instead of select(2)\n"
 	"         -d                turn on debugging\n"
         "         -P                privacy mode\n"
+        "         -x                first field is the virtual host\n"
         "         -S <salt>         salt for the privacy mode\n"
-	"         -C <config>       use instead of contents of resolv.conf\n",
+	"         -C <config>       use instead of contents of resolv.conf\n"
+        "\n"
+        "The privacy mode replaces resolved addresses by a 32 bit hash value\n"
+        "or truncates IP addresses to 16/40 bit.  A random salt should be\n"
+        "used to make testing for addresses hard.\n",
 	stdout);
 }
 
@@ -672,7 +845,7 @@ int main(int argc, char *argv[]) {
 
   maxpending= DEFMAXPENDING;
   opts= 0;
-  while ((c= getopt(argc, argv, "c:C:dpPS:")) != -1)
+  while ((c= getopt(argc, argv, "c:C:dxpPS:")) != -1)
     switch (c) {
     case 'c':
       maxpending= atoi(optarg);
@@ -686,6 +859,9 @@ int main(int argc, char *argv[]) {
       break;
     case 'd':
       opts|= OPT_DEBUG;
+      break;
+    case 'x':
+      opts|= OPT_VHOST;
       break;
     case 'P':
       opts|= OPT_PRIVACY;
