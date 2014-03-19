@@ -61,9 +61,8 @@
 /* maximum length of a line */
 #define MAXLINE 2048
 
-/* Max length of a truncated IP string.
-   "nnnn:nnnn:n000::"  or "nnn.nnn.0.0"  */
-#define TRUNCIPLEN 16
+/* Length of a buffer to hold an expanded IP addr string incl 0.  */
+#define FULLIPBUFLEN 33
 
 /* option flags */
 #define OPT_DEBUG 1
@@ -561,12 +560,12 @@ expand_v6 (const char *addrstr)
 
 
 /*
- * Parse the IP address and convert to a reverse domain name.  ON
- * return a truncated IP address is stored at TRUNCIP which is
- * expected to be a buffer of at least TRUNCIPLEN+1 bytes.
+ * Parse the IP address and convert to a reverse domain name.  On
+ * return the full IP address is stored at FULLIP which is
+ * expected to be a buffer of at least FULLIPBUFLEN bytes.
  */
 static char *
-ipaddr2domain(char *start, char **addr, char **rest, char *truncip,
+ipaddr2domain(char *start, char **addr, char **rest, char *fullip,
               int *r_is_v6, int opts)
 {
   /* Sample values BUF needs to hold:
@@ -623,6 +622,9 @@ ipaddr2domain(char *start, char **addr, char **rest, char *truncip,
 
       len = strlen (exp);
       assert (len + 9 + 1 <= sizeof buf);
+      assert (len < FULLIPBUFLEN);
+      strcpy (fullip, exp);
+
       p = buf;
       for (s = exp + len - 1; s >= exp; s--)
         {
@@ -630,8 +632,6 @@ ipaddr2domain(char *start, char **addr, char **rest, char *truncip,
           *p++ = '.';
         }
       strcpy (p, "ip6.arpa.");
-      snprintf (truncip, TRUNCIPLEN+1, "%.4s:%.4s:%.1s000::",
-                exp, exp+4, exp+8);
       *addr = start;
       *rest = endp;
     }
@@ -646,6 +646,8 @@ ipaddr2domain(char *start, char **addr, char **rest, char *truncip,
           *addr = *rest = NULL;
           goto leave;
         }
+      snprintf (fullip, FULLIPBUFLEN, "%.*s", (int)(endp-start), start);
+
       ptrs[0] = start;
       for (i = 1; i < 5; i++)
         {
@@ -668,9 +670,6 @@ ipaddr2domain(char *start, char **addr, char **rest, char *truncip,
                 (int)(ptrs[3]-ptrs[2]-1), ptrs[2],
                 (int)(ptrs[2]-ptrs[1]-1), ptrs[1],
                 (int)(ptrs[1]-ptrs[0]-1), ptrs[0]);
-      snprintf (truncip, TRUNCIPLEN+1, "%.*s.%.*s.0.0",
-                (int)(ptrs[1]-ptrs[0]-1), ptrs[0],
-                (int)(ptrs[2]-ptrs[1]-1), ptrs[1]);
       *addr= ptrs[0];
       *rest= ptrs[4]-1;
     }
@@ -680,21 +679,29 @@ ipaddr2domain(char *start, char **addr, char **rest, char *truncip,
 }
 
 static void
-printline(FILE *outf, char *start, char *addr, char *rest, char *domain,
-          const char *truncip, int is_v6, int opts)
+printline(FILE *outf, char *start, char *addr, char *rest, const char *domain,
+          const char *fullip, int is_v6, int opts)
 {
+  int append_null = 0;
+
+  if ((opts & OPT_PRIVACY) && !domain && *fullip)
+    {
+      domain = fullip;
+      append_null = 1;
+    }
+
   if (domain)
     {
-      char *p;
+      const char *p;
 
-      p = strrchr (domain, '.');
+      p = append_null? ".null" : strrchr (domain, '.');
       if ((opts & OPT_PRIVACY) && p && p[1])
         {
           unsigned char hash[20];
           int i;
 
           rmd160_hash_buffer (hash, domain, strlen (domain));
-          fprintf(outf, "%.*sp", (int)(addr - start), start);
+          fprintf (outf, "%.*sp", (int)(addr - start), start);
           for (i=0; i < 4; i++)
             fprintf (outf, "%02x", hash[i]);
           fprintf(outf, "%c%s%s", is_v6? '6':'4', p, rest);
@@ -702,17 +709,17 @@ printline(FILE *outf, char *start, char *addr, char *rest, char *domain,
       else
         fprintf(outf, "%.*s%s%s", (int)(addr - start), start, domain, rest);
     }
-  else if ((opts & OPT_PRIVACY))
-    fprintf(outf, "%.*s%s%s", (int)(addr - start), start, truncip, rest);
   else
     fputs(start, outf);
-  if (ferror(outf)) aargh("write output");
+
+  if (ferror(outf))
+    aargh("write output");
 }
 
 typedef struct logline {
   struct logline *next;
   char *start, *addr, *rest;
-  char truncip[TRUNCIPLEN+1];
+  char fullip[FULLIPBUFLEN];
   int is_v6;
   adns_query query;
 } logline;
@@ -729,9 +736,9 @@ static logline *readline(FILE *inf, adns_state adns, int opts) {
     line->next= NULL;
     line->start= str+sizeof(logline);
     line->is_v6 = 0;
-    *line->truncip = 0;
+    *line->fullip = 0;
     strcpy(line->start, buf);
-    str= ipaddr2domain(line->start, &line->addr, &line->rest, line->truncip,
+    str= ipaddr2domain(line->start, &line->addr, &line->rest, line->fullip,
                        &line->is_v6, opts);
     if (opts & OPT_DEBUG)
       msg("submitting %.*s -> %s", (int)(line->rest-line->addr), guard_null(line->addr), str);
@@ -784,7 +791,7 @@ static void proclog(FILE *inf, FILE *outf, int maxpending, int opts) {
       }
       printline(outf, head->start, head->addr, head->rest,
 		answer->status == adns_s_ok ? *answer->rrs.str : NULL,
-                head->truncip, head->is_v6, opts);
+                head->fullip, head->is_v6, opts);
       line= head; head= head->next;
       free(line);
       free(answer);
@@ -815,9 +822,8 @@ static void printhelp(FILE *file) {
         "         -S <salt>         salt for the privacy mode\n"
 	"         -C <config>       use instead of contents of resolv.conf\n"
         "\n"
-        "The privacy mode replaces resolved addresses by a 32 bit hash value\n"
-        "or truncates IP addresses to 16/40 bit.  A random salt should be\n"
-        "used to make testing for addresses hard.\n",
+        "The privacy mode replaces addresses by a 32 bit hash value.\n"
+        "A daily salt should be used to make testing for addresses hard.\n",
 	stdout);
 }
 
