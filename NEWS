@@ -1,5 +1,11 @@
-Noteworthy changes in version 1.4-g10-4 (unreleased)
+Noteworthy changes in version 1.4-g10-4 (2014-04-05)
 ----------------------------------------------------
+
+ * Improved privacy mode for adnslogres.
+
+ * Added IPv6 support to adnslogres.
+
+ * Added FTP log support to adnslogres.
 
 
 Noteworthy changes in version 1.4-g10-3 (2013-04-24)
