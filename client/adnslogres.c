@@ -69,6 +69,7 @@
 #define OPT_POLL 2
 #define OPT_PRIVACY 4
 #define OPT_VHOST 8
+#define OPT_FTP 16
 
 static const char *const progname= "adnslogres";
 static const char *config_text;
@@ -579,13 +580,37 @@ ipaddr2domain(char *start, char **addr, char **rest, char *fullip,
 
   *r_is_v6 = 0;
 
-  /* Better skip leading spaces which might have been create by some
+  /* Better skip leading spaces which might have been created by some
      log processing scripts.  */
   while (sensible_ctype(isspace, *start))
     start++;
 
   if ((opts & OPT_VHOST))
     {
+      while (!sensible_ctype(isspace, *start))
+        start++;
+      while (sensible_ctype(isspace, *start))
+        start++;
+    }
+  if ((opts & OPT_FTP))
+    {
+      /* Sample FTP log line (after the xfer tag):
+
+         Mon Mar 11 05:18:16 2013 1 124.0.0.0 287 /gcrypt/gnupg/foo \
+            b _ o a anonymous ftp 0 * c
+
+         Timestamp, time (rounded up, so that it is never zero),
+         remote host IP,
+         file size, filename, transfer type, special action flag,
+         direction, access mode, username, service name,
+         authentication method, authenticated user ID, completion status.  */
+      if (strlen (start) < 38)
+        {
+          strcpy (buf, "invalid");
+          *addr = *rest = NULL;
+          goto leave;
+        }
+      start += 25;
       while (!sensible_ctype(isspace, *start))
         start++;
       while (sensible_ctype(isspace, *start))
@@ -819,6 +844,7 @@ static void printhelp(FILE *file) {
 	"         -d                turn on debugging\n"
         "         -P                privacy mode\n"
         "         -x                first field is the virtual host\n"
+        "         -f                FTP log mode\n"
         "         -S <salt>         salt for the privacy mode\n"
 	"         -C <config>       use instead of contents of resolv.conf\n"
         "\n"
@@ -851,7 +877,7 @@ int main(int argc, char *argv[]) {
 
   maxpending= DEFMAXPENDING;
   opts= 0;
-  while ((c= getopt(argc, argv, "c:C:dxpPS:")) != -1)
+  while ((c= getopt(argc, argv, "c:C:dxfpPS:")) != -1)
     switch (c) {
     case 'c':
       maxpending= atoi(optarg);
@@ -868,6 +894,9 @@ int main(int argc, char *argv[]) {
       break;
     case 'x':
       opts|= OPT_VHOST;
+      break;
+    case 'f':
+      opts|= OPT_FTP;
       break;
     case 'P':
       opts|= OPT_PRIVACY;
