@@ -48,8 +48,7 @@
 
 struct outqueuenode {
   struct outqueuenode *next, *back;
-  void *buffer;
-  char *textp;
+  char *buffer, *textp;
   int textlen;
   struct timeval printbefore;
   struct treething *addr;
@@ -216,7 +215,8 @@ static void queueoutchar(int c) {
   struct outqueuenode *entry;
   
   entry= outqueue.tail;
-  if (!entry || entry->addr || entry->textlen >= peroutqueuenode) {
+  if (!entry || entry->addr ||
+      entry->textlen >= peroutqueuenode - (entry->textp - entry->buffer)) {
     peroutqueuenode= !peroutqueuenode || !entry || entry->addr ? 128 : 
       peroutqueuenode >= 1024 ? 4096 : peroutqueuenode<<2;
     entry= xmalloc(sizeof(*entry));
