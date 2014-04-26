@@ -24,6 +24,7 @@
 
 set -e
 
+: ${srcdir=.}
 if [ $# -lt 3 ]
 then
 	echo >&2 \
@@ -33,7 +34,7 @@ then
 	exit 1
 fi
 
-case="case-$1"; shift
+case="$srcdir/case-$1"; shift
 initfile="$1"; shift
 
 hrecord="./adnstest_record"
@@ -64,8 +65,8 @@ fi
 
 queryargs="$*"
 
-initstring="`cat init-$initfile.text`"
-xinitflagsf=$program-xinitflags.text
+initstring="`cat $srcdir/init-$initfile.text`"
+xinitflagsf=$srcdir/$program-xinitflags.text
 if test -f $xinitflagsf
 then
 	useinitflags="$initflags $(cat $xinitflagsf)";

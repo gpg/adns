@@ -24,8 +24,10 @@ srcdir=		@srcdir@
 VPATH=		@srcdir@
 
 TARGETS=	libadns.a
-include		$(srcdir)/../settings.make
-include		adns.make
+include		../settings.make
+include		$(srcdir)/adns.make
+
+DIRCFLAGS=	-I. -I$(srcdir)
 
 install:
 		mkdir -p $(libdir) $(includedir)

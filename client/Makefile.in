@@ -30,11 +30,11 @@ PROGRAMS=	adnslogres adnsheloex adnshost $(PROGS_SYSDEP)
 PROGRAMS_LOCAL=	fanftest adnstest
 PROGRAMS_ALL=	$(PROGRAMS) $(PROGRAMS_LOCAL)
 
-STATIC_LIB=	$(ADNSDIR)/libadns.a
+STATIC_LIB=	../src/libadns.a
 
 ifeq ($(ENABLE_DYNAMIC),elf)
-DYNAMIC_DEP=	$(srcdir)/../dynamic/$(SHLIBFILE)
-DYNAMIC_LINK=	-L$(srcdir)/../dynamic -ladns
+DYNAMIC_DEP=	../dynamic/$(SHLIBFILE)
+DYNAMIC_LINK=	-L../dynamic -ladns
 DYNAMIC_SUFFIX=	_s
 else
 DYNAMIC_DEP=	$(STATIC_LIB)
@@ -45,15 +45,15 @@ endif
 TARG_INSTALL=	$(PROGRAMS)
 TARG_LOCAL=	$(addsuffix $(DYNAMIC_SUFFIX), $(PROGRAMS_ALL))
 TARGETS=	$(TARG_LOCAL) $(TARG_INSTALL)
-include		$(srcdir)/../settings.make
+include		../settings.make
 
-DIRCFLAGS=	-I$(srcdir)/../src
+ADNSDIR=	$(srcdir)/../src
+DIRCFLAGS=	-I. -I../src -I$(ADNSDIR)
 
 TARG_OBJS=	$(addsuffix .o, $(PROGRAMS_ALL))
 ADH_OBJS=	adh-main.o adh-opts.o adh-query.o
 ALL_OBJS=	$(ADH_OBJS) $(TARG_OBJS)
 
-ADNSDIR=	$(srcdir)/../src/
 
 all:		$(TARGETS)
 
@@ -72,7 +72,7 @@ adnshost_s:	$(ADH_OBJS) $(STATIC_LIB)
 		$(CC) $(LDFLAGS) $(ADH_OBJS) $(STATIC_LIB) -o $@ $(LDLIBS)
 
 $(ADH_OBJS):		adnshost.h
-$(ALL_OBJS):		$(ADNSDIR)/adns.h $(ADNSDIR)/config.h
+$(ALL_OBJS):		$(ADNSDIR)/adns.h ../src/config.h
 adnsresfilter.o:	$(ADNSDIR)/tvarith.h
 
 %:		%.o $(DYNAMIC_DEP)

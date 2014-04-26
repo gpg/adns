@@ -23,19 +23,20 @@
 #  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
 
 set -e
+: ${srcdir=.}
 mrc=1
 trap 'exit $mrc' 0
 
 casename="$1"
-case="case-$casename"
+case="$srcdir/case-$casename"
 ocase="output-$casename"
 
 exec 4<"$case.sys"
 read <&4 program initfile initflags
 read <&4 queryargs
 
-initstring="`cat init-$initfile.text`"
-xinitflagsf=$program-xinitflags.text
+initstring="`cat $srcdir/init-$initfile.text`"
+xinitflagsf=$srcdir/$program-xinitflags.text
 if test -f $xinitflagsf
 then
 	initflags="$initflags `cat $xinitflagsf`";

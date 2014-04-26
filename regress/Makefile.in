@@ -28,10 +28,10 @@ PROGS_SYSDEP=	@PROGS_HAVE_TSEARCH@
 CLIENTS=	adnstest adnshost adnslogres $(PROGS_SYSDEP)
 AUTOCHDRS=	harness.h hsyscalls.h hredirect.h
 AUTOCSRCS=	hrecord.c hplayback.c hcommon.c
-include		$(srcdir)/../settings.make
+include		../settings.make
 include		$(srcdir)/../src/adns.make
 
-DIRCFLAGS=	-I$(srcdir)/../src
+DIRCFLAGS=	-I../src -I$(srcdir) -I$(srcdir)/../src
 
 HCPPFLAGS=	-DADNS_REGRESS_TEST -I.
 
@@ -46,7 +46,7 @@ ALL_OBJS=	$(HARNLOBJS) dtest.o hrecord.o hplayback.o
 all install uninstall: $(TARGETS)
 
 check:		$(TARGETS)
-		./checkall
+		srcdir=$(srcdir) $(srcdir)/checkall
 
 LINK_CMD=	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
@@ -70,6 +70,6 @@ $(ALL_OBJS):	harness.h hsyscalls.h
 $(ADH_OBJS):	$(srcdir)/../client/adnshost.h
 
 %::	%.m4 hmacros.i4 hsyscalls.i4
-	$(M4) -P $< >$@-a.new
+	$(M4) -P -I$(srcdir) $< >$@-a.new
 	sed -e 's/hm_comma/,/g; s/hm_squote/'\''/g; /^[	 ]*$$/d' <$@-a.new >$@-b.new
-	@mv -f $@-b.new $@; rm -f $@-a.new
+	@mv -f $@-b.new $(srcdir)/$@; rm -f $@-a.new

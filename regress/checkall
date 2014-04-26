@@ -24,15 +24,16 @@
 
 set -e
 
+: ${srcdir=.}
 failed=''
 passed=''
 skipped=''
 
-for f in case-*.sys
+for f in $srcdir/case-*.sys
 do
-	case="`echo \"$f\" | sed -e 's/^case-//; s/\.sys$//'`"
+	case="`echo \"$f\" | sed -e 's:^.*/::; s/^case-//; s/\.sys$//'`"
 	set +e
-	./r1test $case
+	$srcdir/r1test $case
 	rc=$?
 	set -e
 	case $rc in

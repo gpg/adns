@@ -69,8 +69,8 @@ check:			all
 	$(MAKE) -C regress check
 
 README:			README.html
-	lynx -dump -number_links -cfg=/dev/null ./README.html >README.tmp
-	mv -f README.tmp README
+	lynx -dump -number_links -cfg=/dev/null $(srcdir)/README.html >README.tmp
+	mv -f README.tmp $(srcdir)/README
 
 TAGS info dvi:
 	# do nothing
