@@ -93,7 +93,8 @@ perl -ne '
 		$out .= $_;
 	END {
 		if ($out =~ m/^\@\@/s &&
-		    $out =~ m/^(?:\+ )?[^\@ ].*\w.*$/m) {
+		    ($out =~ m/^\+(?!u?adns).*\w.*$/m ||
+		     $out =~ m/^\-(?!u?adns).*\w.*$/m)) {
 			print $&, "\n\n" or die $!;
 		}
 		print $out or die $!;
