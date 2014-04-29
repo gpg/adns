@@ -92,6 +92,10 @@ cat >$tmp/msg-filter <<'FEND'
 perl -ne '
 		$out .= $_;
 	END {
+		if ($out =~ /\*\*\* empty log message/) {
+			($out = `git diff $ENV{GIT_COMMIT}^ $ENV{GIT_COMMIT} -- changelog`)
+			   =~ s/\A.*\n\@\@ /\@\@ /s;
+		}
 		if ($out !~ /\n.*\n/) {
 			$out = `fmt <<'\''EOF'\''
 $out
