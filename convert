@@ -37,15 +37,6 @@ abandondatedbranch () {
 	abandonbranch branch-$date-$olddesc abandon.$date.$newdesc
 	ensurenotag branchpoint-$date-$olddesc master
 }
-
-abandonbranch branch-rrtypenoenum abandon.1998-10-04.rrtypenoenum
-abandondatedbranch 1999-04-10 mthread multithread
-abandondatedbranch 1999-04-11 ipv6
-abandondatedbranch 1999-04-11 pollfds
-
-abandondatedbranch 2000-05-07 ipv6
-abandonbranch branch-0-7-inftodebug abandon.2000-03-26.infotodebug-0.7
-
 graftmergein () {
 	local desc=$1
 	local mergecommit=$2
@@ -60,6 +51,14 @@ END
 	ensurenotag mergepoint-$desc
 	ensurenotag branchpoint-$desc
 }
+
+abandonbranch branch-rrtypenoenum abandon.1998-10-04.rrtypenoenum
+abandondatedbranch 1999-04-10 mthread multithread
+abandondatedbranch 1999-04-11 ipv6
+abandondatedbranch 1999-04-11 pollfds
+
+abandondatedbranch 2000-05-07 ipv6
+abandonbranch branch-0-7-inftodebug abandon.2000-03-26.infotodebug-0.7
 
 graftmergein logcallbackfn 741a795cdaa539b48f83afbc0ac8e471543b9bf6
 graftmergein 1999-05-09-gplvslgpl e7cf3a99e5829bf53a9f36e08769787a78261045
