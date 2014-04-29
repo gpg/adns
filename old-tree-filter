@@ -1,0 +1,23 @@
+cat >$tmp/tree-filter <<'FEND'
+	set -e
+	if test -f GPL-vs-LGPL.dont; then
+		cat <<'END' - GPL-vs-LGPL >GPL-vs-LGPL.new
+NB that NO VERSIONS of this file have been released, and I do not
+intend to adopt this version.  The licence exceptions in this file
+therefore DO NOT APPLY to any version of adns (unless the contrary is
+clearly stated at some point in the future by me).
+
+I.e. this file is just a draft.  That includes all the versions you
+may find in version control systems (eg CVS or git), and particularly
+those in work-in-progress or abandoned branches, or old revisions.
+
+  - Ian Jackson, 29th April 2014.
+
+END
+		mv -f GPL-vs-LGPL.new GPL-vs-LGPL
+	fi
+	set +e
+FEND
+chmod +x $tmp/tree-filter
+
+ --tree-filter $tmp/tree-filter
