@@ -75,7 +75,7 @@ END
 
 git checkout master
 scr=cvs-to-git-conversion-script
-cp $base/convert $scr
+cp $base/script/convert $scr
 git add $scr
 git commit -m "$scr: record the script
 
