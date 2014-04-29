@@ -92,6 +92,12 @@ cat >$tmp/msg-filter <<'FEND'
 perl -ne '
 		$out .= $_;
 	END {
+		if ($out !~ /\n.*\n/) {
+			$out = `fmt <<'\''EOF'\''
+$out
+EOF
+`;
+		}
 		if ($out =~ m/^\@\@/s &&
 		    ($out =~ m/^\+(?!u?adns).*\w.*$/m ||
 		     $out =~ m/^\-(?!u?adns).*\w.*$/m)) {
