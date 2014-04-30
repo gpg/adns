@@ -43,7 +43,7 @@ graftmergein () {
 	local branchname=branch-$desc
 	mkdir -p .git/info
 	local branchtip=`git rev-parse $branchname~0`
-	local oldparents=`git-log -n1 --pretty=format:%P $mergecommit`
+	local oldparents=`git log -n1 --pretty=format:%P $mergecommit`
 	cat <<END >>.git/info/grafts
 $2 $oldparents $branchtip
 END
@@ -92,8 +92,19 @@ cat >$tmp/msg-filter <<'FEND'
 perl -ne '
 		$out .= $_;
 	END {
+		if ($out =~ /\*\*\* empty log message/) {
+			($out = `git diff $ENV{GIT_COMMIT}^ $ENV{GIT_COMMIT} -- changelog`)
+			   =~ s/\A.*\n\@\@ /\@\@ /s;
+		}
+		if ($out !~ /\n.*\n/) {
+			$out = `fmt <<'\''EOF'\''
+$out
+EOF
+`;
+		}
 		if ($out =~ m/^\@\@/s &&
-		    $out =~ m/^(?:\+ )?[^\@ ].*\w.*$/m) {
+		    ($out =~ m/^\+(?!u?adns).*\w.*$/m ||
+		     $out =~ m/^\-(?!u?adns).*\w.*$/m)) {
 			print $&, "\n\n" or die $!;
 		}
 		print $out or die $!;
@@ -102,11 +113,11 @@ perl -ne '
 FEND
 chmod +x $tmp/msg-filter
 
-git-filter-branch --msg-filter $tmp/msg-filter \
-	`git-show-ref | awk '{print $2}'`
+git filter-branch --msg-filter $tmp/msg-filter \
+	`git show-ref | awk '{print $2}'`
 
-git-show-ref | awk '{print $2}' | grep '^refs/original/' \
-	| xargs -n1 git-update-ref -d
+git show-ref | awk '{print $2}' | grep '^refs/original/' \
+	| xargs -n1 git update-ref -d
 
 rm -rf $tmp/converted
 mkdir $tmp/converted
