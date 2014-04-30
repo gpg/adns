@@ -61,7 +61,7 @@ abandonbranch branch-0-7-inftodebug abandon.2000-03-26.infotodebug-0.7
 
 graftmergein logcallbackfn 741a795cdaa539b48f83afbc0ac8e471543b9bf6
 graftmergein 1999-05-09-gplvslgpl e7cf3a99e5829bf53a9f36e08769787a78261045
-graftmergein 1999-04-11 pollfds f889c99835eec14dacda4b18da0636911dcd8cbc
+graftmergein 1999-04-11-pollfds f889c99835eec14dacda4b18da0636911dcd8cbc
 
 xargs git tag -d <<END
 tochiark-1998-11-08
