@@ -152,6 +152,7 @@ static void ccf_sortlist(adns_state ads, const char *fn,
 			 int lno, const char *buf) {
   const char *word;
   char tbuf[200], *slash, *ep;
+  const char *maskwhat;
   struct in_addr base, mask;
   int l;
   unsigned long initial, baselocal;
@@ -182,16 +183,13 @@ static void ccf_sortlist(adns_state ads, const char *fn,
 
     if (slash) {
       if (strchr(slash,'.')) {
+	maskwhat = "mask";
 	if (!inet_aton(slash,&mask)) {
 	  configparseerr(ads,fn,lno,"invalid mask `%s' in sortlist",slash);
 	  continue;
 	}
-	if (base.s_addr & ~mask.s_addr) {
-	  configparseerr(ads,fn,lno, "mask `%s' in sortlist"
-			 " overlaps address `%s'",slash,tbuf);
-	  continue;
-	}
       } else {
+	maskwhat = "prefix length";
 	initial= strtoul(slash,&ep,10);
 	if (*ep || initial>32) {
 	  configparseerr(ads,fn,lno,"mask length `%s' invalid",slash);
@@ -200,6 +198,7 @@ static void ccf_sortlist(adns_state ads, const char *fn,
 	mask.s_addr= htonl((0x0ffffffffUL) << (32-initial));
       }
     } else {
+      maskwhat = "implied mask";
       baselocal= ntohl(base.s_addr);
       if (!(baselocal & 0x080000000UL)) /* class A */
 	mask.s_addr= htonl(0x0ff000000UL);
@@ -213,6 +212,13 @@ static void ccf_sortlist(adns_state ads, const char *fn,
 		       " must specify mask explicitly", tbuf);
 	continue;
       }
+    }
+
+    if (base.s_addr & ~mask.s_addr) {
+      configparseerr(ads,fn,lno, "%s `%s' in sortlist"
+		     " overlaps address `%s'",maskwhat,
+		     slash ? slash : inet_ntoa(mask), tbuf);
+      continue;
     }
 
     ads->sortlist[ads->nsortlist].base= base;
