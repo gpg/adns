@@ -73,17 +73,22 @@ tochiark-1998-11-17
 fromchiark-1998-11-28
 END
 
+(set -e
+ cd $base/script
+ if [ x"`git diff`" != x ]; then
+	git checkout master~0
+	git commit -a -m autocommit
+	git tag -f actual
+	git reset master
+	git checkout master
+ fi)
+
 git checkout master
-scr=cvs-to-git-conversion-script
-cp $base/script/convert $scr
-git add $scr
-git commit -m "$scr: record the script
+git fetch $base/script actual
+git merge -m 'CVS to git conversion
 
-Record the script we used to convert the CVS repo to git"
-git rm $scr
-git commit -m "$scr: delete the script
-
-We have in fact done the conversion and don't need the script any more."
+Record the scripts etc. we used (and their history) for posterity,
+by binding them into the history.' FETCH_HEAD
 
 git branch -d origin
 git tag cvs-to-git-conversion
