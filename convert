@@ -81,6 +81,8 @@ END
 	git tag -f actual
 	git reset master
 	git checkout master
+ else
+	git tag -f actual
  fi)
 
 git checkout master
