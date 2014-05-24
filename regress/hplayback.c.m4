@@ -257,12 +257,11 @@ static int Pbytes(byte *buf, int maxlen) {
 }
   
 void Q_vb(void) {
-  int r;
   const char *nl;
 
   Tensurerecordfile();
   if (!adns__vbuf_ensure(&vb2,vb.used+2)) Tnomem();
-  r= fread(vb2.buf,1,vb.used+2,Tinputfile);
+  fread(vb2.buf,1,vb.used+2,Tinputfile);
   if (feof(Tinputfile)) {
     fprintf(stderr,"adns test harness: input ends prematurely; program did:\n %.*s\n",
            vb.used,vb.buf);
