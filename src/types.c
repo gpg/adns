@@ -47,7 +47,8 @@
  * _intstr                    (mf,csp,cs)
  * _manyistr                  (mf,cs)
  * _txt                       (pa)
- * _inaddr                    (pa,di,cs +search_sortlist, dip_genaddr)
+ * _inaddr                    (pa,di,cs
+ *				+search_sortlist, dip_genaddr, csp_genaddr)
  * _addr                      (pa,di,div,csp,cs,gsz
  *				+search_sortlist_sa, dip_sockaddr)
  * _domain                    (pap,csp,cs)
@@ -244,7 +245,7 @@ static adns_status cs_hinfo(vbuf *vb, const void *datap) {
 }
 
 /*
- * _inaddr   (pa,di,cs +search_sortlist, dip_genaddr)
+ * _inaddr   (pa,di,cs +search_sortlist, dip_genaddr, csp_genaddr)
  */
 
 static adns_status pa_inaddr(const parseinfo *pai, int cbyte,
@@ -282,13 +283,22 @@ static int di_inaddr(adns_state ads,
   return dip_genaddr(ads,AF_INET,datap_a,datap_b);
 }
 
-static adns_status cs_inaddr(vbuf *vb, const void *datap) {
-  const struct in_addr *rrp= datap, rr= *rrp;
-  const char *ia;
+static adns_status csp_genaddr(vbuf *vb, int af, const void *p) {
+  char buf[ADNS_ADDR2TEXT_BUFLEN];
+  int len= sizeof(buf);
+  adns_rr_addr a;
+  int err;
 
-  ia= inet_ntoa(rr); assert(ia);
-  CSP_ADDSTR(ia);
+  memset(&a, 0, sizeof(a));
+  a.addr.sa.sa_family= af;
+  adns__sockaddr_inject(p, 0, &a.addr.sa);
+  err= adns_addr2text(&a.addr.sa,0, buf,&len, 0); assert(!err);
+  CSP_ADDSTR(buf);
   return adns_s_ok;
+}
+
+static adns_status cs_inaddr(vbuf *vb, const void *datap) {
+  return csp_genaddr(vb, AF_INET,datap);
 }
 
 /*
@@ -333,14 +343,20 @@ static int div_addr(void *context, const void *datap_a, const void *datap_b) {
 }		     
 
 static adns_status csp_addr(vbuf *vb, const adns_rr_addr *rrp) {
-  const char *ia;
-  char buf[30];
+  char buf[ADNS_ADDR2TEXT_BUFLEN];
+  int len= sizeof(buf);
+  int err;
 
   switch (rrp->addr.inet.sin_family) {
   case AF_INET:
     CSP_ADDSTR("INET ");
-    ia= inet_ntoa(rrp->addr.inet.sin_addr); assert(ia);
-    CSP_ADDSTR(ia);
+    goto a2t;
+  case AF_INET6:
+    CSP_ADDSTR("INET6 ");
+    goto a2t;
+  a2t:
+    err= adns_addr2text(&rrp->addr.sa,0, buf,&len, 0); assert(!err);
+    CSP_ADDSTR(buf);
     break;
   default:
     sprintf(buf,"AF=%u",rrp->addr.sa.sa_family);

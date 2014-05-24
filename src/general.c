@@ -50,6 +50,7 @@ void adns__lprintf(adns_state ads, const char *fmt, ...) {
 
 void adns__vdiag(adns_state ads, const char *pfx, adns_initflags prevent,
 		 int serv, adns_query qu, const char *fmt, va_list al) {
+  char buf[ADNS_ADDR2TEXT_BUFLEN];
   const char *bef, *aft;
   vbuf vb;
   
@@ -83,9 +84,8 @@ void adns__vdiag(adns_state ads, const char *pfx, adns_initflags prevent,
   }
   
   if (serv>=0) {
-    assert(ads->servers[serv].addr.sa.sa_family==AF_INET);
     adns__lprintf(ads,"%sNS=%s",bef,
-		  inet_ntoa(ads->servers[serv].addr.inet.sin_addr));
+		  adns__sockaddr_ntoa(&ads->servers[serv].addr.sa, buf));
     bef=", "; aft=")\n";
   }
 

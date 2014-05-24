@@ -44,22 +44,25 @@ static void readconfig(adns_state ads, const char *filename, int warnmissing);
 static void addserver(adns_state ads, const struct sockaddr *sa, int n) {
   int i;
   adns_rr_addr *ss;
-  const struct sockaddr_in *sin;
+  char buf[ADNS_ADDR2TEXT_BUFLEN];
 
-  assert(sa->sa_family==AF_INET); /* for inet_ntoa */
-  sin= (const void *)sa;
+  if (sa->sa_family != AF_INET) {
+    adns__debug(ads,-1,0,"non-IPv4 nameserver %s ignored",
+		adns__sockaddr_ntoa(sa, buf));
+    return;
+  }
   
   for (i=0; i<ads->nservers; i++) {
     if (adns__sockaddr_equal_p(sa, &ads->servers[i].addr.sa)) {
       adns__debug(ads,-1,0,"duplicate nameserver %s ignored",
-		  inet_ntoa(sin->sin_addr));
+		  adns__sockaddr_ntoa(sa, buf));
       return;
     }
   }
   
   if (ads->nservers>=MAXSERVERS) {
     adns__diag(ads,-1,0,"too many nameservers, ignoring %s",
-	       inet_ntoa(sin->sin_addr));
+	       adns__sockaddr_ntoa(sa, buf));
     return;
   }
 
@@ -113,17 +116,26 @@ static int nextword(const char **bufp_io, const char **word_r, int *l_r) {
 
 static void ccf_nameserver(adns_state ads, const char *fn,
 			   int lno, const char *buf) {
-  struct sockaddr_in sin;
+  adns_rr_addr a;
+  char addrbuf[ADNS_ADDR2TEXT_BUFLEN];
+  int err;
 
-  memset(&sin,0,sizeof(sin));
-  sin.sin_family= AF_INET;
-  sin.sin_port= htons(DNS_PORT);
-  if (!inet_aton(buf,&sin.sin_addr)) {
+  a.len= sizeof(a.addr);
+  err= adns_text2addr(buf,DNS_PORT, 0, &a.addr.sa,&a.len);
+  switch (err) {
+  case 0:
+    break;
+  case EINVAL:
     configparseerr(ads,fn,lno,"invalid nameserver address `%s'",buf);
     return;
+  default:
+    configparseerr(ads,fn,lno,"failed to parse nameserver address `%s': %s",
+		   buf,strerror(err));
+    return;
   }
-  adns__debug(ads,-1,0,"using nameserver %s",inet_ntoa(sin.sin_addr));
-  addserver(ads,(const struct sockaddr *)&sin,sizeof(sin));
+  adns__debug(ads,-1,0,"using nameserver %s",
+	      adns__sockaddr_ntoa(&a.addr.sa, addrbuf));
+  addserver(ads,&a.addr.sa,a.len);
 }
 
 static void ccf_search(adns_state ads, const char *fn,
@@ -159,6 +171,20 @@ static void ccf_search(adns_state ads, const char *fn,
   ads->searchlist= newptrs;
 }
 
+static int gen_pton(const char *text, int *af_io, union gen_addr *a) {
+  adns_rr_addr addr;
+  int err;
+
+  addr.len= sizeof(addr.addr);
+  err= adns_text2addr(text,0, adns_qf_addrlit_scope_forbid,
+		      &addr.addr.sa, &addr.len);
+  if (err) { assert(err == EINVAL); return 0; }
+  if (*af_io == AF_UNSPEC) *af_io= addr.addr.sa.sa_family;
+  else if (*af_io != addr.addr.sa.sa_family) return 0;
+  adns__sockaddr_extract(&addr.addr.sa, a, 0);
+  return 1;
+}
+
 static void ccf_sortlist(adns_state ads, const char *fn,
 			 int lno, const char *buf) {
   const char *word;
@@ -166,7 +192,7 @@ static void ccf_sortlist(adns_state ads, const char *fn,
   const char *maskwhat;
   struct sortlist *sl;
   int l;
-  int af= AF_UNSPEC;
+  int af;
   int initial= -1;
 
   if (!buf) return;
@@ -189,16 +215,16 @@ static void ccf_sortlist(adns_state ads, const char *fn,
     if (slash) *slash++= 0;
 
     sl= &ads->sortlist[ads->nsortlist];
-    if (!inet_aton(tbuf, &sl->base.v4)) {
+    af= AF_UNSPEC;
+    if (!gen_pton(tbuf, &af, &sl->base)) {
       configparseerr(ads,fn,lno,"invalid address `%s' in sortlist",tbuf);
       continue;
     }
-    af= AF_INET;
 
     if (slash) {
       if (slash[strspn(slash, "0123456789")]) {
 	maskwhat = "mask";
-	if (!inet_aton(slash, &sl->mask.v4)) {
+	if (!gen_pton(slash,&af,&sl->mask)) {
 	  configparseerr(ads,fn,lno,"invalid mask `%s' in sortlist",slash);
 	  continue;
 	}

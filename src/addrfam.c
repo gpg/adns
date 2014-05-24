@@ -444,3 +444,14 @@ int adns_addr2text(const struct sockaddr *sa, adns_queryflags flags,
   if (port_r) *port_r= ntohs(port);
   return 0;
 }
+
+char *adns__sockaddr_ntoa(const struct sockaddr *sa, char *buf) {
+  int err;
+  int len= ADNS_ADDR2TEXT_BUFLEN;
+
+  err= adns_addr2text(sa, 0, buf, &len, 0);
+  if (err == EIO)
+    err= adns_addr2text(sa, adns_qf_addrlit_scope_numeric, buf, &len, 0);
+  assert(!err);
+  return buf;
+}

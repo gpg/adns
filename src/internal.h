@@ -433,6 +433,11 @@ extern void adns__sockaddr_inject(const union gen_addr *a, int port,
  * byte-order).  Assumes that sa->sa_family is already set correctly.
  */
 
+char *adns__sockaddr_ntoa(const struct sockaddr *sa, char *buf);
+/* Convert sa to a string, and write it to buf, which must be at least
+ * ADNS_ADDR2TEXT_BUFLEN bytes long (unchecked).  Return buf; can't fail.
+ */
+
 /* From setup.c: */
 
 int adns__setnonblock(adns_state ads, int fd); /* => errno value */

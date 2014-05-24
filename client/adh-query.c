@@ -96,20 +96,26 @@ static void prep_query(struct query_node **qun_r, int *quflags_r) {
     
   *qun_r= qun;
 }
+
+static void sockaddr_aton(const char *text, adns_rr_addr *a) {
+  int err;
+
+  a->len= sizeof(a->addr);
+  err= adns_text2addr(text,0,adns_qf_addrlit_scope_forbid,
+		      &a->addr.sa,&a->len);
+  if (err == EINVAL) usageerr("invalid IP address %s",text);
+  else if (err) sysfail("adns_text2addr",err);
+}
   
 void of_ptr(const struct optioninfo *oi, const char *arg, const char *arg2) {
   struct query_node *qun;
   int quflags, r;
-  struct sockaddr_in sa;
+  adns_rr_addr a;
 
-  memset(&sa,0,sizeof(sa));
-  sa.sin_family= AF_INET;
-  if (!inet_aton(arg,&sa.sin_addr)) usageerr("invalid IP address %s",arg);
-
+  sockaddr_aton(arg,&a);
   prep_query(&qun,&quflags);
   qun->owner= xstrsave(arg);
-  r= adns_submit_reverse(ads,
-			 (struct sockaddr*)&sa,
+  r= adns_submit_reverse(ads, &a.addr.sa,
 			 ov_type == adns_r_none ? adns_r_ptr : ov_type,
 			 quflags,
 			 qun,
@@ -122,17 +128,13 @@ void of_ptr(const struct optioninfo *oi, const char *arg, const char *arg2) {
 void of_reverse(const struct optioninfo *oi, const char *arg, const char *arg2) {
   struct query_node *qun;
   int quflags, r;
-  struct sockaddr_in sa;
+  adns_rr_addr a;
 
-  memset(&sa,0,sizeof(sa));
-  sa.sin_family= AF_INET;
-  if (!inet_aton(arg,&sa.sin_addr)) usageerr("invalid IP address %s",arg);
-
+  sockaddr_aton(arg,&a);
   prep_query(&qun,&quflags);
   qun->owner= xmalloc(strlen(arg) + strlen(arg2) + 2);
   sprintf(qun->owner, "%s %s", arg,arg2);
-  r= adns_submit_reverse_any(ads,
-			     (struct sockaddr*)&sa, arg2,
+  r= adns_submit_reverse_any(ads, &a.addr.sa,arg2,
 			     ov_type == adns_r_none ? adns_r_txt : ov_type,
 			     quflags,
 			     qun,
