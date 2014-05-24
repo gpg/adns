@@ -455,3 +455,181 @@ char *adns__sockaddr_ntoa(const struct sockaddr *sa, char *buf) {
   assert(!err);
   return buf;
 }
+
+/*
+ * Reverse-domain parsing and construction.
+ */
+
+int adns__make_reverse_domain(const struct sockaddr *sa, const char *zone,
+			      char **buf_io, size_t bufsz,
+			      char **buf_free_r) {
+  size_t req;
+  char *p;
+  unsigned c, y;
+  unsigned long aa;
+  const unsigned char *ap;
+  int i, j;
+
+  switch (sa->sa_family) {
+  AF_CASES(af);
+  af_inet:
+    req= 4 * 4;
+    if (!zone) zone= "in-addr.arpa";
+    break;
+  af_inet6:
+    req = 2 * 32;
+    if (!zone) zone= "ip6.arpa";
+    break;
+  default:
+    return ENOSYS;
+  }
+
+  req += strlen(zone) + 1;
+  if (req <= bufsz)
+    p= *buf_io;
+  else {
+    p= malloc(req); if (!p) return errno;
+    *buf_free_r = p;
+  }
+
+  *buf_io= p;
+  switch (sa->sa_family) {
+  AF_CASES(bf);
+  bf_inet:
+    aa= ntohl(CSIN(sa)->sin_addr.s_addr);
+    for (i=0; i<4; i++) {
+      p += sprintf(p, "%d", (int)(aa & 0xff));
+      *p++= '.';
+      aa >>= 8;
+    }
+    break;
+  bf_inet6:
+    ap= CSIN6(sa)->sin6_addr.s6_addr + 16;
+    for (i=0; i<16; i++) {
+      c= *--ap;
+      for (j=0; j<2; j++) {
+	y= c & 0xf;
+	*p++= (y < 10) ? y + '0' : y - 10 + 'a';
+	c >>= 4;
+	*p++= '.';
+      }
+    }
+    break;
+  default:
+    unknown_af(sa->sa_family);
+  }
+
+  strcpy(p, zone);
+  return 0;
+}
+
+
+static int inet_rev_parsecomp(const char *p, size_t n) {
+  int i= 0;
+  if (n > 3) return -1;
+
+  while (n--) {
+    if ('0' <= *p && *p <= '9') i= 10*i + *p++ - '0';
+    else return -1;
+  }
+  return i;
+}
+
+static void inet_rev_mkaddr(union gen_addr *addr, const byte *ipv) {
+  addr->v4.s_addr= htonl((ipv[3]<<24) | (ipv[2]<<16) |
+			 (ipv[1]<<8) | (ipv[0]));
+}
+
+static int inet6_rev_parsecomp(const char *p, size_t n) {
+  if (n != 1) return -1;
+  else if ('0' <= *p && *p <= '9') return *p - '0';
+  else if ('a' <= *p && *p <= 'f') return *p - 'a' + 10;
+  else if ('A' <= *p && *p <= 'F') return *p - 'a' + 10;
+  else return -1;
+}
+
+static void inet6_rev_mkaddr(union gen_addr *addr, const byte *ipv) {
+  unsigned char *a= addr->v6.s6_addr;
+  int i;
+
+  for (i=0; i<16; i++)
+    a[i]= (ipv[31-2*i] << 4) | (ipv[30-2*i] << 0);
+}
+
+static const struct revparse_domain {
+  int af;				/* address family */
+  int nrevlab;				/* n of reverse-address labels */
+  adns_rrtype rrtype;			/* forward-lookup type */
+
+  int (*rev_parsecomp)(const char *p, size_t n);
+  /* parse a single component from a label; return the integer value, or -1
+   * if it was unintelligible.
+   */
+
+  void (*rev_mkaddr)(union gen_addr *addr, const byte *ipv);
+  /* write out the parsed address from a vector of parsed components */
+
+  const char *const tail[3];		/* tail label names */
+} revparse_domains[NREVDOMAINS] = {
+  { AF_INET, 4, adns_r_a, inet_rev_parsecomp, inet_rev_mkaddr,
+    { DNS_INADDR_ARPA, 0 } },
+  { AF_INET6, 32, adns_r_aaaa, inet6_rev_parsecomp, inet6_rev_mkaddr,
+    { DNS_IP6_ARPA, 0 } },
+};
+
+#define REVDOMAIN_MAP(rps, labnum)					\
+  ((labnum) ? (rps)->map : (1 << NREVDOMAINS) - 1)
+
+int adns__revparse_label(struct revparse_state *rps, int labnum,
+			 const char *label, int lablen) {
+  unsigned f= REVDOMAIN_MAP(rps, labnum);
+  const struct revparse_domain *rpd;
+  const char *tp;
+  unsigned d;
+  int i, ac;
+
+  for (rpd=revparse_domains, i=0, d=1; i<NREVDOMAINS; rpd++, i++, d <<= 1) {
+    if (!(f & d)) continue;
+    if (labnum >= rpd->nrevlab) {
+      tp = rpd->tail[labnum - rpd->nrevlab];
+      if (!tp || strncmp(label, tp, lablen) != 0 || tp[lablen])
+	goto mismatch;
+    } else {
+      ac= rpd->rev_parsecomp(label, lablen);
+      if (ac < 0) goto mismatch;
+      assert(labnum < sizeof(rps->ipv[i]));
+      rps->ipv[i][labnum]= ac;
+    }
+    continue;
+
+  mismatch:
+    f &= ~d;
+    if (!f) return -1;
+  }
+
+  rps->map= f;
+  return 0;
+}
+
+int adns__revparse_done(struct revparse_state *rps, int nlabels,
+			adns_rrtype *rrtype_r, struct af_addr *addr_r) {
+  unsigned f= REVDOMAIN_MAP(rps, nlabels);
+  const struct revparse_domain *rpd;
+  unsigned d;
+  int i, found= -1;
+
+  for (rpd=revparse_domains, i=0, d=1; i<NREVDOMAINS; rpd++, i++, d <<= 1) {
+    if (!(f & d)) continue;
+    if (nlabels >= rpd->nrevlab && !rpd->tail[nlabels - rpd->nrevlab])
+      { found = i; continue; }
+    f &= ~d;
+    if (!f) return -1;
+  }
+  assert(found >= 0); assert(f == (1 << found));
+
+  rpd= &revparse_domains[found];
+  *rrtype_r= rpd->rrtype;
+  addr_r->af= rpd->af;
+  rpd->rev_mkaddr(&addr_r->addr, rps->ipv[found]);
+  return 0;
+}

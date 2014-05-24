@@ -765,29 +765,14 @@ static adns_status cs_inthost(vbuf *vb, const void *datap) {
 static adns_status ckl_ptr(adns_state ads, adns_queryflags flags,
 			   union checklabel_state *cls, qcontext *ctx,
 			   int labnum, const char *label, int lablen) {
-  static const char *const (expectdomain[])= { DNS_INADDR_ARPA };
-  char *ep;
-  const char *ed;
-  char labbuf[4];
-  int l;
-
-  if (labnum < 4) {
-    if (lablen<=0 || lablen>3) return adns_s_querydomainwrong;
-    memcpy(labbuf, label, lablen);
-    labbuf[lablen]= 0;
-    cls->ptr.ipv[3-labnum]= strtoul(labbuf,&ep,10);
-    if (*ep) return adns_s_querydomainwrong;
-    if (lablen>1 && *label=='0') return adns_s_querydomainwrong;
-  } else if (labnum < 4 + sizeof(expectdomain)/sizeof(*expectdomain)) {
-    ed= expectdomain[labnum-4];
-    l= strlen(ed);
-    if (lablen != l || memcmp(label, ed, l)) return adns_s_querydomainwrong;
+  if (lablen) {
+    if (adns__revparse_label(&cls->ptr, labnum, label,lablen))
+      return adns_s_querydomainwrong;
   } else {
-    if (lablen) return adns_s_querydomainwrong;
-    ctx->tinfo.ptr.addr.af= AF_INET;
-    ctx->tinfo.ptr.addr.addr.v4.s_addr=
-      htonl((cls->ptr.ipv[0]<<24) | (cls->ptr.ipv[1]<<16) |
-	    (cls->ptr.ipv[2]<< 8) | (cls->ptr.ipv[3]));
+    if (adns__revparse_done(&cls->ptr, labnum,
+			    &ctx->tinfo.ptr.rev_rrtype,
+			    &ctx->tinfo.ptr.addr))
+      return adns_s_querydomainwrong;
   }
   return adns_s_ok;
 }
@@ -808,9 +793,9 @@ static void icb_ptr(adns_query parent, adns_query child) {
   }
 
   queried= &parent->ctx.tinfo.ptr.addr;
-  assert(cans->type == adns_r_a);
   for (i=0, found=cans->rrs.bytes; i<cans->nrrs; i++, found+=cans->rrsz) {
-    if (adns__genaddr_equal_p(queried->af,&queried->addr, AF_INET,found)) {
+    if (adns__genaddr_equal_p(queried->af,&queried->addr,
+			      parent->ctx.tinfo.ptr.addr.af,found)) {
       if (!parent->children.head) {
 	adns__query_done(parent);
 	return;
@@ -828,6 +813,7 @@ static adns_status pa_ptr(const parseinfo *pai, int dmstart,
 			  int max, void *datap) {
   char **rrp= datap;
   adns_status st;
+  adns_rrtype rrtype= pai->qu->ctx.tinfo.ptr.rev_rrtype;
   int cbyte, id;
   adns_query nqu;
   qcontext ctx;
@@ -840,16 +826,16 @@ static adns_status pa_ptr(const parseinfo *pai, int dmstart,
 
   st= adns__mkquery_frdgram(pai->ads, &pai->qu->vb, &id,
 			    pai->dgram, pai->dglen, dmstart,
-			    adns_r_a, adns_qf_quoteok_query);
+			    rrtype, adns_qf_quoteok_query);
   if (st) return st;
 
   ctx.ext= 0;
   ctx.callback= icb_ptr;
   memset(&ctx.pinfo,0,sizeof(ctx.pinfo));
   memset(&ctx.tinfo,0,sizeof(ctx.tinfo));
-  st= adns__internal_submit(pai->ads, &nqu, adns__findtype(adns_r_a),
-			    adns_r_a, &pai->qu->vb, id, adns_qf_quoteok_query,
-			    pai->now, &ctx);
+  st= adns__internal_submit(pai->ads, &nqu, adns__findtype(rrtype),
+			    rrtype, &pai->qu->vb, id,
+			    adns_qf_quoteok_query, pai->now, &ctx);
   if (st) return st;
 
   nqu->parent= pai->qu;

@@ -331,28 +331,15 @@ int adns_submit_reverse_any(adns_state ads,
 			    adns_queryflags flags,
 			    void *context,
 			    adns_query *query_r) {
-  const unsigned char *iaddr;
-  char *buf, *buf_free;
+  char *buf, *buf_free = 0;
   char shortbuf[100];
-  int r, lreq;
+  int r;
 
   flags &= ~adns_qf_search;
 
-  if (addr->sa_family != AF_INET) return ENOSYS;
-  iaddr= (const unsigned char*)
-    &(((const struct sockaddr_in*)addr) -> sin_addr);
-
-  lreq= strlen(zone) + 4*4 + 1;
-  if (lreq > sizeof(shortbuf)) {
-    buf= malloc(strlen(zone) + 4*4 + 1);
-    if (!buf) return errno;
-    buf_free= buf;
-  } else {
-    buf= shortbuf;
-    buf_free= 0;
-  }
-  sprintf(buf, "%d.%d.%d.%d.%s", iaddr[3], iaddr[2], iaddr[1], iaddr[0], zone);
-
+  buf = shortbuf;
+  r= adns__make_reverse_domain(addr,zone, &buf,sizeof(shortbuf),&buf_free);
+  if (r) return r;
   r= adns_submit(ads,buf,type,flags,context,query_r);
   free(buf_free);
   return r;
@@ -367,8 +354,7 @@ int adns_submit_reverse(adns_state ads,
   if (((type^adns_r_ptr) & adns_rrt_reprmask) &&
       ((type^adns_r_ptr_raw) & adns_rrt_reprmask))
     return EINVAL;
-  return adns_submit_reverse_any(ads,addr,"in-addr.arpa",
-				 type,flags,context,query_r);
+  return adns_submit_reverse_any(ads,addr,0,type,flags,context,query_r);
 }
 
 int adns_synchronous(adns_state ads,

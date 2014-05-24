@@ -69,6 +69,7 @@ typedef unsigned char byte;
 #define DNS_CLASS_IN 1
 
 #define DNS_INADDR_ARPA "in-addr", "arpa"
+#define DNS_IP6_ARPA "ip6", "arpa"
 
 #define MAX_POLLFDS  ADNS_POLLFDS_RECOMMENDED
 
@@ -131,8 +132,14 @@ union gen_addr {
 
 struct af_addr { int af; union gen_addr addr; };
 
+#define NREVDOMAINS 2			/* keep in sync with addrfam! */
+struct revparse_state {
+  unsigned map;				/* which domains are still live */
+  byte ipv[NREVDOMAINS][32];		/* address components so far */
+};
+
 union checklabel_state {
-  struct { byte ipv[4]; } ptr;
+  struct revparse_state ptr;
 };
 
 typedef struct {
@@ -141,6 +148,7 @@ typedef struct {
 
   union {
     struct {
+      adns_rrtype rev_rrtype;
       struct af_addr addr;
     } ptr;
   } tinfo; /* type-specific state for the query itself: zero-init if you
@@ -436,6 +444,40 @@ extern void adns__sockaddr_inject(const union gen_addr *a, int port,
 char *adns__sockaddr_ntoa(const struct sockaddr *sa, char *buf);
 /* Convert sa to a string, and write it to buf, which must be at least
  * ADNS_ADDR2TEXT_BUFLEN bytes long (unchecked).  Return buf; can't fail.
+ */
+
+extern int adns__make_reverse_domain(const struct sockaddr *sa,
+				     const char *zone,
+				     char **buf_io, size_t bufsz,
+				     char **buf_free_r);
+/* Construct a reverse domain string, given a socket address and a parent
+ * zone.  If zone is null, then use the standard reverse-lookup zone for the
+ * address family.  If the length of the resulting string is no larger than
+ * bufsz, then the result is stored starting at *buf_io; otherwise a new
+ * buffer is allocated is used, and a pointer to it is stored in both *buf_io
+ * and *buf_free_r (the latter of which should be null on entry).  If
+ * something goes wrong, then an errno value is returned: ENOSYS if the
+ * address family of sa isn't recognized, or ENOMEM if the attempt to
+ * allocate an output buffer failed.
+ */
+
+extern int adns__revparse_label(struct revparse_state *rps, int labnum,
+				const char *label, int lablen);
+/* Parse a label in a reverse-domain name, given its index labnum (starting
+ * from zero), a pointer to its contents (which need not be null-terminated),
+ * and its length.  The state in *rps is initialized implicitly when labnum
+ * is zero.
+ *
+ * Returns zero if the parse was successful, nonzero if the domain name is
+ * definitely invalid and the parse must be abandoned.
+ */
+
+extern int adns__revparse_done(struct revparse_state *rps, int nlabels,
+			       adns_rrtype *rrtype_r, struct af_addr *addr_r);
+/* Finishes parsing a reverse-domain name, given the total number of labels
+ * in the name.  On success, fills in the address in *addr_r, and the forward
+ * query type in *rrtype_r (because that turns out to be useful).  Returns
+ * nonzero if the parse must be abandoned.
  */
 
 /* From setup.c: */
