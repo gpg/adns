@@ -411,7 +411,8 @@ int adns_addr2text(const struct sockaddr *sa, adns_queryflags flags,
       assert(remain >= IF_NAMESIZE+1/*%*/);
       *scopeptr++= '%'; remain--;
       bool parsedname = 0;
-      af_debug("will print scoped addr %s %% %"PRIu32"", buffer, scope);
+      af_debug("will print scoped addr `%.*s' %% %"PRIu32"",
+	       scopeoffset,buffer, scope);
       if (scope <= UINT_MAX /* so we can pass it to if_indextoname */
 	  && !(flags & adns_qf_addrlit_scope_numeric)
 	  && addrtext_scope_use_ifname(sa)) {
