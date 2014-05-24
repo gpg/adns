@@ -258,15 +258,11 @@ static adns_status pa_inaddr(const parseinfo *pai, int cbyte,
 
 static int search_sortlist(adns_state ads, int af, const void *ad) {
   const struct sortlist *slp;
-  const struct in_addr *a4;
   int i;
   
-  assert(af==AF_INET);
-  a4= ad;
   for (i=0, slp=ads->sortlist;
        i<ads->nsortlist &&
-	 (assert(slp->af==AF_INET),
-	  !((a4->s_addr & slp->mask.v4.s_addr) == slp->base.v4.s_addr));
+	 !adns__addr_match_p(af,ad, slp->af,&slp->base,&slp->mask);
        i++, slp++);
   return i;
 }
@@ -313,10 +309,11 @@ static adns_status pa_addr(const parseinfo *pai, int cbyte,
 }
 
 static int search_sortlist_sa(adns_state ads, const struct sockaddr *sa) {
-  assert(sa->sa_family == AF_INET);
-  return search_sortlist(ads, sa->sa_family,
-			 &((const struct sockaddr_in *)sa)->sin_addr);
+  union gen_addr a;
+  adns__sockaddr_extract(sa, &a, 0);
+  return search_sortlist(ads, sa->sa_family, &a);
 }
+
 static int dip_sockaddr(adns_state ads,
 			const struct sockaddr *sa,
 			const struct sockaddr *sb) {
@@ -772,10 +769,9 @@ static void icb_ptr(adns_query parent, adns_query child) {
   }
 
   queried= &parent->ctx.tinfo.ptr.addr;
-  assert(queried->af == AF_INET);
   assert(cans->type == adns_r_a);
   for (i=0, found=cans->rrs.bytes; i<cans->nrrs; i++, found+=cans->rrsz) {
-    if (queried->addr.v4.s_addr == ((const struct in_addr *)found)->s_addr) {
+    if (adns__genaddr_equal_p(queried->af,&queried->addr, AF_INET,found)) {
       if (!parent->children.head) {
 	adns__query_done(parent);
 	return;

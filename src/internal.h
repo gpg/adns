@@ -374,6 +374,65 @@ struct adns__state {
   unsigned short rand48xsubi[3];
 };
 
+/* From addrfam.c: */
+
+extern int adns__af_supported_p(int af);
+/* Return nonzero if the address family af known to the library and supported
+ * by the other addrfam operations.  Note that the other operations will
+ * abort on an unrecognized address family rather than returning an error
+ * code.
+ */
+
+extern int adns__genaddr_equal_p(int af, const union gen_addr *a,
+				 int bf, const void *b);
+/* b should point to a `struct in_addr' or equivalent for the address family
+ * bf.  Returns nonzero if the two addresses are equal.
+ */
+
+extern int adns__sockaddr_equal_p(const struct sockaddr *sa,
+				  const struct sockaddr *sb);
+/* Return nonzero if the two socket addresses are equal (in all significant
+ * respects).
+ */
+
+extern int adns__addr_width(int af);
+/* Return the width of addresses of family af, in bits. */
+
+extern void adns__prefix_mask(int af, int len, union gen_addr *mask_r);
+/* Store in mask_r an address mask for address family af, whose first len
+ * bits are set and the remainder are clear.  This is what you want for
+ * converting a prefix length into a netmask.
+ */
+
+extern int adns__guess_prefix_length(int af, const union gen_addr *addr);
+/* Given a network base address, guess the appropriate prefix length based on
+ * the appropriate rules for the address family (e.g., for IPv4, this uses
+ * the old address classes).
+ */
+
+extern int adns__addr_match_p(int addraf, const union gen_addr *addr,
+			      int netaf, const union gen_addr *base,
+			      const union gen_addr *mask);
+/* Given an address af (with family addraf) and a network (with family netaf,
+ * base address base, and netmask mask), return nonzero if the address lies
+ * within the network.
+ */
+
+extern void adns__sockaddr_extract(const struct sockaddr *sa,
+				   union gen_addr *a_r, int *port_r);
+/* Extract fields from the socket address, filling in *a_r and *port_r with
+ * the address and (integer, host byte-order) port number, respectively.
+ * Either (or, pointlessly, both) of a_r and port_r may be null to mean
+ * `don't care'.
+ */
+
+extern void adns__sockaddr_inject(const union gen_addr *a, int port,
+				  struct sockaddr *sa);
+/* Inject fields into the socket adress sa.  If a is not null, copy the
+ * address in; if port is not -1, then copy the port (converting from host
+ * byte-order).  Assumes that sa->sa_family is already set correctly.
+ */
+
 /* From setup.c: */
 
 int adns__setnonblock(adns_state ads, int fd); /* => errno value */

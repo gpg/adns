@@ -46,12 +46,11 @@ static void addserver(adns_state ads, const struct sockaddr *sa, int n) {
   adns_rr_addr *ss;
   const struct sockaddr_in *sin;
 
-  assert(sa->sa_family==AF_INET); assert(n>=sizeof(*sin));
+  assert(sa->sa_family==AF_INET); /* for inet_ntoa */
   sin= (const void *)sa;
   
   for (i=0; i<ads->nservers; i++) {
-    assert(ads->servers[i].addr.sa.sa_family==AF_INET);
-    if (ads->servers[i].addr.inet.sin_addr.s_addr == sin->sin_addr.s_addr) {
+    if (adns__sockaddr_equal_p(sa, &ads->servers[i].addr.sa)) {
       adns__debug(ads,-1,0,"duplicate nameserver %s ignored",
 		  inet_ntoa(sin->sin_addr));
       return;
@@ -165,9 +164,10 @@ static void ccf_sortlist(adns_state ads, const char *fn,
   const char *word;
   char tbuf[200], *slash, *ep;
   const char *maskwhat;
-  struct in_addr base, mask;
+  struct sortlist *sl;
   int l;
-  unsigned long initial, baselocal;
+  int af= AF_UNSPEC;
+  int initial= -1;
 
   if (!buf) return;
   
@@ -187,55 +187,54 @@ static void ccf_sortlist(adns_state ads, const char *fn,
     memcpy(tbuf,word,l); tbuf[l]= 0;
     slash= strchr(tbuf,'/');
     if (slash) *slash++= 0;
-    
-    if (!inet_aton(tbuf,&base)) {
+
+    sl= &ads->sortlist[ads->nsortlist];
+    if (!inet_aton(tbuf, &sl->base.v4)) {
       configparseerr(ads,fn,lno,"invalid address `%s' in sortlist",tbuf);
       continue;
     }
+    af= AF_INET;
 
     if (slash) {
-      if (strchr(slash,'.')) {
+      if (slash[strspn(slash, "0123456789")]) {
 	maskwhat = "mask";
-	if (!inet_aton(slash,&mask)) {
+	if (!inet_aton(slash, &sl->mask.v4)) {
 	  configparseerr(ads,fn,lno,"invalid mask `%s' in sortlist",slash);
 	  continue;
 	}
       } else {
 	maskwhat = "prefix length";
 	initial= strtoul(slash,&ep,10);
-	if (*ep || initial>32) {
+	if (*ep || initial>adns__addr_width(af)) {
 	  configparseerr(ads,fn,lno,"mask length `%s' invalid",slash);
 	  continue;
 	}
-	mask.s_addr= htonl((0x0ffffffffUL) << (32-initial));
+	adns__prefix_mask(af, initial, &sl->mask);
       }
     } else {
-      maskwhat = "implied mask";
-      baselocal= ntohl(base.s_addr);
-      if (!(baselocal & 0x080000000UL)) /* class A */
-	mask.s_addr= htonl(0x0ff000000UL);
-      else if ((baselocal & 0x0c0000000UL) == 0x080000000UL)
-	mask.s_addr= htonl(0x0ffff0000UL); /* class B */
-      else if ((baselocal & 0x0f0000000UL) == 0x0e0000000UL)
-	mask.s_addr= htonl(0x0ff000000UL); /* class C */
-      else {
+      maskwhat = "implied prefix length";
+      initial= adns__guess_prefix_length(af, &sl->base);
+      if (initial < 0) {
 	configparseerr(ads,fn,lno, "network address `%s'"
 		       " in sortlist is not in classed ranges,"
 		       " must specify mask explicitly", tbuf);
 	continue;
       }
+      adns__prefix_mask(af, initial, &sl->mask);
     }
 
-    if (base.s_addr & ~mask.s_addr) {
-      configparseerr(ads,fn,lno, "%s `%s' in sortlist"
-		     " overlaps address `%s'",maskwhat,
-		     slash ? slash : inet_ntoa(mask), tbuf);
+    if (!adns__addr_match_p(af,&sl->base, af,&sl->base,&sl->mask)) {
+      if (initial >= 0) {
+	configparseerr(ads,fn,lno, "%s %d in sortlist"
+		       " overlaps address `%s'",maskwhat,initial,tbuf);
+      } else {
+	configparseerr(ads,fn,lno, "%s `%s' in sortlist"
+		       " overlaps address `%s'",maskwhat,slash,tbuf);
+      }
       continue;
     }
 
-    ads->sortlist[ads->nsortlist].af= AF_INET;
-    ads->sortlist[ads->nsortlist].base.v4= base;
-    ads->sortlist[ads->nsortlist].mask.v4= mask;
+    sl->af= af;
     ads->nsortlist++;
   }
 }

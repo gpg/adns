@@ -81,12 +81,8 @@ static void checkc_global(adns_state ads) {
   assert(ads->udpsocket >= 0);
 
   for (i=0; i<ads->nsortlist; i++) {
-    assert(ads->sortlist[i].af==AF_INET);
-    assert(!(ads->sortlist[i].base.v4.s_addr &
-	     ~ads->sortlist[i].mask.v4.s_addr));
     sl= &ads->sortlist[i];
-    assert(sl->af==AF_INET);
-    assert(!(sl->base.v4.s_addr & ~sl->mask.v4.s_addr));
+    assert(adns__addr_match_p(sl->af,&sl->base, sl->af,&sl->base,&sl->mask));
   }
 
   assert(ads->tcpserver >= 0 && ads->tcpserver < ads->nservers);
