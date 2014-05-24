@@ -162,6 +162,8 @@ typedef enum {
  adns_r_rp_raw=          17,
  adns_r_rp=                  adns_r_rp_raw|adns__qtf_mail822,
 
+ adns_r_aaaa=		 28,
+
  /* For SRV records, query domain without _qf_quoteok_query must look
   * as expected from SRV RFC with hostname-like Name.  _With_
   * _quoteok_query, any query domain is allowed. */
@@ -380,6 +382,7 @@ typedef struct {
     adns_rr_intstr *(*manyistr);     /* txt (list strs ends with i=-1, str=0)*/
     adns_rr_addr *addr;              /* addr */
     struct in_addr *inaddr;          /* a */
+    struct in6_addr *in6addr;	     /* aaaa */
     adns_rr_hostaddr *hostaddr;      /* ns */
     adns_rr_intstrpair *intstrpair;  /* hinfo */
     adns_rr_strpair *strpair;        /* rp, rp_raw */

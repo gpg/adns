@@ -49,6 +49,7 @@
  * _txt                       (pa)
  * _inaddr                    (pa,di,cs
  *				+search_sortlist, dip_genaddr, csp_genaddr)
+ * _in6addr		      (pa,di,cs)
  * _addr                      (pa,di,div,csp,cs,gsz
  *				+search_sortlist_sa, dip_sockaddr)
  * _domain                    (pap,csp,cs)
@@ -299,6 +300,28 @@ static adns_status csp_genaddr(vbuf *vb, int af, const void *p) {
 
 static adns_status cs_inaddr(vbuf *vb, const void *datap) {
   return csp_genaddr(vb, AF_INET,datap);
+}
+
+/*
+ * _in6addr   (pa,di,cs)
+ */
+
+static adns_status pa_in6addr(const parseinfo *pai, int cbyte,
+			     int max, void *datap) {
+  struct in6_addr *storeto= datap;
+
+  if (max-cbyte != 16) return adns_s_invaliddata;
+  memcpy(storeto->s6_addr, pai->dgram + cbyte, 16);
+  return adns_s_ok;
+}
+
+static int di_in6addr(adns_state ads,
+		     const void *datap_a, const void *datap_b) {
+  return dip_genaddr(ads,AF_INET6,datap_a,datap_b);
+}
+
+static adns_status cs_in6addr(vbuf *vb, const void *datap) {
+  return csp_genaddr(vb,AF_INET6,datap);
 }
 
 /*
@@ -1280,6 +1303,7 @@ DEEP_TYPE(hinfo,  "HINFO", 0,   intstrpair,hinfo,   0,     hinfo           ),
 DEEP_TYPE(mx_raw, "MX",   "raw",intstr,    mx_raw,  mx_raw,inthost         ),
 DEEP_TYPE(txt,    "TXT",   0,   manyistr,  txt,     0,     txt             ),
 DEEP_TYPE(rp_raw, "RP",   "raw",strpair,   rp,      0,     rp              ),
+FLAT_TYPE(aaaa,	  "AAAA",  0,   in6addr,   in6addr, in6addr,in6addr        ),
 DEEP_TYPE(srv_raw,"SRV",  "raw",srvraw ,   srvraw,  srv,   srvraw,
 			      .checklabel= ckl_srv, .postsort= postsort_srv),
 

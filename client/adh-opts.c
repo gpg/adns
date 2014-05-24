@@ -262,10 +262,10 @@ static void printusage(void) {
 	" 11   usage problems\n"
 	"\n"
 	"Query types (see adns.h; default is addr):\n"
-	"  ns  soa  ptr  mx  rp  srv  addr       - enhanced versions\n"
-	"  cname  hinfo  txt                     - types with only one version\n"
-	"  a  ns-  soa-  ptr-  mx-  rp-  srv-    - _raw versions\n"
-	"  type<number>                          - `unknown' type, RFC3597\n"
+	"  ns  soa  ptr  mx  rp  srv  addr           - enhanced versions\n"
+	"  cname  hinfo  txt                         - types with only one version\n"
+	"  a  aaaa  ns-  soa-  ptr-  mx-  rp-  srv-  - _raw versions\n"
+	"  type<number>                              - `unknown' type, RFC3597\n"
 	"Default is addr, or ptr for -i/--ptr queries\n",
 	stdout);
   if (ferror(stdout)) sysfail("write usage message",errno);
