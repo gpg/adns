@@ -230,7 +230,8 @@ int adns_submit(adns_state ads,
   
   qu->ctx.ext= context;
   qu->ctx.callback= 0;
-  memset(&qu->ctx.info,0,sizeof(qu->ctx.info));
+  memset(&qu->ctx.pinfo,0,sizeof(qu->ctx.pinfo));
+  memset(&qu->ctx.tinfo,0,sizeof(qu->ctx.tinfo));
 
   *query_r= qu;
 

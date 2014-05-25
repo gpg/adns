@@ -456,7 +456,7 @@ static adns_status pap_findaddrs(const parseinfo *pai, adns_rr_hostaddr *ha,
 
 static void icb_hostaddr(adns_query parent, adns_query child) {
   adns_answer *cans= child->answer;
-  adns_rr_hostaddr *rrp= child->ctx.info.hostaddr;
+  adns_rr_hostaddr *rrp= child->ctx.pinfo.hostaddr;
   adns_state ads= parent->ads;
   adns_status st;
 
@@ -510,7 +510,8 @@ static adns_status pap_hostaddr(const parseinfo *pai, int *cbyte_io,
 
   ctx.ext= 0;
   ctx.callback= icb_hostaddr;
-  ctx.info.hostaddr= rrp;
+  ctx.pinfo.hostaddr= rrp;
+  memset(&ctx.tinfo, 0, sizeof(ctx.tinfo));
   
   nflags= adns_qf_quoteok_query;
   if (!(pai->qu->flags & adns_qf_cname_loose)) nflags |= adns_qf_cname_forbid;
@@ -720,7 +721,7 @@ static void icb_ptr(adns_query parent, adns_query child) {
     return;
   }
 
-  queried= &parent->ctx.info.ptr_parent_addr;
+  queried= &parent->ctx.tinfo.ptr_addr;
   for (i=0, found=cans->rrs.addr; i<cans->nrrs; i++, found++) {
     if (queried->len == found->len &&
 	!memcmp(&queried->addr,&found->addr,queried->len)) {
@@ -758,7 +759,7 @@ static adns_status pa_ptr(const parseinfo *pai, int dmstart,
   if (st) return st;
   if (cbyte != max) return adns_s_invaliddata;
 
-  ap= &pai->qu->ctx.info.ptr_parent_addr;
+  ap= &pai->qu->ctx.tinfo.ptr_addr;
   if (!ap->len) {
     adns__findlabel_start(&fls, pai->ads, -1, pai->qu,
 			  pai->qu->query_dgram, pai->qu->query_dglen,
@@ -797,7 +798,8 @@ static adns_status pa_ptr(const parseinfo *pai, int dmstart,
 
   ctx.ext= 0;
   ctx.callback= icb_ptr;
-  memset(&ctx.info,0,sizeof(ctx.info));
+  memset(&ctx.pinfo,0,sizeof(ctx.pinfo));
+  memset(&ctx.tinfo,0,sizeof(ctx.tinfo));
   st= adns__internal_submit(pai->ads, &nqu, adns__findtype(adns_r_addr),
 			    &pai->qu->vb, id,
 			    adns_qf_quoteok_query, pai->now, &ctx);
