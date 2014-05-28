@@ -210,23 +210,35 @@ static void Ppollfds(struct pollfd *fds, int nfds) {
 #endif
 
 static void Paddr(struct sockaddr *addr, int *lenr) {
-  struct sockaddr_in *sa= (struct sockaddr_in*)addr;
-  char *p, *ep;
-  long ul;
-  
-  assert(*lenr >= sizeof(*sa));
-  p= strchr(vb2.buf+vb2.used,':');
-  if (!p) Psyntax("no port on address");
-  *p++= 0;
-  memset(sa,0,sizeof(*sa));
-  sa->sin_family= AF_INET;
-  if (!inet_aton(vb2.buf+vb2.used,&sa->sin_addr)) Psyntax("invalid address");
-  ul= strtoul(p,&ep,10);
-  if (*ep && *ep != hm_squote hm_squote) Psyntax("invalid port (bad syntax)");
-  if (ul >= 65536) Psyntax("port too large");
-  sa->sin_port= htons(ul);
-  *lenr= sizeof(*sa);
+  adns_rr_addr a;
+  char *p, *q, *ep;
+  int err;
+  unsigned long ul;
 
+  p= vb2.buf+vb2.used;
+  if (*p!='[') {
+    q= strchr(p,':');
+    if (!q) Psyntax("missing :");
+    *q++= 0;
+  } else {
+    p++;
+    q= strchr(p,']');
+    if (!q) Psyntax("missing ]");
+    *q++= 0;
+    if (*q!=':') Psyntax("expected : after ]");
+    q++;
+  }
+  ul= strtoul(q,&ep,10);
+  if (*ep && *ep != ' ') Psyntax("invalid port (bad syntax)");
+  if (ul >= 65536) Psyntax("port too large");
+
+  a.len= sizeof(a.addr);
+  err= adns_text2addr(p, (int)ul, 0, &a.addr.sa,&a.len);
+  if (err) Psyntax("invalid address");
+
+  assert(*lenr >= a.len);
+  memcpy(addr, &a.addr, a.len);
+  *lenr= a.len;
   vb2.used= ep - (char*)vb2.buf;
 }
 

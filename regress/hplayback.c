@@ -7,6 +7,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/time.h>
+#include <netdb.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include "harness.h"
@@ -153,21 +154,34 @@ static void Ppollfds(struct pollfd *fds, int nfds) {
 }
 #endif
 static void Paddr(struct sockaddr *addr, int *lenr) {
-  struct sockaddr_in *sa= (struct sockaddr_in*)addr;
-  char *p, *ep;
-  long ul;
-  assert(*lenr >= sizeof(*sa));
-  p= strchr(vb2.buf+vb2.used,':');
-  if (!p) Psyntax("no port on address");
-  *p++= 0;
-  memset(sa,0,sizeof(*sa));
-  sa->sin_family= AF_INET;
-  if (!inet_aton(vb2.buf+vb2.used,&sa->sin_addr)) Psyntax("invalid address");
-  ul= strtoul(p,&ep,10);
-  if (*ep && *ep != ' ') Psyntax("invalid port (bad syntax)");
-  if (ul >= 65536) Psyntax("port too large");
-  sa->sin_port= htons(ul);
-  *lenr= sizeof(*sa);
+  struct addrinfo *ai, hint = { 0 };
+  char *p, *q, *ep;
+  int err;
+  p= vb2.buf+vb2.used;
+  if (*p!='[') {
+    q= strchr(p,':');
+    if (!q) Psyntax("missing :");
+    *q++= 0;
+  } else {
+    p++;
+    q= strchr(p,']');
+    if (!q) Psyntax("missing ]");
+    *q++= 0;
+    if (*q!=':') Psyntax("expected : after ]");
+    q++;
+  }
+  for (ep=q; ctype_digit(*ep); ep++);
+  if (ep==q || (*ep && *ep!=' ')) Psyntax("invalid port number");
+  *ep= 0;
+  hint.ai_socktype= SOCK_DGRAM;
+  hint.ai_family= AF_UNSPEC;
+  hint.ai_flags= AI_NUMERICHOST | AI_NUMERICSERV;
+  err= getaddrinfo(p, q, &hint, &ai);
+  if (err) Psyntax("invalid address");
+  assert(*lenr >= ai->ai_addrlen);
+  memcpy(addr, ai->ai_addr, ai->ai_addrlen);
+  *lenr= ai->ai_addrlen;
+  freeaddrinfo(ai);
   vb2.used= ep - (char*)vb2.buf;
 }
 static int Pbytes(byte *buf, int maxlen) {

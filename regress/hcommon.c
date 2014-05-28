@@ -143,10 +143,12 @@ void Qwrite(	int fd , const void *buf , size_t len 	) {
   Q_vb();
 }
 void Tvbaddr(const struct sockaddr *addr, int len) {
-  const struct sockaddr_in *ai= (const struct sockaddr_in*)addr;
-  assert(len==sizeof(struct sockaddr_in));
-  assert(ai->sin_family==AF_INET);
-  Tvbf("%s:%u",inet_ntoa(ai->sin_addr),htons(ai->sin_port));
+  char buf[ADNS_ADDR2TEXT_BUFLEN];
+  int err, port;
+  int sz= sizeof(buf);
+  err= adns_addr2text(addr, 0, buf,&sz, &port);
+  assert(!err);
+  Tvbf(strchr(buf, ':') ? "[%s]:%d" : "%s:%d", buf,port);
 }
 void Tvbbytes(const void *buf, int len) {
   const byte *bp;
