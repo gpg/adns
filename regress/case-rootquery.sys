@@ -21,7 +21,7 @@ adnstest default
  select max=5 rfds=[4] wfds=[] efds=[] to=1.997025
  select=1 rfds=[4] wfds=[] efds=[]
  +0.012535
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      311f8180 00010001 000d000d 00000600 01000006 00010000 eb3e003e 01410c52
      4f4f542d 53455256 45525303 4e455400 0a686f73 746d6173 74657208 494e5445
@@ -40,13 +40,13 @@ adnstest default
      01000929 a8000480 3f0235c1 08000100 01000929 a8000480 09006bc1 17000100
      01000929 a80004c0 21040c.
  +0.002867
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000463
  select max=5 rfds=[4] wfds=[] efds=[] to=1.982941
  select=1 rfds=[4] wfds=[] efds=[]
  +0.008221
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      31208180 00010001 000d000d 00000600 01000006 00010000 df7a003e 01410c52
      4f4f542d 53455256 45525303 4e455400 0a686f73 746d6173 74657208 494e5445
@@ -65,7 +65,7 @@ adnstest default
      01000929 a8000480 3f0235c1 08000100 01000929 a8000480 09006bc1 17000100
      01000929 a80004c0 21040c.
  +0.002425
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000260
  close fd=4

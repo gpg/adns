@@ -18,7 +18,7 @@ adnstest default
  select max=5 rfds=[4] wfds=[] efds=[] to=1.999040
  select=1 rfds=[4] wfds=[] efds=[]
  +0.000200
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      311f8580 00010002 00010001 02333702 34350231 38033137 3207696e 2d616464
      72046172 70610000 0c0001c0 0c000500 01000151 80003f02 33370234 35023138
@@ -27,7 +27,7 @@ adnstest default
      00060370 7472c082 c0510002 00010000 003c0006 036e7330 c05ac094 00010001
      00015180 0004ac12 2d06.
  +0.000624
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000222
  close fd=4

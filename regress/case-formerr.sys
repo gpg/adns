@@ -20,11 +20,11 @@ adnstest default
  select max=5 rfds=[4] wfds=[] efds=[] to=1.999023
  select=1 rfds=[4] wfds=[] efds=[]
  +0.000192
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      311f8181 00010000 00000000.
  +0.000130
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000088
  select max=5 rfds=[4] wfds=[] efds=[] to=1.998613
@@ -40,11 +40,11 @@ adnstest default
  select max=5 rfds=[4] wfds=[] efds=[] to=1.999234
  select=1 rfds=[4] wfds=[] efds=[]
  +0.000115
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      311f8181 00010000 00000000.
  +0.000116
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000065
  select max=5 rfds=[4] wfds=[] efds=[] to=1.998938
@@ -63,11 +63,11 @@ adnstest default
  select max=5 rfds=[4] wfds=[] efds=[] to=1.999312
  select=1 rfds=[4] wfds=[] efds=[]
  +0.000113
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      311f8181 00010000 00000000.
  +0.000114
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000065
  select max=5 rfds=[4] wfds=[] efds=[] to=1.999020
@@ -83,11 +83,11 @@ adnstest default
  select max=5 rfds=[4] wfds=[] efds=[] to=1.999298
  select=1 rfds=[4] wfds=[] efds=[]
  +0.000113
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      311f8181 00010000 00000000.
  +0.000114
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000066
  select max=5 rfds=[4] wfds=[] efds=[] to=1.999005
@@ -103,11 +103,11 @@ adnstest default
  select max=5 rfds=[4] wfds=[] efds=[] to=1.999286
  select=1 rfds=[4] wfds=[] efds=[]
  +0.000117
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      311f8181 00010000 00000000.
  +0.000117
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000069
  select max=5 rfds=[4] wfds=[] efds=[] to=1.998983
@@ -126,11 +126,11 @@ adnstest default
  select max=5 rfds=[4] wfds=[] efds=[] to=1.999311
  select=1 rfds=[4] wfds=[] efds=[]
  +0.000114
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      311f8181 00010000 00000000.
  +0.000113
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000064
  select max=5 rfds=[4] wfds=[] efds=[] to=1.999020
@@ -146,11 +146,11 @@ adnstest default
  select max=5 rfds=[4] wfds=[] efds=[] to=1.999284
  select=1 rfds=[4] wfds=[] efds=[]
  +0.000114
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      311f8181 00010000 00000000.
  +0.000136
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000066
  select max=5 rfds=[4] wfds=[] efds=[] to=1.998968
@@ -169,11 +169,11 @@ adnstest default
  select max=5 rfds=[4] wfds=[] efds=[] to=1.999331
  select=1 rfds=[4] wfds=[] efds=[]
  +0.000113
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      311f8181 00010000 00000000.
  +0.000115
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000065
  select max=5 rfds=[4] wfds=[] efds=[] to=1.999038
@@ -189,11 +189,11 @@ adnstest default
  select max=5 rfds=[4] wfds=[] efds=[] to=1.999280
  select=1 rfds=[4] wfds=[] efds=[]
  +0.000113
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      311f8181 00010000 00000000.
  +0.000114
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000065
  select max=5 rfds=[4] wfds=[] efds=[] to=1.998988
@@ -209,11 +209,11 @@ adnstest default
  select max=5 rfds=[4] wfds=[] efds=[] to=1.999297
  select=1 rfds=[4] wfds=[] efds=[]
  +0.000134
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      311f8181 00010000 00000000.
  +0.000115
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000066
  select max=5 rfds=[4] wfds=[] efds=[] to=1.998982
@@ -229,11 +229,11 @@ adnstest default
  select max=5 rfds=[4] wfds=[] efds=[] to=1.999240
  select=1 rfds=[4] wfds=[] efds=[]
  +0.000120
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      311f8181 00010000 00000000.
  +0.000116
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000070
  select max=5 rfds=[4] wfds=[] efds=[] to=1.998934
@@ -249,11 +249,11 @@ adnstest default
  select max=5 rfds=[4] wfds=[] efds=[] to=1.999184
  select=1 rfds=[4] wfds=[] efds=[]
  +0.000124
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      311f8181 00010000 00000000.
  +0.000120
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000074
  select max=5 rfds=[4] wfds=[] efds=[] to=1.998866
@@ -269,11 +269,11 @@ adnstest default
  select max=5 rfds=[4] wfds=[] efds=[] to=1.999112
  select=1 rfds=[4] wfds=[] efds=[]
  +0.000127
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      311f8181 00010000 00000000.
  +0.000119
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000072
  select max=5 rfds=[4] wfds=[] efds=[] to=1.998794
@@ -289,11 +289,11 @@ adnstest default
  select max=5 rfds=[4] wfds=[] efds=[] to=1.999160
  select=1 rfds=[4] wfds=[] efds=[]
  +0.000297
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      311f8181 00010000 00000000.
  +0.000124
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000077
  select max=5 rfds=[4] wfds=[] efds=[] to=1.998662
@@ -312,11 +312,11 @@ adnstest default
  select max=5 rfds=[4] wfds=[] efds=[] to=1.999209
  select=1 rfds=[4] wfds=[] efds=[]
  +0.000117
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      311f8181 00010000 00000000.
  +0.000271
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000080
  select max=5 rfds=[4] wfds=[] efds=[] to=1.998741

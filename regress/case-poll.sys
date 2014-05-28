@@ -18,7 +18,7 @@ adnstest default -,p
  poll fds=[{fd=4, events=POLLIN, revents=0}] timeout=2000
  poll=1 fds=[{fd=4, events=POLLIN, revents=POLLIN}]
  +0.006530
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      311f8580 00010001 00020002 06636869 61726b08 67726565 6e656e64 036f7267
      02756b00 00010001 c00c0001 00010001 51800004 c3e04c84 08677265 656e656e
@@ -26,7 +26,7 @@ adnstest default -,p
      7479c038 c0380002 00010001 51800006 036e7331 c057c053 00010001 00015180
      0004ac12 2d06c070 00010001 00015180 0004ac12 2d41.
  +0.001044
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000211
  close fd=4

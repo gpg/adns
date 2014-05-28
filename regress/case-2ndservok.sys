@@ -29,7 +29,7 @@ adnstest 2ndserver
  select max=5 rfds=[4] wfds=[] efds=[] to=1.999137
  select=1 rfds=[4] wfds=[] efds=[]
  +0.000126
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      311f8580 00010001 00030003 08646176 656e616e 740a7265 6c617469 76697479
      08677265 656e656e 64036f72 6702756b 00000100 01c00c00 01000100 01518000
@@ -39,7 +39,7 @@ adnstest 2ndserver
      04ac122d 06c07d00 01000100 01518000 04ac122d 41c08f00 01000100 01518000
      04ac122d 01.
  +0.001026
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000423
  close fd=4

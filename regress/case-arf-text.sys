@@ -25,7 +25,7 @@
  select max=2 rfds=[0] wfds=[] efds=[] to=null
  select=1 rfds=[0] wfds=[] efds=[]
  +2.095986
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=EAGAIN
  +0.000177
  read fd=0 buflen=512
@@ -39,7 +39,7 @@
  select max=2 rfds=[0] wfds=[] efds=[] to=null
  select=1 rfds=[0] wfds=[] efds=[]
  +0.349329
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=EAGAIN
  +0.000085
  read fd=0 buflen=512

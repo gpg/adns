@@ -88,44 +88,44 @@ adnstest default
  select max=5 rfds=[4] wfds=[] efds=[] to=1.993986
  select=1 rfds=[4] wfds=[] efds=[]
  +0.005183
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      311f8580 00010000 00010000 08677265 656e656e 64036f72 6702756b 00000100
      01c00c00 06000100 01518000 2d026e73 06636869 61726bc0 0c0a686f 73746d61
      73746572 c00c7727 41340000 70800000 1c200009 3a800001 5180.
  +0.000588
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000147
  select max=5 rfds=[4] wfds=[] efds=[] to=1.988691
  select=1 rfds=[4] wfds=[] efds=[]
  +0.004348
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      31208580 00010002 00000002 08677265 656e656e 64036f72 6702756b 00000200
      01c00c00 02000100 01518000 11036e73 310a7265 6c617469 76697479 c00cc00c
      00020001 00015180 0006036e 7330c031 c02d0001 00010001 51800004 ac122d41
      c04a0001 00010001 51800004 ac122d06.
  +0.000642
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000247
  select max=5 rfds=[4] wfds=[] efds=[] to=1.983879
  select=1 rfds=[4] wfds=[] efds=[]
  +0.002737
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      31218580 00010000 00010000 08677265 656e656e 64036f72 6702756b 00000500
      01c00c00 06000100 01518000 2d026e73 06636869 61726bc0 0c0a686f 73746d61
      73746572 c00c7727 41340000 70800000 1c200009 3a800001 5180.
  +0.000541
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000099
  select max=5 rfds=[4] wfds=[] efds=[] to=1.980873
  select=1 rfds=[4] wfds=[] efds=[]
  +0.005000
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      31228580 00010001 00020002 08677265 656e656e 64036f72 6702756b 00000600
      01c00c00 06000100 01518000 2d026e73 06636869 61726bc0 0c0a686f 73746d61
@@ -134,37 +134,37 @@ adnstest default
      80000603 6e7330c0 6ac06600 01000100 01518000 04ac122d 41c08300 01000100
      01518000 04ac122d 06.
  +0.000913
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000195
  select max=5 rfds=[4] wfds=[] efds=[] to=1.975134
  select=1 rfds=[4] wfds=[] efds=[]
  +0.002529
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      31238580 00010000 00010000 08677265 656e656e 64036f72 6702756b 00000c00
      01c00c00 06000100 01518000 2d026e73 06636869 61726bc0 0c0a686f 73746d61
      73746572 c00c7727 41340000 70800000 1c200009 3a800001 5180.
  +0.000541
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000100
  select max=5 rfds=[4] wfds=[] efds=[] to=1.972333
  select=1 rfds=[4] wfds=[] efds=[]
  +0.003175
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      31248580 00010000 00010000 08677265 656e656e 64036f72 6702756b 00000d00
      01c00c00 06000100 01518000 2d026e73 06636869 61726bc0 0c0a686f 73746d61
      73746572 c00c7727 41340000 70800000 1c200009 3a800001 5180.
  +0.000538
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000122
  select max=5 rfds=[4] wfds=[] efds=[] to=1.968912
  select=1 rfds=[4] wfds=[] efds=[]
  +0.005109
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      31258580 00010001 00020003 08677265 656e656e 64036f72 6702756b 00000f00
      01c00c00 0f000100 01518000 0b000a06 63686961 726bc00c c00c0002 00010001
@@ -172,74 +172,74 @@ adnstest default
      06036e73 30c048c0 2f000100 01000151 800004c3 e04c84c0 44000100 01000151
      800004ac 122d41c0 61000100 01000151 800004ac 122d06.
  +0.000826
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000173
  select max=5 rfds=[4] wfds=[] efds=[] to=1.963175
  select=1 rfds=[4] wfds=[] efds=[]
  +0.002746
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      31268580 00010000 00010000 08677265 656e656e 64036f72 6702756b 00001000
      01c00c00 06000100 01518000 2d026e73 06636869 61726bc0 0c0a686f 73746d61
      73746572 c00c7727 41340000 70800000 1c200009 3a800001 5180.
  +0.000539
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000127
  select max=5 rfds=[4] wfds=[] efds=[] to=1.960131
  select=1 rfds=[4] wfds=[] efds=[]
  +0.003161
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      31278580 00010000 00010000 08677265 656e656e 64036f72 6702756b 00001100
      01c00c00 06000100 01518000 2d026e73 06636869 61726bc0 0c0a686f 73746d61
      73746572 c00c7727 41340000 70800000 1c200009 3a800001 5180.
  +0.000537
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000098
  select max=5 rfds=[4] wfds=[] efds=[] to=1.956703
  select=1 rfds=[4] wfds=[] efds=[]
  +0.003055
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      31288580 00010000 00010000 08677265 656e656e 64036f72 6702756b 00000100
      01c00c00 06000100 01518000 2d026e73 06636869 61726bc0 0c0a686f 73746d61
      73746572 c00c7727 41340000 70800000 1c200009 3a800001 5180.
  +0.000537
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000126
  select max=5 rfds=[4] wfds=[] efds=[] to=1.953352
  select=1 rfds=[4] wfds=[] efds=[]
  +0.004322
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      31298580 00010002 00000002 08677265 656e656e 64036f72 6702756b 00000200
      01c00c00 02000100 01518000 11036e73 300a7265 6c617469 76697479 c00cc00c
      00020001 00015180 0006036e 7331c031 c02d0001 00010001 51800004 ac122d06
      c04a0001 00010001 51800004 ac122d41.
  +0.000638
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000268
  select max=5 rfds=[4] wfds=[] efds=[] to=1.948491
  select=1 rfds=[4] wfds=[] efds=[]
  +0.002741
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      312a8580 00010000 00010000 08677265 656e656e 64036f72 6702756b 00000c00
      01c00c00 06000100 01518000 2d026e73 06636869 61726bc0 0c0a686f 73746d61
      73746572 c00c7727 41340000 70800000 1c200009 3a800001 5180.
  +0.000540
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000129
  select max=5 rfds=[4] wfds=[] efds=[] to=1.945447
  select=1 rfds=[4] wfds=[] efds=[]
  +0.005215
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      312b8580 00010001 00020003 08677265 656e656e 64036f72 6702756b 00000f00
      01c00c00 0f000100 01518000 0b000a06 63686961 726bc00c c00c0002 00010001
@@ -247,13 +247,13 @@ adnstest default
      06036e73 31c048c0 2f000100 01000151 800004c3 e04c84c0 44000100 01000151
      800004ac 122d06c0 61000100 01000151 800004ac 122d41.
  +0.000822
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000197
  select max=5 rfds=[4] wfds=[] efds=[] to=1.939591
  select=1 rfds=[4] wfds=[] efds=[]
  +0.004484
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      312c8580 00010001 00020002 08677265 656e656e 64036f72 6702756b 00000600
      01c00c00 06000100 01518000 2d026e73 06636869 61726bc0 0c0a686f 73746d61
@@ -262,19 +262,19 @@ adnstest default
      80000603 6e7331c0 6ac06600 01000100 01518000 04ac122d 06c08300 01000100
      01518000 04ac122d 41.
  +0.000910
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000223
  select max=5 rfds=[4] wfds=[] efds=[] to=1.934365
  select=1 rfds=[4] wfds=[] efds=[]
  +0.002704
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      312d8580 00010000 00010000 08677265 656e656e 64036f72 6702756b 00001100
      01c00c00 06000100 01518000 2d026e73 06636869 61726bc0 0c0a686f 73746d61
      73746572 c00c7727 41340000 70800000 1c200009 3a800001 5180.
  +0.000537
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000099
  close fd=4

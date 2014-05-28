@@ -25,7 +25,7 @@
  select max=2 rfds=[0] wfds=[] efds=[] to=null
  select=1 rfds=[0] wfds=[] efds=[]
  +3.476363
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=EAGAIN
  +0.000178
  read fd=0 buflen=512
@@ -39,7 +39,7 @@
  select max=2 rfds=[0] wfds=[] efds=[] to=null
  select=1 rfds=[0] wfds=[] efds=[]
  +1.-12312
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=EAGAIN
  +0.000119
  read fd=0 buflen=512
@@ -52,7 +52,7 @@
      04617270 6100000c 0001.
  sendto=42
  +0.000902
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      311f8580 00010001 00020002 01360234 35023138 03313732 07696e2d 61646472
      04617270 6100000c 0001c00c 000c0001 00015180 00250864 6176656e 616e740a
@@ -66,7 +66,7 @@
      08677265 656e656e 64036f72 6702756b 00000100 01.
  sendto=53
  +0.000758
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      31208580 00010001 00020002 08646176 656e616e 740a7265 6c617469 76697479
      08677265 656e656e 64036f72 6702756b 00000100 01c00c00 01000100 01518000
@@ -75,7 +75,7 @@
      31c045c0 6b000100 01000151 800004ac 122d06c0 7d000100 01000151 800004ac
      122d01.
  +0.000572
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=EAGAIN
  +0.000146
  write fd=1
@@ -85,10 +85,10 @@
  select max=7 rfds=[0,6] wfds=[] efds=[] to=0.996185
  select=0 rfds=[] wfds=[] efds=[]
  +1.-05562
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=EAGAIN
  +0.000093
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=EAGAIN
  +0.000061
  write fd=1
@@ -103,7 +103,7 @@
  select max=2 rfds=[0] wfds=[] efds=[] to=null
  select=1 rfds=[0] wfds=[] efds=[]
  +1.-31596
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=EAGAIN
  +0.000127
  read fd=0 buflen=512
@@ -116,7 +116,7 @@
      72706100 000c0001.
  sendto=40
  +0.000787
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      31218580 00010001 00010001 01310130 01300331 32370769 6e2d6164 64720461
      72706100 000c0001 c00c000c 00010009 3a80000b 096c6f63 616c686f 73740003
@@ -127,13 +127,13 @@
      31220100 00010000 00000000 096c6f63 616c686f 73740000 010001.
  sendto=27
  +0.000523
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      31228580 00010001 00010001 096c6f63 616c686f 73740000 010001c0 0c000100
      0100093a 8000047f 000001c0 0c000200 0100093a 800002c0 0cc00c00 01000100
      093a8000 047f0000 01.
  +0.000310
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=EAGAIN
  +0.000120
  write fd=1
@@ -143,10 +143,10 @@
  select max=7 rfds=[0,6] wfds=[] efds=[] to=0.997132
  select=0 rfds=[] wfds=[] efds=[]
  +1.-02556
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=EAGAIN
  +0.000082
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=EAGAIN
  +0.000054
  write fd=1
@@ -160,7 +160,7 @@
  select max=2 rfds=[0] wfds=[] efds=[] to=null
  select=1 rfds=[0] wfds=[] efds=[]
  +5.-307533
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=EAGAIN
  +0.000115
  read fd=0 buflen=512
@@ -172,7 +172,7 @@
      04617270 6100000c 0001.
  sendto=42
  +0.000691
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      31238580 00010001 00020002 01310234 35023138 03313732 07696e2d 61646472
      04617270 6100000c 0001c00c 000c0001 00015180 00220573 66657265 0a72656c
@@ -186,7 +186,7 @@
      65656e65 6e64036f 72670275 6b000001 0001.
  sendto=50
  +0.000716
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      31248580 00010001 00020002 05736665 72650a72 656c6174 69766974 79086772
      65656e65 6e64036f 72670275 6b000001 0001c00c 00010001 00015180 0004ac12
@@ -194,16 +194,16 @@
      00010001 51800006 036e7330 c042c042 00020001 00015180 0006036e 7331c042
      c0680001 00010001 51800004 ac122d06 c07a0001 00010001 51800004 ac122d01.
  +0.000562
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=EAGAIN
  +0.000137
  select max=7 rfds=[0,6] wfds=[] efds=[] to=0.996993
  select=0 rfds=[] wfds=[] efds=[]
  +1.-06724
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=EAGAIN
  +0.000083
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=EAGAIN
  +0.000055
  write fd=1
@@ -217,7 +217,7 @@
  select max=2 rfds=[0] wfds=[] efds=[] to=null
  select=1 rfds=[0] wfds=[] efds=[]
  +4.-137179
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=EAGAIN
  +0.000103
  read fd=0 buflen=512
@@ -227,7 +227,7 @@
  select max=2 rfds=[0] wfds=[] efds=[] to=null
  select=1 rfds=[0] wfds=[] efds=[]
  +4.-28658
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=EAGAIN
  +0.000121
  read fd=0 buflen=512
@@ -239,7 +239,7 @@
      72046172 70610000 0c0001.
  sendto=43
  +0.000747
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      31258580 00010001 00020002 02343002 34350231 38033137 3207696e 2d616464
      72046172 70610000 0c0001c0 0c000c00 01000151 80002306 6e6f7277 61790a72
@@ -253,7 +253,7 @@
      7265656e 656e6403 6f726702 756b0000 010001.
  sendto=51
  +0.000678
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      31268580 00010001 00020002 066e6f72 7761790a 72656c61 74697669 74790867
      7265656e 656e6403 6f726702 756b0000 010001c0 0c000100 01000151 800004ac
@@ -262,16 +262,16 @@
      43c06900 01000100 01518000 04ac122d 06c07b00 01000100 01518000 04ac122d
      01.
  +0.000566
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=EAGAIN
  +0.000135
  select max=7 rfds=[0,6] wfds=[] efds=[] to=0.997013
  select=0 rfds=[] wfds=[] efds=[]
  +1.-08851
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=EAGAIN
  +0.000087
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=EAGAIN
  +0.000057
  write fd=1
@@ -286,7 +286,7 @@
  select max=2 rfds=[0] wfds=[] efds=[] to=null
  select=1 rfds=[0] wfds=[] efds=[]
  +2.-184099
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=EAGAIN
  +0.000114
  read fd=0 buflen=512
@@ -300,7 +300,7 @@
  select max=2 rfds=[0] wfds=[] efds=[] to=null
  select=1 rfds=[0] wfds=[] efds=[]
  +0.323183
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=EAGAIN
  +0.000084
  read fd=0 buflen=512

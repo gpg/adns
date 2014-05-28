@@ -32,7 +32,7 @@
  select max=7 rfds=[0,6] wfds=[] efds=[] to=1.998371
  select=1 rfds=[6] wfds=[] efds=[]
  +0.000910
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      311f8580 00010001 00010001 02313403 32303602 33300331 37320769 6e2d6164
      64720461 72706100 000c0001 c00c000c 00010000 003c002a 06323036 2d31340b
@@ -46,7 +46,7 @@
      74657374 0763756c 74757265 05646f74 61740261 74000001 0001.
  sendto=58
  +0.001988
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=EAGAIN
  +0.000537
  select max=7 rfds=[0,6] wfds=[] efds=[] to=1.996058
@@ -70,12 +70,12 @@
  select max=7 rfds=[0,6] wfds=[] efds=[] to=null
  select=1 rfds=[6] wfds=[] efds=[]
  +42.-794672
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      31208182 00010000 00000000 06323036 2d31340b 62726f6b 656e2d7a 6f6e6504
      74657374 0763756c 74757265 05646f74 61740261 74000001 0001.
  +0.000986
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=EAGAIN
  +0.003836
  select max=7 rfds=[0,6] wfds=[] efds=[] to=null

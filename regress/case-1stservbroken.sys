@@ -18,7 +18,7 @@ adnstest 1stservbroken
  select max=5 rfds=[4] wfds=[] efds=[] to=1.993626
  select=1 rfds=[4] wfds=[] efds=[]
  +0.001402
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=ECONNREFUSED
  +0.000666
  select max=5 rfds=[4] wfds=[] efds=[] to=1.991558
@@ -32,7 +32,7 @@ adnstest 1stservbroken
  select max=5 rfds=[4] wfds=[] efds=[] to=1.997738
  select=1 rfds=[4] wfds=[] efds=[]
  +0.000973
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      311f8380 00010008 00000000 05747275 6e630474 65737403 69776a0a 72656c61
      74697669 74790867 7265656e 656e6403 6f726702 756b0000 0c0001c0 0c000c00
@@ -62,7 +62,7 @@ adnstest 1stservbroken
  connect fd=5 addr=172.18.45.2:53
  connect=EINPROGRESS
  +0.000797
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000829
  select max=6 rfds=[4] wfds=[5] efds=[] to=13.987562

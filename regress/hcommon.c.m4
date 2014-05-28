@@ -113,7 +113,7 @@ void Q$1(hm_args_massage($3,void)) {
  m4_define(`hm_arg_addr_in', `Tvba(" $'`1="); Tvbaddr($'`1,$'`2);')
  m4_define(`hm_arg_bytes_in', `')
  m4_define(`hm_arg_bytes_out', `Tvbf(" $'`4=%lu",(unsigned long)$'`4);')
- m4_define(`hm_arg_addr_out', `Tvbf(" *$'`2=%d",$'`2);')
+ m4_define(`hm_arg_addr_out', `')
   $3
 
  hm_create_nothing

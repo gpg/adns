@@ -24,7 +24,7 @@ adnstest ndots100
  select max=5 rfds=[4] wfds=[] efds=[] to=1.995872
  select=1 rfds=[4] wfds=[] efds=[]
  +0.000232
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      31218583 00010000 00010000 13317878 786c6c6c 616e7479 73696c69 6f676f67
      3f6c6c61 6e666169 7270776c 6c677779 6e67796c 6c676f67 65727963 68777972
@@ -38,7 +38,7 @@ adnstest ndots100
      00015180 0027036e 7330c100 0a686f73 746d6173 746572c1 00000000 2d00001c
      2000000e 1000093a 80000151 80.
  +0.001145
- recvfrom fd=4 buflen=512 *addrlen=16
+ recvfrom fd=4 buflen=512
  recvfrom=EAGAIN
  +0.000155
  close fd=4

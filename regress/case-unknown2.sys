@@ -47,7 +47,7 @@
  select max=7 rfds=[6] wfds=[] efds=[] to=1.999763
  select=1 rfds=[6] wfds=[] efds=[]
  +1.961402
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=OK addr=172.18.45.6:53
      311f8180 00010004 00040004 04756361 6d036f72 67000002 00010475 63616d03
      6f726700 00020001 00054600 000c0663 68696172 6b026e73 c01ac01a 00020001
@@ -58,7 +58,7 @@
      c8aac046 00010001 0001517c 0004836f 082ac05d 00010001 0001517c 0004836f
      e86cc071 00010001 0001517c 0004cd86 e6ba.
  +0.000366
- recvfrom fd=6 buflen=512 *addrlen=16
+ recvfrom fd=6 buflen=512
  recvfrom=EAGAIN
  +0.000089
  close fd=6

@@ -126,7 +126,6 @@ void Qrecvfrom(	int fd , int buflen , int addrlen 	) {
  Tvba("recvfrom");
 	Tvbf(" fd=%d",fd); 
 	Tvbf(" buflen=%lu",(unsigned long)buflen); 
-	Tvbf(" *addrlen=%d",addrlen); 
   Q_vb();
 }
 void Qread(	int fd , size_t buflen 	) {
