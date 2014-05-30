@@ -25,10 +25,10 @@ adns debug: using nameserver 172.18.45.6
 4.204.50.158.in-addr.arpa flags 0 type A(-): No such data; nrrs=0; cname=$; owner=$; ttl=0
 4.204.50.158.in-addr.arpa flags 0 type NS(raw): No such data; nrrs=0; cname=$; owner=$; ttl=0
 4.204.50.158.in-addr.arpa flags 0 type SOA(822): No such data; nrrs=0; cname=$; owner=$; ttl=0
-adns debug: reply not found, id 312c, query owner 4.204.50.158.in-addr.arpa (NS=172.18.45.6)
+adns debug: reply not found, id 312d, query owner 4.204.50.158.in-addr.arpa (NS=172.18.45.6)
 adns debug: reply not found, id 311f, query owner 4.204.50.158.in-addr.arpa (NS=172.18.45.6)
 adns debug: reply not found, id 3120, query owner 4.204.50.158.in-addr.arpa (NS=172.18.45.6)
-adns debug: reply not found, id 312a, query owner 4.204.50.158.in-addr.arpa (NS=172.18.45.6)
+adns debug: reply not found, id 312b, query owner 4.204.50.158.in-addr.arpa (NS=172.18.45.6)
 4.204.50.158.in-addr.arpa flags 0 type RP(raw): No such data; nrrs=0; cname=$; owner=$; ttl=0
 4.204.50.158.in-addr.arpa flags 0 type CNAME(-): No such data; nrrs=0; cname=$; owner=$; ttl=0
 adns debug: TCP connected (NS=172.18.45.6)

@@ -50,9 +50,9 @@ adns debug: using nameserver 172.18.45.6
 . flags 0 type PTR(raw): No such data; nrrs=0; cname=$; owner=$; ttl=599
 adns debug: reply not found, id 3123, query owner  (NS=172.18.45.6)
 . flags 0 type HINFO(-): No such data; nrrs=0; cname=$; owner=$; ttl=86400
-adns debug: reply not found, id 3128, query owner  (NS=172.18.45.6)
-adns debug: reply not found, id 312a, query owner  (NS=172.18.45.6)
-adns debug: reply not found, id 312e, query owner  (NS=172.18.45.6)
+adns debug: reply not found, id 3129, query owner  (NS=172.18.45.6)
+adns debug: reply not found, id 312b, query owner  (NS=172.18.45.6)
+adns debug: reply not found, id 312f, query owner  (NS=172.18.45.6)
 . flags 0 type MX(raw): No such data; nrrs=0; cname=$; owner=$; ttl=86400
 . flags 0 type TXT(-): No such data; nrrs=0; cname=$; owner=$; ttl=86400
 . flags 0 type RP(raw): No such data; nrrs=0; cname=$; owner=$; ttl=86400
@@ -96,11 +96,11 @@ adns debug: reply not found, id 312e, query owner  (NS=172.18.45.6)
  A.ROOT-SERVERS.NET hostmaster.INTERNIC.NET 1999041600 1800 900 604800 86400
 . flags 1 type PTR(raw): No such data; nrrs=0; cname=$; owner=$; ttl=599
 . flags 1 type HINFO(-): No such data; nrrs=0; cname=$; owner=$; ttl=599
-adns debug: reply not found, id 3132, query owner  (NS=172.18.45.6)
-adns debug: reply not found, id 3123, query owner  (NS=172.18.45.6)
 adns debug: reply not found, id 3133, query owner  (NS=172.18.45.6)
-adns debug: reply not found, id 3137, query owner  (NS=172.18.45.6)
+adns debug: reply not found, id 3123, query owner  (NS=172.18.45.6)
+adns debug: reply not found, id 3134, query owner  (NS=172.18.45.6)
 adns debug: reply not found, id 3139, query owner  (NS=172.18.45.6)
+adns debug: reply not found, id 313b, query owner  (NS=172.18.45.6)
 . flags 1 type MX(raw): No such data; nrrs=0; cname=$; owner=$; ttl=86400
 . flags 1 type TXT(-): No such data; nrrs=0; cname=$; owner=$; ttl=86400
 . flags 1 type RP(raw): No such data; nrrs=0; cname=$; owner=$; ttl=86399

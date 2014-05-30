@@ -14,9 +14,9 @@ adns debug: using nameserver 172.18.45.6
 4.204.50.158.in-addr.arpa flags 0 type 65548 PTR(checked) submitted
 4.204.50.158.in-addr.arpa flags 0 type 65551 MX(+addr) submitted
 4.204.50.158.in-addr.arpa flags 0 type 131078 SOA(822) submitted
-4.204.50.158.in-addr.arpa flags 0 type 131089adns debug: reply not found, id 3141, query owner ns2.afpdoc.com (NS=172.18.45.6)
-adns debug: reply not found, id 3142, query owner ns2.afp-notes.com (NS=172.18.45.6)
-adns debug: reply not found, id 3143, query owner ns2.afp-domino.com (NS=172.18.45.6)
+4.204.50.158.in-addr.arpa flags 0 type 131089adns debug: reply not found, id 3142, query owner ns2.afpdoc.com (NS=172.18.45.6)
+adns debug: reply not found, id 3143, query owner ns2.afp-notes.com (NS=172.18.45.6)
+adns debug: reply not found, id 3144, query owner ns2.afp-domino.com (NS=172.18.45.6)
  RP(822) submitted
 4.204.50.158.in-addr.arpa flags 0 type A(-): No such data; nrrs=0; cname=$; owner=$; ttl=0
 4.204.50.158.in-addr.arpa flags 0 type NS(raw): No such data; nrrs=0; cname=$; owner=$; ttl=0

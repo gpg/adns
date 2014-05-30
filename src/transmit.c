@@ -120,6 +120,7 @@ adns_status adns__mkquery(adns_state ads, vbuf *vb, int *id_r,
   const char *p, *pe;
   adns_status st;
 
+  if (!((type^adns_r_addr) & adns_rrt_reprmask)) ads->nextid++; /* bodge */
   st= mkquery_header(ads,vb,id_r,ol+2); if (st) return st;
   
   MKQUERY_START(vb);
@@ -155,6 +156,7 @@ adns_status adns__mkquery_frdgram(adns_state ads, vbuf *vb, int *id_r,
   int lablen, labstart;
   adns_status st;
 
+  if (!((type^adns_r_addr) & adns_rrt_reprmask)) ads->nextid++; /* bodge */
   st= mkquery_header(ads,vb,id_r,qd_dglen); if (st) return st;
 
   MKQUERY_START(vb);
