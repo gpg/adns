@@ -455,7 +455,7 @@ adns_status adns__internal_submit(adns_state ads, adns_query *query_r,
 				  const typeinfo *typei, vbuf *qumsg_vb,
 				  int id,
 				  adns_queryflags flags, struct timeval now,
-				  const qcontext *ctx);
+				  qcontext *ctx);
 /* Submits a query (for internal use, called during external submits).
  *
  * The new query is returned in *query_r, or we return adns_s_nomemory.
@@ -464,7 +464,8 @@ adns_status adns__internal_submit(adns_state ads, adns_query *query_r,
  * the memory for it is _taken over_ by this routine whether it
  * succeeds or fails (if it succeeds, the vbuf is reused for qu->vb).
  *
- * *ctx is copied byte-for-byte into the query.
+ * *ctx is copied byte-for-byte into the query.  Before doing this, its tinfo
+ * field may be modified by type hooks.
  *
  * When the child query is done, ctx->callback will be called.  The
  * child will already have been taken off both the global list of

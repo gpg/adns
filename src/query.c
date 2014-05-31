@@ -112,7 +112,7 @@ adns_status adns__internal_submit(adns_state ads, adns_query *query_r,
 				  const typeinfo *typei, vbuf *qumsg_vb,
 				  int id,
 				  adns_queryflags flags, struct timeval now,
-				  const qcontext *ctx) {
+				  qcontext *ctx) {
   adns_query qu;
 
   qu= query_alloc(ads,typei,typei->typekey,flags,now);
