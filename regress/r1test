@@ -67,7 +67,7 @@ fi
 set +e
 ADNS_TEST_REPORT_FD=3 ADNS_TEST_IN_FD=4 \
  3>>"$ocase.report" 4<&4 >"$ocase.out" 2>"$ocase.err" \
- $playback $initflags"$initstring" $queryargs
+ $ADNS_TEST_DEBUG $playback $initflags"$initstring" $queryargs
 rc=$?
 set -e
 
