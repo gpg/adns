@@ -106,6 +106,7 @@ typedef enum { /* In general, or together the desired flags: */
 
 typedef enum {
  adns_rrt_typemask=  0x0ffff,
+ adns_rrt_reprmask= 0xffffff,
  adns__qtf_deref=    0x10000,/* dereference domains; perhaps get extra data */
  adns__qtf_mail822=  0x20000,/* return mailboxes in RFC822 rcpt field fmt   */
 

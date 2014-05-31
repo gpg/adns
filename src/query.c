@@ -364,7 +364,9 @@ int adns_submit_reverse(adns_state ads,
 			adns_queryflags flags,
 			void *context,
 			adns_query *query_r) {
-  if (type != adns_r_ptr && type != adns_r_ptr_raw) return EINVAL;
+  if (((type^adns_r_ptr) & adns_rrt_reprmask) &&
+      ((type^adns_r_ptr_raw) & adns_rrt_reprmask))
+    return EINVAL;
   return adns_submit_reverse_any(ads,addr,"in-addr.arpa",
 				 type,flags,context,query_r);
 }

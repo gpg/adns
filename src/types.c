@@ -1222,11 +1222,11 @@ static void mf_flat(adns_query qu, void *data) { }
 #define TYPESZ_M(member)           (sizeof(*((adns_answer*)0)->rrs.member))
 
 #define DEEP_TYPE(code,rrt,fmt,memb,parser,comparer,/*printer*/...)	\
- { adns_r_##code, rrt,fmt,TYPESZ_M(memb), mf_##memb,			\
+ { adns_r_##code&adns_rrt_reprmask, rrt,fmt,TYPESZ_M(memb), mf_##memb,	\
      GLUE(cs_, CAR(__VA_ARGS__)),pa_##parser,di_##comparer,		\
      adns__ckl_hostname, CDR(__VA_ARGS__) }
 #define FLAT_TYPE(code,rrt,fmt,memb,parser,comparer,/*printer*/...)	\
- { adns_r_##code, rrt,fmt,TYPESZ_M(memb), mf_flat,			\
+ { adns_r_##code&adns_rrt_reprmask, rrt,fmt,TYPESZ_M(memb), mf_flat,	\
      GLUE(cs_, CAR(__VA_ARGS__)),pa_##parser,di_##comparer,		\
      adns__ckl_hostname, CDR(__VA_ARGS__) }
 
@@ -1267,6 +1267,7 @@ const typeinfo *adns__findtype(adns_rrtype type) {
   const typeinfo *begin, *end, *mid;
 
   if (type & adns_r_unknown) return &typeinfo_unknown;
+  type &= adns_rrt_reprmask;
 
   begin= typeinfos;  end= typeinfos+(sizeof(typeinfos)/sizeof(typeinfo));
 

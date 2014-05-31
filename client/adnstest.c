@@ -251,7 +251,8 @@ int main(int argc, char *const *argv) {
       mc->doneyet= 0;
       mc->fdom= fdomlist[qi];
 
-      fprintf(stdout,"%s flags %d type %d",domain,qflags,types[ti]);
+      fprintf(stdout,"%s flags %d type %d",
+	      domain,qflags,types[ti]&adns_rrt_reprmask);
       r= adns_submit(ads,domain,types[ti],qflags,mc,&mc->qu);
       if (r == ENOSYS) {
 	fprintf(stdout," not implemented\n");
