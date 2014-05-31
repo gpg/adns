@@ -311,7 +311,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
 
   /* Now, we have some RRs which we wanted. */
 
-  qu->answer->rrs.untyped= adns__alloc_interim(qu,qu->typei->rrsz*wantedrrs);
+  qu->answer->rrs.untyped= adns__alloc_interim(qu,qu->answer->rrsz*wantedrrs);
   if (!qu->answer->rrs.untyped) {
     adns__query_fail(qu,adns_s_nomemory);
     return;
@@ -341,7 +341,8 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
 	!ownermatched)
       continue;
     adns__update_expires(qu,ttl,now);
-    st= typei->parse(&pai, rdstart,rdstart+rdlength, rrsdata+nrrs*typei->rrsz);
+    st= typei->parse(&pai, rdstart,rdstart+rdlength,
+		     rrsdata+nrrs*qu->answer->rrsz);
     if (st) { adns__query_fail(qu,st); return; }
     if (rdstart==-1) goto x_truncated;
     nrrs++;

@@ -83,7 +83,7 @@ static adns_query query_alloc(adns_state ads,
   qu->answer->expires= -1;
   qu->answer->nrrs= 0;
   qu->answer->rrs.untyped= 0;
-  qu->answer->rrsz= typei->rrsz;
+  qu->answer->rrsz= typei->getrrsz(typei,type);
 
   return qu;
 }
@@ -580,7 +580,7 @@ void adns__query_done(adns_query qu) {
   }
 
   if (ans->nrrs && qu->typei->diff_needswap) {
-    if (!adns__vbuf_ensure(&qu->vb,qu->typei->rrsz)) {
+    if (!adns__vbuf_ensure(&qu->vb,qu->answer->rrsz)) {
       adns__query_fail(qu,adns_s_nomemory);
       return;
     }
@@ -591,7 +591,8 @@ void adns__query_done(adns_query qu) {
 		qu->ads);
   }
   if (ans->nrrs && qu->typei->postsort) {
-    qu->typei->postsort(qu->ads, ans->rrs.bytes, ans->nrrs, qu->typei);
+    qu->typei->postsort(qu->ads, ans->rrs.bytes,
+			ans->nrrs,ans->rrsz, qu->typei);
   }
 
   ans->expires= qu->expires;

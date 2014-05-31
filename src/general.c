@@ -196,6 +196,9 @@ const char *adns__diag_domain(adns_state ads, int serv, adns_query qu,
   return vb->buf;
 }
 
+int adns__getrrsz_default(const typeinfo *typei, adns_rrtype type)
+  { return typei->fixed_rrsz; }
+
 adns_status adns_rr_info(adns_rrtype type,
 			 const char **rrtname_r, const char **fmtname_r,
 			 int *len_r,
@@ -209,7 +212,7 @@ adns_status adns_rr_info(adns_rrtype type,
 
   if (rrtname_r) *rrtname_r= typei->rrtname;
   if (fmtname_r) *fmtname_r= typei->fmtname;
-  if (len_r) *len_r= typei->rrsz;
+  if (len_r) *len_r= typei->getrrsz(typei, type);
 
   if (!datap) return adns_s_ok;
   

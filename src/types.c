@@ -1100,12 +1100,12 @@ static adns_status cs_srvha(vbuf *vb, const void *datap) {
   return csp_hostaddr(vb,&rrp->ha);
 }
 
-static void postsort_srv(adns_state ads, void *array, int nrrs,
+static void postsort_srv(adns_state ads, void *array, int nrrs,int rrsz,
 			 const struct typeinfo *typei) {
   /* we treat everything in the array as if it were an adns_rr_srvha
    * even though the array might be of adns_rr_srvraw.  That's OK
    * because they have the same prefix, which is all we access.
-   * We use typei->rrsz, too, rather than naive array indexing, of course.
+   * We use rrsz, too, rather than naive array indexing, of course.
    */
   char *workbegin, *workend, *search, *arrayend;
   const adns_rr_srvha *rr;
@@ -1113,14 +1113,15 @@ static void postsort_srv(adns_state ads, void *array, int nrrs,
   int cpriority, totalweight, runtotal;
   long randval;
 
-  for (workbegin= array, arrayend= workbegin + typei->rrsz * nrrs;
+  assert(rrsz <= sizeof(rrtmp));
+  for (workbegin= array, arrayend= workbegin + rrsz * nrrs;
        workbegin < arrayend;
        workbegin= workend) {
     cpriority= (rr=(void*)workbegin)->priority;
     
     for (workend= workbegin, totalweight= 0;
 	 workend < arrayend && (rr=(void*)workend)->priority == cpriority;
-	 workend += typei->rrsz) {
+	 workend += rrsz) {
       totalweight += rr->weight;
     }
 
@@ -1131,8 +1132,8 @@ static void postsort_srv(adns_state ads, void *array, int nrrs,
      * workbegin (swapping with the one that was there, and then
      * advance workbegin. */
     for (;
-	 workbegin + typei->rrsz < workend; /* don't bother if just one */
-	 workbegin += typei->rrsz) {
+	 workbegin + rrsz < workend; /* don't bother if just one */
+	 workbegin += rrsz) {
       
       randval= nrand48(ads->rand48xsubi);
       randval %= (totalweight + 1);
@@ -1144,13 +1145,13 @@ static void postsort_srv(adns_state ads, void *array, int nrrs,
 
       for (search=workbegin, runtotal=0;
 	   (runtotal += (rr=(void*)search)->weight) < randval;
-	   search += typei->rrsz);
+	   search += rrsz);
       assert(search < arrayend);
       totalweight -= rr->weight;
       if (search != workbegin) {
-	memcpy(&rrtmp, workbegin, typei->rrsz);
-	memcpy(workbegin, search, typei->rrsz);
-	memcpy(search, &rrtmp, typei->rrsz);
+	memcpy(&rrtmp, workbegin, rrsz);
+	memcpy(workbegin, search, rrsz);
+	memcpy(search, &rrtmp, rrsz);
       }
     }
   }
@@ -1226,11 +1227,11 @@ static void mf_flat(adns_query qu, void *data) { }
 #define DEEP_TYPE(code,rrt,fmt,memb,parser,comparer,/*printer*/...)	\
  { adns_r_##code&adns_rrt_reprmask, rrt,fmt,TYPESZ_M(memb), mf_##memb,	\
      GLUE(cs_, CAR(__VA_ARGS__)),pa_##parser,di_##comparer,		\
-     adns__ckl_hostname, CDR(__VA_ARGS__) }
+     adns__ckl_hostname, 0, adns__getrrsz_default, CDR(__VA_ARGS__) }
 #define FLAT_TYPE(code,rrt,fmt,memb,parser,comparer,/*printer*/...)	\
  { adns_r_##code&adns_rrt_reprmask, rrt,fmt,TYPESZ_M(memb), mf_flat,	\
      GLUE(cs_, CAR(__VA_ARGS__)),pa_##parser,di_##comparer,		\
-     adns__ckl_hostname, CDR(__VA_ARGS__) }
+     adns__ckl_hostname, 0, adns__getrrsz_default, CDR(__VA_ARGS__) }
 
 #define di_0 0
 

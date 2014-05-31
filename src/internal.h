@@ -148,7 +148,7 @@ typedef struct typeinfo {
   adns_rrtype typekey;
   const char *rrtname;
   const char *fmtname;
-  int rrsz;
+  int fixed_rrsz;
 
   void (*makefinal)(adns_query qu, void *data);
   /* Change memory management of *data.
@@ -166,7 +166,7 @@ typedef struct typeinfo {
   /* Parse one RR, in dgram of length dglen, starting at cbyte and
    * extending until at most max.
    *
-   * The RR should be stored at *store_r, of length qu->typei->rrsz.
+   * The RR should be stored at *store_r, of length qu->typei->getrrsz().
    *
    * If there is an overrun which might indicate truncation, it should set
    * *rdstart to -1; otherwise it may set it to anything else positive.
@@ -191,11 +191,16 @@ typedef struct typeinfo {
    * because lablen is zero.
    */
 
-  void (*postsort)(adns_state ads, void *array, int nrrs,
+  void (*postsort)(adns_state ads, void *array, int nrrs,int rrsz,
 		   const struct typeinfo *typei);
   /* Called immediately after the RRs have been sorted, and may rearrange
    * them.  (This is really for the benefit of SRV's bizarre weighting
    * stuff.)  May be 0 to mean nothing needs to be done.
+   */
+
+  int (*getrrsz)(const struct typeinfo *typei, adns_rrtype type);
+  /* Return the output resource-record element size; if this is null, then
+   * the rrsz member can be used.
    */
 } typeinfo;
 
@@ -403,6 +408,11 @@ const char *adns__diag_domain(adns_state ads, int serv, adns_query qu,
  *
  * Returns either vb->buf, or a pointer to a string literal.  Do not modify
  * vb before using the return value.
+ */
+
+int adns__getrrsz_default(const typeinfo *typei, adns_rrtype type);
+/* Default function for the `getrrsz' type hook; returns the `fixed_rrsz'
+ * value from the typeinfo entry.
  */
 
 void adns__isort(void *array, int nobjs, int sz, void *tempbuf,
