@@ -124,6 +124,20 @@ typedef struct {
   struct timeval now;
 } parseinfo;
 
+typedef struct {
+  void *ext;
+  void (*callback)(adns_query parent, adns_query child);
+
+  union {
+    adns_rr_addr ptr_addr;
+  } tinfo; /* type-specific state for the query itself: zero-init if you
+	    * don't know better. */
+
+  union {
+    adns_rr_hostaddr *hostaddr;
+  } pinfo; /* state for use by parent's callback function */
+} qcontext;
+
 typedef struct typeinfo {
   adns_rrtype typekey;
   const char *rrtname;
@@ -198,20 +212,6 @@ union maxalign {
   void (*fp)(void);
   union maxalign *up;
 } data;
-
-typedef struct {
-  void *ext;
-  void (*callback)(adns_query parent, adns_query child);
-
-  union {
-    adns_rr_addr ptr_addr;
-  } tinfo; /* type-specific state for the query itself: zero-init if you
-	    * don't know better. */
-
-  union {
-    adns_rr_hostaddr *hostaddr;
-  } pinfo; /* state for use by parent's callback function */
-} qcontext;
 
 struct adns__query {
   adns_state ads;
