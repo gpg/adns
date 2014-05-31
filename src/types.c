@@ -1321,9 +1321,6 @@ static void mf_flat(adns_query qu, void *data) { }
 
 #define TYPESZ_M(member)           (sizeof(*((adns_answer*)0)->rrs.member))
 
-#define DEEP_MEMB(memb) TYPESZ_M(memb), mf_##memb, cs_##memb
-#define FLAT_MEMB(memb) TYPESZ_M(memb), mf_flat, cs_##memb
-
 #define DEEP_TYPE(code,rrt,fmt,memb,parser,comparer,printer)	\
  { adns_r_##code, rrt,fmt,TYPESZ_M(memb), mf_##memb,		\
       printer,parser,comparer, adns__qdpl_normal,0 }
