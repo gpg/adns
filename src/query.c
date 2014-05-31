@@ -108,21 +108,67 @@ static void query_submit(adns_state ads, adns_query qu,
   adns__query_send(qu,now);
 }
 
+adns_status adns__ckl_hostname(adns_state ads, adns_queryflags flags,
+			       union checklabel_state *cls,
+			       qcontext *ctx, int labnum,
+			       const char *label, int lablen)
+{
+  int i, c;
+
+  if (flags & adns_qf_quoteok_query) return adns_s_ok;
+  for (i=0; i<lablen; i++) {
+    c= label[i];
+    if (c == '-') {
+      if (!i) return adns_s_querydomaininvalid;
+    } else if (!ctype_alpha(c) && !ctype_digit(c)) {
+      return adns_s_querydomaininvalid;
+    }
+  }
+  return adns_s_ok;
+}
+
+static adns_status check_domain_name(adns_state ads, adns_queryflags flags,
+				     qcontext *ctx, const typeinfo *typei,
+				     const byte *dgram, int dglen)
+{
+  findlabel_state fls;
+  adns_status err;
+  int labnum= 0, labstart, lablen;
+  union checklabel_state cls;
+
+  adns__findlabel_start(&fls,ads, -1,0, dgram,dglen,dglen, DNS_HDRSIZE,0);
+  do {
+    err= adns__findlabel_next(&fls, &lablen,&labstart);
+    assert(!err); assert(lablen >= 0);
+    err= typei->checklabel(ads,flags, &cls,ctx,
+			   labnum++, dgram+labstart,lablen);
+    if (err) return err;
+  } while (lablen);
+  return adns_s_ok;
+}
+
 adns_status adns__internal_submit(adns_state ads, adns_query *query_r,
 				  const typeinfo *typei, vbuf *qumsg_vb,
 				  int id,
 				  adns_queryflags flags, struct timeval now,
 				  qcontext *ctx) {
   adns_query qu;
+  adns_status err;
 
+  err= check_domain_name(ads, flags,ctx,typei, qumsg_vb->buf,qumsg_vb->used);
+  if (err) goto x_err;
   qu= query_alloc(ads,typei,typei->typekey,flags,now);
-  if (!qu) { adns__vbuf_free(qumsg_vb); return adns_s_nomemory; }
+  if (!qu) { err = adns_s_nomemory; goto x_err; }
   *query_r= qu;
 
   memcpy(&qu->ctx,ctx,sizeof(qu->ctx));
   query_submit(ads,qu, typei,qumsg_vb,id,flags,now);
   
   return adns_s_ok;
+
+x_err:
+  adns__vbuf_free(qumsg_vb);
+  return err;
 }
 
 static void query_simple(adns_state ads, adns_query qu,
@@ -144,6 +190,9 @@ static void query_simple(adns_state ads, adns_query qu,
       return;
     }
   }
+
+  stat= check_domain_name(ads, flags,&qu->ctx,typei, qu->vb.buf,qu->vb.used);
+  if (stat) { adns__query_fail(qu,stat); return; }
 
   vb_new= qu->vb;
   adns__vbuf_init(&qu->vb);

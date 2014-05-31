@@ -65,13 +65,13 @@
  * _mailbox                   (pap,csp +pap_mailbox822)
  * _rp                        (pa,cs)
  * _soa                       (pa,mf,cs)
- * _srv*                      (qdpl,(pap),pa*2,mf*2,di,(csp),cs*2,postsort)
+ * _srv*                      (ckl,(pap),pa*2,mf*2,di,(csp),cs*2,postsort)
  * _byteblock                 (mf)
  * _opaque                    (pa,cs)
  * _flat                      (mf)
  *
  * within each section:
- *    qdpl_*
+ *    ckl_*
  *    pap_*
  *    pa_*
  *    dip_*
@@ -1010,36 +1010,17 @@ static adns_status cs_soa(vbuf *vb, const void *datap) {
 }
 
 /*
- * _srv*  (qdpl,(pap),pa*2,mf*2,di,(csp),cs*2,postsort)
+ * _srv*  (ckl,(pap),pa*2,mf*2,di,(csp),cs*2,postsort)
  */
 
-static adns_status qdpl_srv(adns_state ads,
-			    const char **p_io, const char *pe, int labelnum,
-			    char label_r[DNS_MAXDOMAIN], int *ll_io,
-			    adns_queryflags flags,
-			    const typeinfo *typei) {
-  int useflags;
-  const char *p_orig;
-  adns_status st;
-
-  if (labelnum < 2 && !(flags & adns_qf_quoteok_query)) {
-    useflags= adns_qf_quoteok_query;
-    p_orig= *p_io;
-  } else {
-    useflags= flags;
-    p_orig= 0;
+static adns_status ckl_srv(adns_state ads, adns_queryflags flags,
+			   union checklabel_state *cls, qcontext *ctx,
+			   int labnum, const char *label, int lablen) {
+  if (labnum < 2 && !(flags & adns_qf_quoteok_query)) {
+    if (!lablen || label[0] != '_') return adns_s_querydomaininvalid;
+    return adns_s_ok;
   }
-  st= adns__qdpl_normal(ads, p_io,pe, labelnum,label_r, ll_io, useflags,typei);
-  if (st) return st;
-
-  if (p_orig) {
-    int ll= *ll_io;
-    if (!ll || label_r[0]!='_')
-      return adns_s_querydomaininvalid;
-    if (memchr(p_orig+1, '\\', pe - (p_orig+1)))
-      return adns_s_querydomaininvalid;
-  }
-  return adns_s_ok;
+  return adns__ckl_hostname(ads, flags, cls, ctx, labnum, label, lablen);
 }
 
 static adns_status pap_srv_begin(const parseinfo *pai, int *cbyte_io, int max,
@@ -1253,11 +1234,11 @@ static void mf_flat(adns_query qu, void *data) { }
 #define DEEP_TYPE(code,rrt,fmt,memb,parser,comparer,/*printer*/...)	\
  { adns_r_##code, rrt,fmt,TYPESZ_M(memb), mf_##memb,			\
      GLUE(cs_, CAR(__VA_ARGS__)),pa_##parser,di_##comparer,		\
-     adns__qdpl_normal, CDR(__VA_ARGS__) }
+     adns__ckl_hostname, CDR(__VA_ARGS__) }
 #define FLAT_TYPE(code,rrt,fmt,memb,parser,comparer,/*printer*/...)	\
  { adns_r_##code, rrt,fmt,TYPESZ_M(memb), mf_flat,			\
      GLUE(cs_, CAR(__VA_ARGS__)),pa_##parser,di_##comparer,		\
-     adns__qdpl_normal, CDR(__VA_ARGS__) }
+     adns__ckl_hostname, CDR(__VA_ARGS__) }
 
 #define di_0 0
 
@@ -1275,14 +1256,14 @@ DEEP_TYPE(mx_raw, "MX",   "raw",intstr,    mx_raw,  mx_raw,inthost         ),
 DEEP_TYPE(txt,    "TXT",   0,   manyistr,  txt,     0,     txt             ),
 DEEP_TYPE(rp_raw, "RP",   "raw",strpair,   rp,      0,     rp              ),
 DEEP_TYPE(srv_raw,"SRV",  "raw",srvraw ,   srvraw,  srv,   srvraw,
-			   .qdparselabel= qdpl_srv, .postsort= postsort_srv),
+			      .checklabel= ckl_srv, .postsort= postsort_srv),
 
 FLAT_TYPE(addr,   "A",  "addr", addr,      addr,    addr,  addr            ),
 DEEP_TYPE(ns,     "NS", "+addr",hostaddr,  hostaddr,hostaddr,hostaddr      ),
 DEEP_TYPE(ptr,    "PTR","checked",str,     ptr,     0,     domain          ),
 DEEP_TYPE(mx,     "MX", "+addr",inthostaddr,mx,     mx,    inthostaddr,    ),
 DEEP_TYPE(srv,    "SRV","+addr",srvha,     srvha,   srv,   srvha,
-			   .qdparselabel= qdpl_srv, .postsort= postsort_srv),
+			      .checklabel= ckl_srv, .postsort= postsort_srv),
 
 DEEP_TYPE(soa,    "SOA","822",  soa,       soa,     0,     soa             ),
 DEEP_TYPE(rp,     "RP", "822",  strpair,   rp,      0,     rp              ),

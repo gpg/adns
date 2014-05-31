@@ -124,6 +124,10 @@ typedef struct {
   struct timeval now;
 } parseinfo;
 
+union checklabel_state {
+  int dummy;
+};
+
 typedef struct {
   void *ext;
   void (*callback)(adns_query parent, adns_query child);
@@ -173,16 +177,17 @@ typedef struct typeinfo {
    * 0 otherwise.  Must not fail.
    */
 
-  adns_status (*qdparselabel)(adns_state ads,
-			      const char **p_io, const char *pe, int labelnum,
-			      char label_r[DNS_MAXDOMAIN], int *ll_io,
-			      adns_queryflags flags,
-			      const struct typeinfo *typei);
-  /* Parses one label from the query domain string.  On entry, *p_io
-   * points to the next character to parse and *ll_io is the size of
-   * the buffer.  pe points just after the end of the query domain
-   * string.  On successful return, label_r[] and *ll_io are filled in
-   * and *p_io points to *pe or just after the label-ending `.'.  */
+  adns_status (*checklabel)(adns_state ads, adns_queryflags flags,
+			    union checklabel_state *cls, qcontext *ctx,
+			    int labnum, const char *label, int lablen);
+  /* Check a label from the query domain string.  The label is not
+   * necessarily null-terminated.  The hook can refuse the query's submission
+   * by returning a nonzero status.  State can be stored in *cls between
+   * calls, and useful information can be stashed in ctx->tinfo, to be stored
+   * with the query (e.g., it will be available to the parse hook).  This
+   * hook can detect a first call because labnum is zero, and a final call
+   * because lablen is zero.
+   */
 
   void (*postsort)(adns_state ads, void *array, int nrrs,
 		   const struct typeinfo *typei);
@@ -192,13 +197,13 @@ typedef struct typeinfo {
    */
 } typeinfo;
 
-adns_status adns__qdpl_normal(adns_state ads,
-			      const char **p_io, const char *pe, int labelnum,
-			      char label_r[], int *ll_io,
-			      adns_queryflags flags,
-			      const typeinfo *typei);
-  /* implemented in transmit.c, used by types.c as default
-   * and as part of implementation for some fancier types */
+adns_status adns__ckl_hostname(adns_state ads, adns_queryflags flags,
+			       union checklabel_state *cls,
+			       qcontext *ctx, int labnum,
+			       const char *label, int lablen);
+  /* implemented in query.c, used by types.c as default
+   * and as part of implementation for some fancier types
+   * doesn't require any state */
 
 typedef struct allocnode {
   struct allocnode *next, *back;
