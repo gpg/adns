@@ -1250,45 +1250,46 @@ static void mf_flat(adns_query qu, void *data) { }
 
 #define TYPESZ_M(member)           (sizeof(*((adns_answer*)0)->rrs.member))
 
-#define DEEP_TYPE(code,rrt,fmt,memb,parser,comparer,printer)	\
- { adns_r_##code, rrt,fmt,TYPESZ_M(memb), mf_##memb,		\
-      printer,parser,comparer, adns__qdpl_normal,0 }
-#define FLAT_TYPE(code,rrt,fmt,memb,parser,comparer,printer)	\
- { adns_r_##code, rrt,fmt,TYPESZ_M(memb), mf_flat,		\
-     printer,parser,comparer, adns__qdpl_normal,0 }
-#define XTRA_TYPE(code,rrt,fmt,memb,parser,comparer,printer,qdpl,postsort) \
- { adns_r_##code, rrt,fmt,TYPESZ_M(memb), mf_##memb,			   \
-    printer,parser,comparer,qdpl,postsort }
+#define DEEP_TYPE(code,rrt,fmt,memb,parser,comparer,/*printer*/...)	\
+ { adns_r_##code, rrt,fmt,TYPESZ_M(memb), mf_##memb,			\
+     GLUE(cs_, CAR(__VA_ARGS__)),pa_##parser,di_##comparer,		\
+     adns__qdpl_normal, CDR(__VA_ARGS__) }
+#define FLAT_TYPE(code,rrt,fmt,memb,parser,comparer,/*printer*/...)	\
+ { adns_r_##code, rrt,fmt,TYPESZ_M(memb), mf_flat,			\
+     GLUE(cs_, CAR(__VA_ARGS__)),pa_##parser,di_##comparer,		\
+     adns__qdpl_normal, CDR(__VA_ARGS__) }
+
+#define di_0 0
 
 static const typeinfo typeinfos[] = {
 /* Must be in ascending order of rrtype ! */
 /* mem-mgmt code  rrt     fmt   member   parser      comparer  printer */
 
-FLAT_TYPE(a,      "A",     0,   inaddr,  pa_inaddr,  di_inaddr,cs_inaddr     ),
-DEEP_TYPE(ns_raw, "NS",   "raw",str,     pa_host_raw,0,        cs_domain     ),
-DEEP_TYPE(cname,  "CNAME", 0,   str,     pa_dom_raw, 0,        cs_domain     ),
-DEEP_TYPE(soa_raw,"SOA",  "raw",soa,     pa_soa,     0,        cs_soa        ),
-DEEP_TYPE(ptr_raw,"PTR",  "raw",str,     pa_host_raw,0,        cs_domain     ),
-DEEP_TYPE(hinfo,  "HINFO", 0, intstrpair,pa_hinfo,   0,        cs_hinfo      ),
-DEEP_TYPE(mx_raw, "MX",   "raw",intstr,  pa_mx_raw,  di_mx_raw,cs_inthost    ),
-DEEP_TYPE(txt,    "TXT",   0,   manyistr,pa_txt,     0,        cs_txt        ),
-DEEP_TYPE(rp_raw, "RP",   "raw",strpair, pa_rp,      0,        cs_rp         ),
-XTRA_TYPE(srv_raw,"SRV",  "raw",srvraw , pa_srvraw,  di_srv,   cs_srvraw,
-	                                               qdpl_srv, postsort_srv),
+FLAT_TYPE(a,      "A",     0,   inaddr,    inaddr,  inaddr,inaddr          ),
+DEEP_TYPE(ns_raw, "NS",   "raw",str,       host_raw,0,     domain          ),
+DEEP_TYPE(cname,  "CNAME", 0,   str,       dom_raw, 0,     domain          ),
+DEEP_TYPE(soa_raw,"SOA",  "raw",soa,       soa,     0,     soa             ),
+DEEP_TYPE(ptr_raw,"PTR",  "raw",str,       host_raw,0,     domain          ),
+DEEP_TYPE(hinfo,  "HINFO", 0,   intstrpair,hinfo,   0,     hinfo           ),
+DEEP_TYPE(mx_raw, "MX",   "raw",intstr,    mx_raw,  mx_raw,inthost         ),
+DEEP_TYPE(txt,    "TXT",   0,   manyistr,  txt,     0,     txt             ),
+DEEP_TYPE(rp_raw, "RP",   "raw",strpair,   rp,      0,     rp              ),
+DEEP_TYPE(srv_raw,"SRV",  "raw",srvraw ,   srvraw,  srv,   srvraw,
+			   .qdparselabel= qdpl_srv, .postsort= postsort_srv),
 
-FLAT_TYPE(addr,   "A",  "addr", addr,    pa_addr,    di_addr,  cs_addr       ),
-DEEP_TYPE(ns,     "NS", "+addr",hostaddr,pa_hostaddr,di_hostaddr,cs_hostaddr ),
-DEEP_TYPE(ptr,    "PTR","checked",str,   pa_ptr,     0,        cs_domain     ),
-DEEP_TYPE(mx,     "MX", "+addr",inthostaddr,pa_mx,   di_mx,    cs_inthostaddr),
-XTRA_TYPE(srv,    "SRV","+addr",srvha,   pa_srvha,   di_srv,   cs_srvha,
-          	                                       qdpl_srv, postsort_srv),
+FLAT_TYPE(addr,   "A",  "addr", addr,      addr,    addr,  addr            ),
+DEEP_TYPE(ns,     "NS", "+addr",hostaddr,  hostaddr,hostaddr,hostaddr      ),
+DEEP_TYPE(ptr,    "PTR","checked",str,     ptr,     0,     domain          ),
+DEEP_TYPE(mx,     "MX", "+addr",inthostaddr,mx,     mx,    inthostaddr,    ),
+DEEP_TYPE(srv,    "SRV","+addr",srvha,     srvha,   srv,   srvha,
+			   .qdparselabel= qdpl_srv, .postsort= postsort_srv),
 
-DEEP_TYPE(soa,    "SOA","822",  soa,     pa_soa,     0,        cs_soa        ),
-DEEP_TYPE(rp,     "RP", "822",  strpair, pa_rp,      0,        cs_rp         ),
+DEEP_TYPE(soa,    "SOA","822",  soa,       soa,     0,     soa             ),
+DEEP_TYPE(rp,     "RP", "822",  strpair,   rp,      0,     rp              ),
 };
 
 static const typeinfo typeinfo_unknown=
-DEEP_TYPE(unknown,0, "unknown",byteblock,pa_opaque,  0,        cs_opaque     );
+DEEP_TYPE(unknown,0, "unknown",byteblock,opaque,  0,     opaque            );
 
 const typeinfo *adns__findtype(adns_rrtype type) {
   const typeinfo *begin, *end, *mid;

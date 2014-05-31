@@ -72,6 +72,27 @@ typedef unsigned char byte;
 
 #define MAX_POLLFDS  ADNS_POLLFDS_RECOMMENDED
 
+/* Some preprocessor hackery */
+
+#define GLUE(x, y) GLUE_(x, y)
+#define GLUE_(x, y) x##y
+
+/* C99 macro `...' must match at least one argument, so the naive definition
+ * `#define CAR(car, ...) car' won't work.  But it's easy to arrange for the
+ * tail to be nonempty if we're just going to discard it anyway. */
+#define CAR(...) CAR_(__VA_ARGS__, _)
+#define CAR_(car, ...) car
+
+/* Extracting the tail of an argument list is rather more difficult.  The
+ * following trick is based on one by Laurent Deniau to count the number of
+ * arguments to a macro, simplified in two ways: (a) it only handles up to
+ * eight arguments, and (b) it only needs to distinguish the one-argument
+ * case from many arguments. */
+#define CDR(...) CDR_(__VA_ARGS__, m, m, m, m, m, m, m, 1, _)(__VA_ARGS__)
+#define CDR_(_1, _2, _3, _4, _5, _6, _7, _8, n, ...) CDR_##n
+#define CDR_1(_)
+#define CDR_m(_, ...) __VA_ARGS__
+
 typedef enum {
   cc_user,
   cc_entex,
