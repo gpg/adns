@@ -133,7 +133,9 @@ typedef struct {
   void (*callback)(adns_query parent, adns_query child);
 
   union {
-    adns_rr_addr ptr_addr;
+    struct {
+      struct in_addr addr;
+    } ptr;
   } tinfo; /* type-specific state for the query itself: zero-init if you
 	    * don't know better. */
 

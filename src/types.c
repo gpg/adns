@@ -711,7 +711,6 @@ static adns_status ckl_ptr(adns_state ads, adns_queryflags flags,
 			   union checklabel_state *cls, qcontext *ctx,
 			   int labnum, const char *label, int lablen) {
   static const char *const (expectdomain[])= { DNS_INADDR_ARPA };
-  adns_rr_addr *ap;
   char *ep;
   const char *ed;
   char labbuf[4];
@@ -730,11 +729,7 @@ static adns_status ckl_ptr(adns_state ads, adns_queryflags flags,
     if (lablen != l || memcmp(label, ed, l)) return adns_s_querydomainwrong;
   } else {
     if (lablen) return adns_s_querydomainwrong;
-    ap= &ctx->tinfo.ptr_addr;
-    ap->len= sizeof(struct sockaddr_in);
-    memset(&ap->addr,0,sizeof(ap->addr.inet));
-    ap->addr.inet.sin_family= AF_INET;
-    ap->addr.inet.sin_addr.s_addr=
+    ctx->tinfo.ptr.addr.s_addr=
       htonl((cls->ptr.ipv[0]<<24) | (cls->ptr.ipv[1]<<16) |
 	    (cls->ptr.ipv[2]<< 8) | (cls->ptr.ipv[3]));
   }
@@ -743,7 +738,8 @@ static adns_status ckl_ptr(adns_state ads, adns_queryflags flags,
 
 static void icb_ptr(adns_query parent, adns_query child) {
   adns_answer *cans= child->answer;
-  const adns_rr_addr *queried, *found;
+  const struct in_addr *queried;
+  const unsigned char *found;
   adns_state ads= parent->ads;
   int i;
 
@@ -755,10 +751,9 @@ static void icb_ptr(adns_query parent, adns_query child) {
     return;
   }
 
-  queried= &parent->ctx.tinfo.ptr_addr;
-  for (i=0, found=cans->rrs.addr; i<cans->nrrs; i++, found++) {
-    if (queried->len == found->len &&
-	!memcmp(&queried->addr,&found->addr,queried->len)) {
+  queried= &parent->ctx.tinfo.ptr.addr;
+  for (i=0, found=cans->rrs.bytes; i<cans->nrrs; i++, found+=cans->rrsz) {
+    if (!memcmp(queried,found,cans->rrsz)) {
       if (!parent->children.head) {
 	adns__query_done(parent);
 	return;
@@ -788,14 +783,14 @@ static adns_status pa_ptr(const parseinfo *pai, int dmstart,
 
   st= adns__mkquery_frdgram(pai->ads, &pai->qu->vb, &id,
 			    pai->dgram, pai->dglen, dmstart,
-			    adns_r_addr, adns_qf_quoteok_query);
+			    adns_r_a, adns_qf_quoteok_query);
   if (st) return st;
 
   ctx.ext= 0;
   ctx.callback= icb_ptr;
   memset(&ctx.pinfo,0,sizeof(ctx.pinfo));
   memset(&ctx.tinfo,0,sizeof(ctx.tinfo));
-  st= adns__internal_submit(pai->ads, &nqu, adns__findtype(adns_r_addr),
+  st= adns__internal_submit(pai->ads, &nqu, adns__findtype(adns_r_a),
 			    &pai->qu->vb, id,
 			    adns_qf_quoteok_query, pai->now, &ctx);
   if (st) return st;
