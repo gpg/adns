@@ -48,7 +48,7 @@
  * _manyistr                  (mf,cs)
  * _txt                       (pa)
  * _inaddr                    (pa,dip,di,cs +search_sortlist)
- * _addr                      (pa,di,div,csp,cs)
+ * _addr                      (pa,di,div,csp,cs,gsz)
  * _domain                    (pap,csp,cs)
  * _dom_raw		      (pa)
  * _host_raw                  (pa)
@@ -80,6 +80,7 @@
  *    mf_*
  *    csp_*
  *    cs_*
+ *    gsz_*
  *    postsort_*
  */
 
@@ -292,7 +293,7 @@ static adns_status cs_inaddr(vbuf *vb, const void *datap) {
 }
 
 /*
- * _addr   (pa,di,div,csp,cs)
+ * _addr   (pa,di,div,csp,cs,gsz)
  */
 
 static adns_status pa_addr(const parseinfo *pai, int cbyte,
@@ -343,6 +344,11 @@ static adns_status cs_addr(vbuf *vb, const void *datap) {
   const adns_rr_addr *rrp= datap;
 
   return csp_addr(vb,rrp);
+}
+
+static int gsz_addr(const typeinfo *typei, adns_rrtype type) {
+  return type & adns__qtf_bigaddr ?
+    sizeof(adns_rr_addr) : sizeof(adns_rr_addr_v4only);
 }
 
 /*
@@ -415,6 +421,7 @@ static adns_status pa_host_raw(const parseinfo *pai, int cbyte,
  */
 
 static adns_status pap_findaddrs(const parseinfo *pai, adns_rr_hostaddr *ha,
+				 size_t addrsz,
 				 int *cbyte_io, int count, int dmstart) {
   int rri, naddrs;
   int type, class, rdlen, rdstart, ownermatched;
@@ -433,22 +440,21 @@ static adns_status pap_findaddrs(const parseinfo *pai, adns_rr_hostaddr *ha,
     if (naddrs == -1) {
       naddrs= 0;
     }
-    if (!adns__vbuf_ensure(&pai->qu->vb, (naddrs+1)*sizeof(adns_rr_addr)))
+    if (!adns__vbuf_ensure(&pai->qu->vb, (naddrs+1)*addrsz))
       R_NOMEM;
     adns__update_expires(pai->qu,ttl,pai->now);
-    st= pa_addr(pai, rdstart,rdstart+rdlen,
-		pai->qu->vb.buf + naddrs*sizeof(adns_rr_addr));
+    st= pa_addr(pai, rdstart,rdstart+rdlen, pai->qu->vb.buf + naddrs*addrsz);
     if (st) return st;
     naddrs++;
   }
   if (naddrs >= 0) {
-    ha->addrs= adns__alloc_interim(pai->qu, naddrs*sizeof(adns_rr_addr));
+    ha->addrs= adns__alloc_interim(pai->qu, naddrs*addrsz);
     if (!ha->addrs) R_NOMEM;
-    memcpy(ha->addrs, pai->qu->vb.buf, naddrs*sizeof(adns_rr_addr));
+    memcpy(ha->addrs, pai->qu->vb.buf, naddrs*addrsz);
     ha->naddrs= naddrs;
     ha->astatus= adns_s_ok;
 
-    adns__isort(ha->addrs, naddrs, sizeof(adns_rr_addr), pai->qu->vb.buf,
+    adns__isort(ha->addrs, naddrs, addrsz, pai->qu->vb.buf,
 		div_addr, pai->ads);
   }
   return adns_s_ok;
@@ -459,13 +465,13 @@ static void icb_hostaddr(adns_query parent, adns_query child) {
   adns_rr_hostaddr *rrp= child->ctx.pinfo.hostaddr;
   adns_state ads= parent->ads;
   adns_status st;
+  size_t addrsz= gsz_addr(0, parent->answer->type);
 
   st= cans->status;
   rrp->astatus= st;
   rrp->naddrs= (st>0 && st<=adns_s_max_tempfail) ? -1 : cans->nrrs;
   rrp->addrs= cans->rrs.addr;
-  adns__transfer_interim(child, parent, rrp->addrs,
-			 rrp->naddrs*sizeof(adns_rr_addr));
+  adns__transfer_interim(child, parent, rrp->addrs, rrp->naddrs*addrsz);
 
   if (parent->children.head) {
     LIST_LINK_TAIL(ads->childw,parent);
@@ -482,6 +488,7 @@ static adns_status pap_hostaddr(const parseinfo *pai, int *cbyte_io,
   int id;
   adns_query nqu;
   adns_queryflags nflags;
+  size_t addrsz= gsz_addr(0, pai->qu->answer->type);
 
   dmstart= cbyte= *cbyte_io;
   st= pap_domain(pai, &cbyte, max, &rrp->host,
@@ -495,11 +502,11 @@ static adns_status pap_hostaddr(const parseinfo *pai, int *cbyte_io,
 
   cbyte= pai->nsstart;
 
-  st= pap_findaddrs(pai, rrp, &cbyte, pai->nscount, dmstart);
+  st= pap_findaddrs(pai, rrp,addrsz, &cbyte, pai->nscount, dmstart);
   if (st) return st;
   if (rrp->naddrs != -1) return adns_s_ok;
 
-  st= pap_findaddrs(pai, rrp, &cbyte, pai->arcount, dmstart);
+  st= pap_findaddrs(pai, rrp,addrsz, &cbyte, pai->arcount, dmstart);
   if (st) return st;
   if (rrp->naddrs != -1) return adns_s_ok;
 
@@ -561,10 +568,11 @@ static int di_hostaddr(adns_state ads,
 
 static void mfp_hostaddr(adns_query qu, adns_rr_hostaddr *rrp) {
   void *tablev;
+  size_t addrsz= gsz_addr(0, qu->answer->type);
 
   adns__makefinal_str(qu,&rrp->host);
   tablev= rrp->addrs;
-  adns__makefinal_block(qu, &tablev, rrp->naddrs*sizeof(*rrp->addrs));
+  adns__makefinal_block(qu, &tablev, rrp->naddrs*addrsz);
   rrp->addrs= tablev;
 }
 
@@ -1251,7 +1259,8 @@ DEEP_TYPE(rp_raw, "RP",   "raw",strpair,   rp,      0,     rp              ),
 DEEP_TYPE(srv_raw,"SRV",  "raw",srvraw ,   srvraw,  srv,   srvraw,
 			      .checklabel= ckl_srv, .postsort= postsort_srv),
 
-FLAT_TYPE(addr,   "A",  "addr", addr,      addr,    addr,  addr            ),
+FLAT_TYPE(addr,   "A",  "addr", addr,      addr,    addr,  addr,
+							 .getrrsz= gsz_addr),
 DEEP_TYPE(ns,     "NS", "+addr",hostaddr,  hostaddr,hostaddr,hostaddr      ),
 DEEP_TYPE(ptr,    "PTR","checked",str,     ptr,     0,     domain,
 						       .checklabel= ckl_ptr),

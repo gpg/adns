@@ -107,8 +107,13 @@ typedef enum { /* In general, or together the desired flags: */
 typedef enum {
  adns_rrt_typemask=  0x0ffff,
  adns_rrt_reprmask= 0xffffff,
- adns__qtf_deref=    0x10000,/* dereference domains; perhaps get extra data */
+ adns__qtf_deref_bit=0x10000,/* internal version of ..._deref below */
  adns__qtf_mail822=  0x20000,/* return mailboxes in RFC822 rcpt field fmt   */
+
+ adns__qtf_bigaddr=0x1000000,/* use the new larger sockaddr union */
+
+ adns__qtf_deref=    adns__qtf_deref_bit|adns__qtf_bigaddr
+			    ,/* dereference domains; perhaps get extra data */
 
  adns_r_unknown=     0x40000,
    /* To use this, ask for records of type   <rr-type-code>|adns_r_unknown.
@@ -283,13 +288,28 @@ typedef enum {
  
 } adns_status;
 
+typedef union {
+  struct sockaddr sa;
+  struct sockaddr_in inet;
+} adns_sockaddr_v4only;
+
+typedef union {
+  struct sockaddr sa;
+  struct sockaddr_in inet;
+  struct sockaddr_in6 inet6;
+} adns_sockaddr;
+
 typedef struct {
   int len;
-  union {
-    struct sockaddr sa;
-    struct sockaddr_in inet;
-  } addr;
+  adns_sockaddr addr;
 } adns_rr_addr;
+
+typedef struct {
+  /* the old v4-only structure; handy if you have complicated binary
+   * compatibility problems. */
+  int len;
+  adns_sockaddr_v4only addr;
+} adns_rr_addr_v4only;
 
 typedef struct {
   char *host;
