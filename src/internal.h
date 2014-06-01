@@ -125,7 +125,7 @@ typedef struct {
 } parseinfo;
 
 union checklabel_state {
-  int dummy;
+  struct { byte ipv[4]; } ptr;
 };
 
 typedef struct {

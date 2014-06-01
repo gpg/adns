@@ -58,7 +58,7 @@
  * _mx                        (pa,di)
  * _inthostaddr               (mf,cs)
  * _inthost		      (cs)
- * _ptr                       (pa)
+ * _ptr                       (ckl,pa +icb_ptr)
  * _strpair                   (mf)
  * _intstrpair                (mf)
  * _hinfo                     (pa)
@@ -704,8 +704,42 @@ static adns_status cs_inthost(vbuf *vb, const void *datap) {
 }
 
 /*
- * _ptr   (pa, +icb_ptr)
+ * _ptr   (ckl,pa +icb_ptr)
  */
+
+static adns_status ckl_ptr(adns_state ads, adns_queryflags flags,
+			   union checklabel_state *cls, qcontext *ctx,
+			   int labnum, const char *label, int lablen) {
+  static const char *const (expectdomain[])= { DNS_INADDR_ARPA };
+  adns_rr_addr *ap;
+  char *ep;
+  const char *ed;
+  char labbuf[4];
+  int l;
+
+  if (labnum < 4) {
+    if (lablen<=0 || lablen>3) return adns_s_querydomainwrong;
+    memcpy(labbuf, label, lablen);
+    labbuf[lablen]= 0;
+    cls->ptr.ipv[3-labnum]= strtoul(labbuf,&ep,10);
+    if (*ep) return adns_s_querydomainwrong;
+    if (lablen>1 && *label=='0') return adns_s_querydomainwrong;
+  } else if (labnum < 4 + sizeof(expectdomain)/sizeof(*expectdomain)) {
+    ed= expectdomain[labnum-4];
+    l= strlen(ed);
+    if (lablen != l || memcmp(label, ed, l)) return adns_s_querydomainwrong;
+  } else {
+    if (lablen) return adns_s_querydomainwrong;
+    ap= &ctx->tinfo.ptr_addr;
+    ap->len= sizeof(struct sockaddr_in);
+    memset(&ap->addr,0,sizeof(ap->addr.inet));
+    ap->addr.inet.sin_family= AF_INET;
+    ap->addr.inet.sin_addr.s_addr=
+      htonl((cls->ptr.ipv[0]<<24) | (cls->ptr.ipv[1]<<16) |
+	    (cls->ptr.ipv[2]<< 8) | (cls->ptr.ipv[3]));
+  }
+  return adns_s_ok;
+}
 
 static void icb_ptr(adns_query parent, adns_query child) {
   adns_answer *cans= child->answer;
@@ -740,16 +774,9 @@ static void icb_ptr(adns_query parent, adns_query child) {
 
 static adns_status pa_ptr(const parseinfo *pai, int dmstart,
 			  int max, void *datap) {
-  static const char *const (expectdomain[])= { DNS_INADDR_ARPA };
-  
   char **rrp= datap;
   adns_status st;
-  adns_rr_addr *ap;
-  findlabel_state fls;
-  char *ep;
-  byte ipv[4];
-  char labbuf[4];
-  int cbyte, i, lablen, labstart, l, id;
+  int cbyte, id;
   adns_query nqu;
   qcontext ctx;
 
@@ -758,38 +785,6 @@ static adns_status pa_ptr(const parseinfo *pai, int dmstart,
 		 pai->qu->flags & adns_qf_quoteok_anshost ? pdf_quoteok : 0);
   if (st) return st;
   if (cbyte != max) return adns_s_invaliddata;
-
-  ap= &pai->qu->ctx.tinfo.ptr_addr;
-  if (!ap->len) {
-    adns__findlabel_start(&fls, pai->ads, -1, pai->qu,
-			  pai->qu->query_dgram, pai->qu->query_dglen,
-			  pai->qu->query_dglen, DNS_HDRSIZE, 0);
-    for (i=0; i<4; i++) {
-      st= adns__findlabel_next(&fls,&lablen,&labstart); assert(!st);
-      if (lablen<=0 || lablen>3) return adns_s_querydomainwrong;
-      memcpy(labbuf, pai->qu->query_dgram + labstart, lablen);
-      labbuf[lablen]= 0;
-      ipv[3-i]= strtoul(labbuf,&ep,10);
-      if (*ep) return adns_s_querydomainwrong;
-      if (lablen>1 && pai->qu->query_dgram[labstart]=='0')
-	return adns_s_querydomainwrong;
-    }
-    for (i=0; i<sizeof(expectdomain)/sizeof(*expectdomain); i++) {
-      st= adns__findlabel_next(&fls,&lablen,&labstart); assert(!st);
-      l= strlen(expectdomain[i]);
-      if (lablen != l ||
-	  memcmp(pai->qu->query_dgram + labstart, expectdomain[i], l))
-	return adns_s_querydomainwrong;
-    }
-    st= adns__findlabel_next(&fls,&lablen,0); assert(!st);
-    if (lablen) return adns_s_querydomainwrong;
-    
-    ap->len= sizeof(struct sockaddr_in);
-    memset(&ap->addr,0,sizeof(ap->addr.inet));
-    ap->addr.inet.sin_family= AF_INET;
-    ap->addr.inet.sin_addr.s_addr=
-      htonl((ipv[0]<<24) | (ipv[1]<<16) | (ipv[2]<<8) | (ipv[3]));
-  }
 
   st= adns__mkquery_frdgram(pai->ads, &pai->qu->vb, &id,
 			    pai->dgram, pai->dglen, dmstart,
@@ -1260,7 +1255,8 @@ DEEP_TYPE(srv_raw,"SRV",  "raw",srvraw ,   srvraw,  srv,   srvraw,
 
 FLAT_TYPE(addr,   "A",  "addr", addr,      addr,    addr,  addr            ),
 DEEP_TYPE(ns,     "NS", "+addr",hostaddr,  hostaddr,hostaddr,hostaddr      ),
-DEEP_TYPE(ptr,    "PTR","checked",str,     ptr,     0,     domain          ),
+DEEP_TYPE(ptr,    "PTR","checked",str,     ptr,     0,     domain,
+						       .checklabel= ckl_ptr),
 DEEP_TYPE(mx,     "MX", "+addr",inthostaddr,mx,     mx,    inthostaddr,    ),
 DEEP_TYPE(srv,    "SRV","+addr",srvha,     srvha,   srv,   srvha,
 			      .checklabel= ckl_srv, .postsort= postsort_srv),
