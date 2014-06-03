@@ -27,7 +27,7 @@ PROGS_SYSDEP=	@PROGS_HAVE_TSEARCH@
 ENABLE_DYNAMIC=	@ENABLE_DYNAMIC@
 
 PROGRAMS=	adnslogres adnsheloex adnshost $(PROGS_SYSDEP)
-PROGRAMS_LOCAL=	fanftest adnstest
+PROGRAMS_LOCAL=	fanftest adnstest addrtext
 PROGRAMS_ALL=	$(PROGRAMS) $(PROGRAMS_LOCAL)
 
 STATIC_LIB=	../src/libadns.a

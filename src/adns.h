@@ -66,6 +66,7 @@
 #include <netinet/in.h>
 #include <sys/time.h>
 #include <unistd.h>
+#include <net/if.h>
 
 #ifdef __cplusplus
 extern "C" { /* I really dislike this - iwj. */
@@ -101,6 +102,9 @@ typedef enum { /* In general, or together the desired flags: */
  adns_qf_quotefail_cname=0x00000080,/* refuse if quote-req chars in CNAME we go via */
  adns_qf_cname_loose=    0x00000100,/* allow refs to CNAMEs - without, get _s_cname */
  adns_qf_cname_forbid=   0x00000200,/* don't follow CNAMEs, instead give _s_cname */
+ adns_qf_addrlit_scope_forbid=0x00002000,/* forbid %<scope> in IPv6 literals */
+ adns_qf_addrlit_scope_numeric=0x00004000,/* %<scope> may only be numeric */
+ adns_qf_addrlit_ipv4_quadonly=0x00008000,/* reject non-dotted-quad ipv4 */
  adns__qf_internalmask=  0x0ff00000
 } adns_queryflags;
 
@@ -631,6 +635,60 @@ void adns_finish(adns_state ads);
  * they will be cancelled.
  */
 
+#define ADNS_ADDR2TEXT_BUFLEN					\
+  (INET6_ADDRSTRLEN + 1/*%*/					\
+  + ((IF_NAMESIZE-1) > 9 ? (IF_NAMESIZE-1) : 9/*uint32*/)	\
+  + 1/* nul; included in IF_NAMESIZE */)
+
+int adns_text2addr(const char *text, uint16_t port, adns_queryflags flags,
+		   struct sockaddr *sa_r,
+		   socklen_t *salen_io /* updated iff OK or ENOSPC */);
+int adns_addr2text(const struct sockaddr *sa, adns_queryflags flags,
+		   char *buffer, int *buflen_io /* updated ONLY on ENOSPC */,
+		   int *port_r /* may be 0 */);
+  /*
+   * port is always in host byte order and is simply copied to and
+   * from the appropriate sockaddr field (byteswapped as necessary).
+   *
+   * The only flags supported are adns_qf_addrlit_...; others are
+   * ignored.
+   *
+   * Error return values are:
+   *
+   *  ENOSPC    Output buffer is too small.  Can only happen if
+   *            *buflen_io < ADNS_ADDR2TEXT_BUFLEN or
+   *            *salen_io < sizeof(adns_sockaddr).  On return,
+   *            *buflen_io or *salen_io has been updated by adns.
+   *
+   *  EINVAL    text has invalid syntax.
+   *
+   *            text represents an address family not supported by
+   *            this version of adns.
+   *
+   *            Scoped address supplied (text contained "%" or
+   *            sin6_scope_id nonzero) but caller specified
+   *            adns_qf_addrlit_scope_forbid.
+   *
+   *            Scope name (rather than number) supplied in text but
+   *            caller specified adns_qf_addrlit_scope_numeric.
+   *
+   *  EAFNOSUPPORT   sa->sa_family is not supported (addr2text only).
+   *
+   * Only if neither adns_qf_addrlit_scope_forbid nor
+   * adns_qf_addrlit_scope_numeric are set:
+   *
+   *  ENOSYS    Scope name supplied in text but IPv6 address part of
+   *            sockaddr is not a link local address.
+   *
+   *  ENXIO     Scope name supplied in text but if_nametoindex
+   *            said it wasn't a valid local interface name.
+   *
+   *  EIO       Scoped address supplied but if_nametoindex failed
+   *            in an unexpected way; adns has printed a message to
+   *            stderr.
+   *
+   *  any other   if_nametoindex failed in a more-or-less expected way.
+   */
 
 void adns_forallqueries_begin(adns_state ads);
 adns_query adns_forallqueries_next(adns_state ads, void **context_r);

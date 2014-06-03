@@ -28,11 +28,15 @@
 #include <errno.h>
 #include <limits.h>
 #include <unistd.h>
+#include <inttypes.h>
+#include <stddef.h>
+#include <stdbool.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <net/if.h>
 
 #include "internal.h"
 
@@ -209,4 +213,233 @@ void adns__sockaddr_inject(const union gen_addr *a, int port,
   default:
     unknown_af(sa->sa_family);
   }
+}
+
+/*
+ * addr2text and text2addr
+ */
+
+#define ADDRFAM_DEBUG
+#ifdef ADDRFAM_DEBUG
+static void af_debug_func(const char *fmt, ...) {
+  int esave= errno;
+  va_list al;
+  va_start(al,fmt);
+  vfprintf(stderr,fmt,al);
+  va_end(al);
+  errno= esave;
+}
+# define af_debug(fmt,...) \
+  (af_debug_func("%s: " fmt "\n", __func__, __VA_ARGS__))
+#else
+# define af_debug(fmt,...) ((void)("" fmt "", __VA_ARGS__))
+#endif
+
+static bool addrtext_our_errno(int e) {
+  return
+    e==EAFNOSUPPORT ||
+    e==EINVAL ||
+    e==ENOSPC ||
+    e==ENOSYS;
+}
+
+static bool addrtext_scope_use_ifname(const struct sockaddr *sa) {
+  const struct in6_addr *in6= &CSIN6(sa)->sin6_addr;
+  return
+    IN6_IS_ADDR_LINKLOCAL(in6) ||
+    IN6_IS_ADDR_MC_LINKLOCAL(in6);
+}
+
+int adns_text2addr(const char *text, uint16_t port, adns_queryflags flags,
+		   struct sockaddr *sa, socklen_t *salen_io) {
+  int af;
+  char copybuf[INET6_ADDRSTRLEN];
+  const char *parse=text;
+  const char *scopestr=0;
+  socklen_t needlen;
+  void *dst;
+  uint16_t *portp;
+
+#define INVAL(how) do{				\
+  af_debug("invalid: %s: `%s'", how, text);	\
+  return EINVAL;				\
+}while(0)
+
+#define AFCORE(INETx,SINx,sinx)			\
+    af= AF_##INETx;				\
+    dst = &SINx(sa)->sinx##_addr;		\
+    portp = &SINx(sa)->sinx##_port;		\
+    needlen= sizeof(*SINx(sa));
+
+  if (!strchr(text, ':')) { /* INET */
+
+    AFCORE(INET,SIN,sin);
+
+  } else { /* INET6 */
+
+    AFCORE(INET6,SIN6,sin6);
+
+    const char *percent= strchr(text, '%');
+    if (percent) {
+      ptrdiff_t lhslen = percent - text;
+      if (lhslen >= INET6_ADDRSTRLEN) INVAL("scoped addr lhs too long");
+      memcpy(copybuf, text, lhslen);
+      copybuf[lhslen]= 0;
+
+      parse= copybuf;
+      scopestr= percent+1;
+
+      af_debug("will parse scoped addr `%s' %% `%s'", parse, scopestr);
+    }
+
+  }
+
+#undef AFCORE
+
+  if (scopestr && (flags & adns_qf_addrlit_scope_forbid))
+    INVAL("scoped addr but _scope_forbid");
+
+  if (*salen_io < needlen) {
+    *salen_io = needlen;
+    return ENOSPC;
+  }
+
+  memset(sa, 0, needlen);
+
+  sa->sa_family= af;
+  *portp = htons(port);
+
+  if (af == AF_INET && !(flags & adns_qf_addrlit_ipv4_quadonly)) {
+    /* we have to use inet_aton to deal with non-dotted-quad literals */
+    int r= inet_aton(parse,&SIN(sa)->sin_addr);
+    if (!r) INVAL("inet_aton rejected");
+  } else {
+    int r= inet_pton(af,parse,dst);
+    if (!r) INVAL("inet_pton rejected");
+    assert(r>0);
+  }
+
+  if (scopestr) {
+    errno=0;
+    char *ep;
+    unsigned long scope= strtoul(scopestr,&ep,10);
+    if (errno==ERANGE) INVAL("numeric scope id too large for unsigned long");
+    assert(!errno);
+    if (!*ep) {
+      if (scope > ~(uint32_t)0)
+	INVAL("numeric scope id too large for uint32_t");
+    } else { /* !!*ep */
+      if (flags & adns_qf_addrlit_scope_numeric)
+	INVAL("non-numeric scope but _scope_numeric");
+      if (!addrtext_scope_use_ifname(sa)) {
+	af_debug("cannot convert non-numeric scope"
+		 " in non-link-local addr `%s'", text);
+	return ENOSYS;
+      }
+      errno= 0;
+      scope= if_nametoindex(scopestr);
+      if (!scope) {
+	/* RFC3493 says "No errors are defined".  It's not clear
+	 * whether that is supposed to mean if_nametoindex "can't
+	 * fail" (other than by the supplied name not being that of an
+	 * interface) which seems unrealistic, or that it conflates
+	 * all its errors together by failing to set errno, or simply
+	 * that they didn't bother to document the errors.
+	 *
+	 * glibc, FreeBSD and OpenBSD all set errno (to ENXIO when
+	 * appropriate).  See Debian bug #749349.
+	 *
+	 * We attempt to deal with this by clearing errno to start
+	 * with, and then perhaps mapping the results. */
+	af_debug("if_nametoindex rejected scope name (errno=%s)",
+		 strerror(errno));
+	if (errno==0) {
+	  return ENXIO;
+	} else if (addrtext_our_errno(errno)) {
+	  /* we use these for other purposes, urgh. */
+	  perror("adns: adns_text2addr: if_nametoindex"
+		 " failed with unexpected error");
+	  return EIO;
+	} else {
+	  return errno;
+	}
+      } else { /* ix>0 */
+	if (scope > ~(uint32_t)0) {
+	  fprintf(stderr,"adns: adns_text2addr: if_nametoindex"
+		  " returned an interface index >=2^32 which will not fit"
+		  " in sockaddr_in6.sin6_scope_id");
+	  return EIO;
+	}
+      }
+    } /* else; !!*ep */
+
+    SIN6(sa)->sin6_scope_id= scope;
+  } /* if (scopestr) */
+
+  *salen_io = needlen;
+  return 0;
+}
+
+int adns_addr2text(const struct sockaddr *sa, adns_queryflags flags,
+		   char *buffer, int *buflen_io, int *port_r) {
+  const void *src;
+  int port;
+
+  if (*buflen_io < ADNS_ADDR2TEXT_BUFLEN) {
+    *buflen_io = ADNS_ADDR2TEXT_BUFLEN;
+    return ENOSPC;
+  }
+
+  switch (sa->sa_family) {
+    AF_CASES(af);
+    af_inet:  src= &CSIN(sa)->sin_addr;    port= CSIN(sa)->sin_port;    break;
+    af_inet6: src= &CSIN6(sa)->sin6_addr;  port= CSIN6(sa)->sin6_port;  break;
+    default: return EAFNOSUPPORT;
+  }
+
+  const char *ok= inet_ntop(sa->sa_family, src, buffer, *buflen_io);
+  assert(ok);
+
+  if (sa->sa_family == AF_INET6) {
+    uint32_t scope = CSIN6(sa)->sin6_scope_id;
+    if (scope) {
+      if (flags & adns_qf_addrlit_scope_forbid)
+	return EINVAL;
+      int scopeoffset = strlen(buffer);
+      int remain = *buflen_io - scopeoffset;
+      char *scopeptr =  buffer + scopeoffset;
+      assert(remain >= IF_NAMESIZE+1/*%*/);
+      *scopeptr++= '%'; remain--;
+      bool parsedname = 0;
+      af_debug("will print scoped addr %s %% %"PRIu32"", buffer, scope);
+      if (scope <= UINT_MAX /* so we can pass it to if_indextoname */
+	  && !(flags & adns_qf_addrlit_scope_numeric)
+	  && addrtext_scope_use_ifname(sa)) {
+	parsedname = if_indextoname(scope, scopeptr);
+	if (!parsedname) {
+	  af_debug("if_indextoname rejected scope (errno=%s)",
+		   strerror(errno));
+	  if (errno==ENXIO) {
+	    /* fair enough, show it as a number then */
+	  } else if (addrtext_our_errno(errno)) {
+	    /* we use these for other purposes, urgh. */
+	    perror("adns: adns_addr2text: if_indextoname"
+		   " failed with unexpected error");
+	    return EIO;
+	  } else {
+	    return errno;
+	  }
+	}
+      }
+      if (!parsedname) {
+	int r = snprintf(scopeptr, remain,
+			 "%"PRIu32"", scope);
+	assert(r < *buflen_io - scopeoffset);
+      }
+      af_debug("printed scoped addr `%s'", buffer);
+    }
+  }
+
+  if (port_r) *port_r= ntohs(port);
+  return 0;
 }
