@@ -75,12 +75,19 @@ static void checkc_notcpbuf(adns_state ads) {
 }
 
 static void checkc_global(adns_state ads) {
+  const struct sortlist *sl;
   int i;
   
   assert(ads->udpsocket >= 0);
 
-  for (i=0; i<ads->nsortlist; i++)
-    assert(!(ads->sortlist[i].base.s_addr & ~ads->sortlist[i].mask.s_addr));
+  for (i=0; i<ads->nsortlist; i++) {
+    assert(ads->sortlist[i].af==AF_INET);
+    assert(!(ads->sortlist[i].base.v4.s_addr &
+	     ~ads->sortlist[i].mask.v4.s_addr));
+    sl= &ads->sortlist[i];
+    assert(sl->af==AF_INET);
+    assert(!(sl->base.v4.s_addr & ~sl->mask.v4.s_addr));
+  }
 
   assert(ads->tcpserver >= 0 && ads->tcpserver < ads->nservers);
   

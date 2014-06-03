@@ -124,6 +124,13 @@ typedef struct {
   struct timeval now;
 } parseinfo;
 
+union gen_addr {
+  struct in_addr v4;
+  struct in6_addr v6;
+};
+
+struct af_addr { int af; union gen_addr addr; };
+
 union checklabel_state {
   struct { byte ipv[4]; } ptr;
 };
@@ -134,7 +141,7 @@ typedef struct {
 
   union {
     struct {
-      struct in_addr addr;
+      struct af_addr addr;
     } ptr;
   } tinfo; /* type-specific state for the query itself: zero-init if you
 	    * don't know better. */
@@ -358,11 +365,10 @@ struct adns__state {
   struct sigaction stdsigpipe;
   sigset_t stdsigmask;
   struct pollfd pollfds_buf[MAX_POLLFDS];
-  struct server {
-    struct in_addr addr;
-  } servers[MAXSERVERS];
+  adns_rr_addr servers[MAXSERVERS];
   struct sortlist {
-    struct in_addr base, mask;
+    int af;
+    union gen_addr base, mask;
   } sortlist[MAXSORTLIST];
   char **searchlist;
   unsigned short rand48xsubi[3];

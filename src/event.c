@@ -96,7 +96,7 @@ static void tcp_broken_events(adns_state ads) {
 
 void adns__tcp_tryconnect(adns_state ads, struct timeval now) {
   int r, fd, tries;
-  struct sockaddr_in addr;
+  adns_rr_addr *addr;
   struct protoent *proto;
 
   for (tries=0; tries<ads->nservers; tries++) {
@@ -120,7 +120,8 @@ void adns__tcp_tryconnect(adns_state ads, struct timeval now) {
       adns__diag(ads,-1,0,"unable to find protocol no. for TCP !");
       return;
     }
-    fd= socket(AF_INET,SOCK_STREAM,proto->p_proto);
+    addr = &ads->servers[ads->tcpserver];
+    fd= socket(addr->addr.sa.sa_family, SOCK_STREAM, proto->p_proto);
     if (fd<0) {
       adns__diag(ads,-1,0,"cannot create TCP socket: %s",strerror(errno));
       return;
@@ -132,11 +133,7 @@ void adns__tcp_tryconnect(adns_state ads, struct timeval now) {
       close(fd);
       return;
     }
-    memset(&addr,0,sizeof(addr));
-    addr.sin_family= AF_INET;
-    addr.sin_port= htons(DNS_PORT);
-    addr.sin_addr= ads->servers[ads->tcpserver].addr;
-    r= connect(fd,(const struct sockaddr*)&addr,sizeof(addr));
+    r= connect(fd,&addr->addr.sa,addr->len);
     ads->tcpsocket= fd;
     ads->tcpstate= server_connecting;
     if (r==0) { tcp_connected(ads,now); return; }
@@ -418,7 +415,9 @@ int adns_processreadable(adns_state ads, int fd, const struct timeval *now) {
       }
       for (serv= 0;
 	   serv < ads->nservers &&
-	     ads->servers[serv].addr.s_addr != udpaddr.sin_addr.s_addr;
+	     (assert(ads->servers[serv].addr.sa.sa_family==AF_INET),
+	      ads->servers[serv].addr.inet.sin_addr.s_addr !=
+		udpaddr.sin_addr.s_addr);
 	   serv++);
       if (serv >= ads->nservers) {
 	adns__warn(ads,-1,0,"datagram received from unknown nameserver %s",

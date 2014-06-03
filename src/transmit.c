@@ -243,9 +243,9 @@ static void query_usetcp(adns_query qu, struct timeval now) {
 }
 
 void adns__query_send(adns_query qu, struct timeval now) {
-  struct sockaddr_in servaddr;
   int serv, r;
   adns_state ads;
+  adns_rr_addr *addr;
 
   assert(qu->state == query_tosend);
   if ((qu->flags & adns_qf_usevc) || (qu->query_dglen > DNS_MAXUDP)) {
@@ -258,16 +258,12 @@ void adns__query_send(adns_query qu, struct timeval now) {
     return;
   }
 
-  serv= qu->udpnextserver;
-  memset(&servaddr,0,sizeof(servaddr));
-
   ads= qu->ads;
-  servaddr.sin_family= AF_INET;
-  servaddr.sin_addr= ads->servers[serv].addr;
-  servaddr.sin_port= htons(DNS_PORT);
+  serv= qu->udpnextserver;
+  addr= &ads->servers[serv];
   
   r= sendto(ads->udpsocket,qu->query_dgram,qu->query_dglen,0,
-	    (const struct sockaddr*)&servaddr,sizeof(servaddr));
+	    &addr->addr.sa,addr->len);
   if (r<0 && errno == EMSGSIZE) {
     qu->retries= 0;
     query_usetcp(qu,now);

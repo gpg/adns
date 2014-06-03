@@ -83,7 +83,9 @@ void adns__vdiag(adns_state ads, const char *pfx, adns_initflags prevent,
   }
   
   if (serv>=0) {
-    adns__lprintf(ads,"%sNS=%s",bef,inet_ntoa(ads->servers[serv].addr));
+    assert(ads->servers[serv].addr.sa.sa_family==AF_INET);
+    adns__lprintf(ads,"%sNS=%s",bef,
+		  inet_ntoa(ads->servers[serv].addr.inet.sin_addr));
     bef=", "; aft=")\n";
   }
 

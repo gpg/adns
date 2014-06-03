@@ -41,24 +41,33 @@
 
 static void readconfig(adns_state ads, const char *filename, int warnmissing);
 
-static void addserver(adns_state ads, struct in_addr addr) {
+static void addserver(adns_state ads, const struct sockaddr *sa, int n) {
   int i;
-  struct server *ss;
+  adns_rr_addr *ss;
+  const struct sockaddr_in *sin;
+
+  assert(sa->sa_family==AF_INET); assert(n>=sizeof(*sin));
+  sin= (const void *)sa;
   
   for (i=0; i<ads->nservers; i++) {
-    if (ads->servers[i].addr.s_addr == addr.s_addr) {
-      adns__debug(ads,-1,0,"duplicate nameserver %s ignored",inet_ntoa(addr));
+    assert(ads->servers[i].addr.sa.sa_family==AF_INET);
+    if (ads->servers[i].addr.inet.sin_addr.s_addr == sin->sin_addr.s_addr) {
+      adns__debug(ads,-1,0,"duplicate nameserver %s ignored",
+		  inet_ntoa(sin->sin_addr));
       return;
     }
   }
   
   if (ads->nservers>=MAXSERVERS) {
-    adns__diag(ads,-1,0,"too many nameservers, ignoring %s",inet_ntoa(addr));
+    adns__diag(ads,-1,0,"too many nameservers, ignoring %s",
+	       inet_ntoa(sin->sin_addr));
     return;
   }
 
   ss= ads->servers+ads->nservers;
-  ss->addr= addr;
+  assert(n <= sizeof(ss->addr));
+  ss->len = n;
+  memcpy(&ss->addr, sa, n);
   ads->nservers++;
 }
 
@@ -105,14 +114,17 @@ static int nextword(const char **bufp_io, const char **word_r, int *l_r) {
 
 static void ccf_nameserver(adns_state ads, const char *fn,
 			   int lno, const char *buf) {
-  struct in_addr ia;
-  
-  if (!inet_aton(buf,&ia)) {
+  struct sockaddr_in sin;
+
+  memset(&sin,0,sizeof(sin));
+  sin.sin_family= AF_INET;
+  sin.sin_port= htons(DNS_PORT);
+  if (!inet_aton(buf,&sin.sin_addr)) {
     configparseerr(ads,fn,lno,"invalid nameserver address `%s'",buf);
     return;
   }
-  adns__debug(ads,-1,0,"using nameserver %s",inet_ntoa(ia));
-  addserver(ads,ia);
+  adns__debug(ads,-1,0,"using nameserver %s",inet_ntoa(sin.sin_addr));
+  addserver(ads,(const struct sockaddr *)&sin,sizeof(sin));
 }
 
 static void ccf_search(adns_state ads, const char *fn,
@@ -221,8 +233,9 @@ static void ccf_sortlist(adns_state ads, const char *fn,
       continue;
     }
 
-    ads->sortlist[ads->nsortlist].base= base;
-    ads->sortlist[ads->nsortlist].mask= mask;
+    ads->sortlist[ads->nsortlist].af= AF_INET;
+    ads->sortlist[ads->nsortlist].base.v4= base;
+    ads->sortlist[ads->nsortlist].mask.v4= mask;
     ads->nsortlist++;
   }
 }
@@ -548,16 +561,23 @@ static int init_begin(adns_state *ads_r, adns_initflags flags,
 }
 
 static int init_finish(adns_state ads) {
-  struct in_addr ia;
+  struct sockaddr_in sin;
   struct protoent *proto;
-  int r;
+  int i, r;
   
   if (!ads->nservers) {
     if (ads->logfn && ads->iflags & adns_if_debug)
-      adns__lprintf(ads,"adns: no nameservers, using localhost\n");
-    ia.s_addr= htonl(INADDR_LOOPBACK);
-    addserver(ads,ia);
+      adns__lprintf(ads,"adns: no nameservers, using IPv4 localhost\n");
+    memset(&sin, 0, sizeof(sin));
+    sin.sin_family = AF_INET;
+    sin.sin_port = htons(DNS_PORT);
+    sin.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    addserver(ads,(struct sockaddr *)&sin, sizeof(sin));
   }
+
+  /* we can't cope with multiple transport address families yet */
+  for (i=0; i<ads->nservers; i++)
+    assert(ads->servers[i].addr.sa.sa_family==AF_INET);
 
   proto= getprotobyname("udp"); if (!proto) { r= ENOPROTOOPT; goto x_free; }
   ads->udpsocket= socket(AF_INET,SOCK_DGRAM,proto->p_proto);

@@ -47,8 +47,9 @@
  * _intstr                    (mf,csp,cs)
  * _manyistr                  (mf,cs)
  * _txt                       (pa)
- * _inaddr                    (pa,dip,di,cs +search_sortlist)
- * _addr                      (pa,di,div,csp,cs,gsz)
+ * _inaddr                    (pa,di,cs +search_sortlist, dip_genaddr)
+ * _addr                      (pa,di,div,csp,cs,gsz
+ *				+search_sortlist_sa, dip_sockaddr)
  * _domain                    (pap,csp,cs)
  * _dom_raw		      (pa)
  * _host_raw                  (pa)
@@ -243,7 +244,7 @@ static adns_status cs_hinfo(vbuf *vb, const void *datap) {
 }
 
 /*
- * _inaddr   (pa,dip,di,cs +search_sortlist)
+ * _inaddr   (pa,di,cs +search_sortlist, dip_genaddr)
  */
 
 static adns_status pa_inaddr(const parseinfo *pai, int cbyte,
@@ -255,32 +256,34 @@ static adns_status pa_inaddr(const parseinfo *pai, int cbyte,
   return adns_s_ok;
 }
 
-static int search_sortlist(adns_state ads, struct in_addr ad) {
+static int search_sortlist(adns_state ads, int af, const void *ad) {
   const struct sortlist *slp;
+  const struct in_addr *a4;
   int i;
   
+  assert(af==AF_INET);
+  a4= ad;
   for (i=0, slp=ads->sortlist;
        i<ads->nsortlist &&
-	 !((ad.s_addr & slp->mask.s_addr) == slp->base.s_addr);
+	 (assert(slp->af==AF_INET),
+	  !((a4->s_addr & slp->mask.v4.s_addr) == slp->base.v4.s_addr));
        i++, slp++);
   return i;
 }
 
-static int dip_inaddr(adns_state ads, struct in_addr a, struct in_addr b) {
+static int dip_genaddr(adns_state ads, int af, const void *a, const void *b) {
   int ai, bi;
   
   if (!ads->nsortlist) return 0;
 
-  ai= search_sortlist(ads,a);
-  bi= search_sortlist(ads,b);
+  ai= search_sortlist(ads,af,a);
+  bi= search_sortlist(ads,af,b);
   return bi<ai;
 }
 
 static int di_inaddr(adns_state ads,
 		     const void *datap_a, const void *datap_b) {
-  const struct in_addr *ap= datap_a, *bp= datap_b;
-
-  return dip_inaddr(ads,*ap,*bp);
+  return dip_genaddr(ads,AF_INET,datap_a,datap_b);
 }
 
 static adns_status cs_inaddr(vbuf *vb, const void *datap) {
@@ -293,7 +296,7 @@ static adns_status cs_inaddr(vbuf *vb, const void *datap) {
 }
 
 /*
- * _addr   (pa,di,div,csp,cs,gsz)
+ * _addr   (pa,di,div,csp,cs,gsz +search_sortlist_sa, dip_sockaddr)
  */
 
 static adns_status pa_addr(const parseinfo *pai, int cbyte,
@@ -309,11 +312,21 @@ static adns_status pa_addr(const parseinfo *pai, int cbyte,
   return adns_s_ok;
 }
 
+static int search_sortlist_sa(adns_state ads, const struct sockaddr *sa) {
+  assert(sa->sa_family == AF_INET);
+  return search_sortlist(ads, sa->sa_family,
+			 &((const struct sockaddr_in *)sa)->sin_addr);
+}
+static int dip_sockaddr(adns_state ads,
+			const struct sockaddr *sa,
+			const struct sockaddr *sb) {
+  if (!ads->sortlist) return 0;
+  return search_sortlist_sa(ads, sa) > search_sortlist_sa(ads, sb);
+}
+
 static int di_addr(adns_state ads, const void *datap_a, const void *datap_b) {
   const adns_rr_addr *ap= datap_a, *bp= datap_b;
-
-  assert(ap->addr.sa.sa_family == AF_INET);
-  return dip_inaddr(ads, ap->addr.inet.sin_addr, bp->addr.inet.sin_addr);
+  return dip_sockaddr(ads, &ap->addr.sa, &bp->addr.sa);
 }
 
 static int div_addr(void *context, const void *datap_a, const void *datap_b) {
@@ -552,11 +565,7 @@ static int dip_hostaddr(adns_state ads,
   if (ap->astatus != bp->astatus) return ap->astatus;
   if (ap->astatus) return 0;
 
-  assert(ap->addrs[0].addr.sa.sa_family == AF_INET);
-  assert(bp->addrs[0].addr.sa.sa_family == AF_INET);
-  return dip_inaddr(ads,
-		    ap->addrs[0].addr.inet.sin_addr,
-		    bp->addrs[0].addr.inet.sin_addr);
+  return dip_sockaddr(ads, &ap->addrs[0].addr.sa, &bp->addrs[0].addr.sa);
 }
 
 static int di_hostaddr(adns_state ads,
@@ -739,7 +748,8 @@ static adns_status ckl_ptr(adns_state ads, adns_queryflags flags,
     if (lablen != l || memcmp(label, ed, l)) return adns_s_querydomainwrong;
   } else {
     if (lablen) return adns_s_querydomainwrong;
-    ctx->tinfo.ptr.addr.s_addr=
+    ctx->tinfo.ptr.addr.af= AF_INET;
+    ctx->tinfo.ptr.addr.addr.v4.s_addr=
       htonl((cls->ptr.ipv[0]<<24) | (cls->ptr.ipv[1]<<16) |
 	    (cls->ptr.ipv[2]<< 8) | (cls->ptr.ipv[3]));
   }
@@ -748,7 +758,7 @@ static adns_status ckl_ptr(adns_state ads, adns_queryflags flags,
 
 static void icb_ptr(adns_query parent, adns_query child) {
   adns_answer *cans= child->answer;
-  const struct in_addr *queried;
+  const struct af_addr *queried;
   const unsigned char *found;
   adns_state ads= parent->ads;
   int i;
@@ -762,8 +772,10 @@ static void icb_ptr(adns_query parent, adns_query child) {
   }
 
   queried= &parent->ctx.tinfo.ptr.addr;
+  assert(queried->af == AF_INET);
+  assert(cans->type == adns_r_a);
   for (i=0, found=cans->rrs.bytes; i<cans->nrrs; i++, found+=cans->rrsz) {
-    if (!memcmp(queried,found,cans->rrsz)) {
+    if (queried->addr.v4.s_addr == ((const struct in_addr *)found)->s_addr) {
       if (!parent->children.head) {
 	adns__query_done(parent);
 	return;
