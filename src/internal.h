@@ -350,6 +350,8 @@ struct adns__query {
 
 struct query_queue { adns_query head, tail; };
 
+#define MAXUDP 2
+
 struct adns__state {
   adns_initflags iflags;
   adns_logcallbackfn *logfn;
@@ -357,7 +359,9 @@ struct adns__state {
   int configerrno;
   struct query_queue udpw, tcpw, childw, output;
   adns_query forallnext;
-  int nextid, udpsocket, tcpsocket;
+  int nextid, tcpsocket;
+  struct udpsocket { int af; int fd; } udpsocket[MAXUDP];
+  int nudp;
   vbuf tcpsend, tcprecv;
   int nservers, nsortlist, nsearchlist, searchndots, tcpserver, tcprecv_skip;
   enum adns__tcpstate {
@@ -566,6 +570,15 @@ void adns__querysend_tcp(adns_query qu, struct timeval now);
 /* Query must be in state tcpw/tcpw; it will be sent if possible and
  * no further processing can be done on it for now.  The connection
  * might be broken, but no reconnect will be attempted.
+ */
+
+struct udpsocket *adns__udpsocket_by_af(adns_state ads, int af);
+/* Find the UDP socket structure in ads which has the given address family.
+ * Return null if there isn't one.
+ *
+ * This is used during initialization, so ads is only partially filled in.
+ * The requirements are that nudp is set, and that udpsocket[i].af are
+ * defined for 0<=i<nudp.
  */
 
 void adns__query_send(adns_query qu, struct timeval now);

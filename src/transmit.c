@@ -242,9 +242,17 @@ static void query_usetcp(adns_query qu, struct timeval now) {
   adns__tcp_tryconnect(qu->ads,now);
 }
 
+struct udpsocket *adns__udpsocket_by_af(adns_state ads, int af) {
+  int i;
+  for (i=0; i<ads->nudp; i++)
+    if (ads->udpsocket[i].af == af) return &ads->udpsocket[i];
+  return 0;
+}
+
 void adns__query_send(adns_query qu, struct timeval now) {
   int serv, r;
   adns_state ads;
+  struct udpsocket *udp;
   adns_rr_addr *addr;
 
   assert(qu->state == query_tosend);
@@ -261,8 +269,10 @@ void adns__query_send(adns_query qu, struct timeval now) {
   ads= qu->ads;
   serv= qu->udpnextserver;
   addr= &ads->servers[serv];
+  udp= adns__udpsocket_by_af(ads, addr->addr.sa.sa_family);
+  assert(udp);
   
-  r= sendto(ads->udpsocket,qu->query_dgram,qu->query_dglen,0,
+  r= sendto(udp->fd,qu->query_dgram,qu->query_dglen,0,
 	    &addr->addr.sa,addr->len);
   if (r<0 && errno == EMSGSIZE) {
     qu->retries= 0;

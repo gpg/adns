@@ -312,9 +312,12 @@ int adns__pollfds(adns_state ads, struct pollfd pollfds_buf[MAX_POLLFDS]) {
     nwanted++;					\
   }while(0)
 
-  assert(MAX_POLLFDS==2);
+  int i;
 
-  ADD_POLLFD(ads->udpsocket, POLLIN);
+  assert(MAX_POLLFDS == MAXUDP + 1);
+
+  for (i=0; i<ads->nudp; i++)
+    ADD_POLLFD(ads->udpsocket[i].fd, POLLIN);
 
   switch (ads->tcpstate) {
   case server_disconnected:
@@ -336,9 +339,11 @@ int adns__pollfds(adns_state ads, struct pollfd pollfds_buf[MAX_POLLFDS]) {
 }
 
 int adns_processreadable(adns_state ads, int fd, const struct timeval *now) {
-  int want, dgramlen, r, udpaddrlen, serv, old_skip;
+  int want, dgramlen, r, i, udpaddrlen, serv, old_skip;
   byte udpbuf[DNS_MAXUDP];
-  struct sockaddr_in udpaddr;
+  char addrbuf[ADNS_ADDR2TEXT_BUFLEN];
+  struct udpsocket *udp;
+  adns_sockaddr udpaddr;
   
   adns__consistency(ads,0,cc_entex);
 
@@ -391,45 +396,32 @@ int adns_processreadable(adns_state ads, int fd, const struct timeval *now) {
   default:
     abort();
   }
-  if (fd == ads->udpsocket) {
-    for (;;) {
-      udpaddrlen= sizeof(udpaddr);
-      r= recvfrom(ads->udpsocket,udpbuf,sizeof(udpbuf),0,
-		  (struct sockaddr*)&udpaddr,&udpaddrlen);
-      if (r<0) {
-	if (errno == EAGAIN || errno == EWOULDBLOCK) { r= 0; goto xit; }
-	if (errno == EINTR) continue;
-	if (errno_resources(errno)) { r= errno; goto xit; }
-	adns__warn(ads,-1,0,"datagram receive error: %s",strerror(errno));
-	r= 0; goto xit;
+  for (i=0; i<ads->nudp; i++) {
+    udp= &ads->udpsocket[i];
+    if (fd == udp->fd) {
+      for (;;) {
+	udpaddrlen= sizeof(udpaddr);
+	r= recvfrom(fd,udpbuf,sizeof(udpbuf),0, &udpaddr.sa,&udpaddrlen);
+	if (r<0) {
+	  if (errno == EAGAIN || errno == EWOULDBLOCK) { r= 0; goto xit; }
+	  if (errno == EINTR) continue;
+	  if (errno_resources(errno)) { r= errno; goto xit; }
+	  adns__warn(ads,-1,0,"datagram receive error: %s",strerror(errno));
+	  r= 0; goto xit;
+	}
+	for (serv= 0;
+	     serv < ads->nservers &&
+	       !adns__sockaddr_equal_p(&udpaddr.sa,
+				       &ads->servers[serv].addr.sa);
+	     serv++);
+	if (serv >= ads->nservers) {
+	  adns__warn(ads,-1,0,"datagram received from unknown nameserver %s",
+		     adns__sockaddr_ntoa(&udpaddr.sa, addrbuf));
+	  continue;
+	}
+	adns__procdgram(ads,udpbuf,r,serv,0,*now);
       }
-      if (udpaddrlen != sizeof(udpaddr)) {
-	adns__diag(ads,-1,0,"datagram received with wrong address length %d"
-		   " (expected %lu)", udpaddrlen,
-		   (unsigned long)sizeof(udpaddr));
-	continue;
-      }
-      if (udpaddr.sin_family != AF_INET) {
-	adns__diag(ads,-1,0,"datagram received with wrong protocol family"
-		   " %u (expected %u)",udpaddr.sin_family,AF_INET);
-	continue;
-      }
-      if (ntohs(udpaddr.sin_port) != DNS_PORT) {
-	adns__diag(ads,-1,0,"datagram received from wrong port"
-		   " %u (expected %u)", ntohs(udpaddr.sin_port),DNS_PORT);
-	continue;
-      }
-      for (serv= 0;
-	   serv < ads->nservers &&
-	     !adns__sockaddr_equal_p(&ads->servers[serv].addr.sa,
-				     (const struct sockaddr *)&udpaddr);
-	   serv++);
-      if (serv >= ads->nservers) {
-	adns__warn(ads,-1,0,"datagram received from unknown nameserver %s",
-		   inet_ntoa(udpaddr.sin_addr));
-	continue;
-      }
-      adns__procdgram(ads,udpbuf,r,serv,0,*now);
+      break;
     }
   }
   r= 0;
