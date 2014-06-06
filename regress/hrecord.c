@@ -81,9 +81,9 @@ int Hpoll(	struct pollfd *fds , int nfds , int timeout 	) {
 #endif
 int Hsocket(	int domain , int type , int protocol 	) {
  int r, e;
-	Tmust("socket","domain",domain==AF_INET); 
+  Tmust("socket","domain",domain==PF_INET || domain==PF_INET6); 
   Tmust("socket","type",type==SOCK_STREAM || type==SOCK_DGRAM); 
- Qsocket(	 type 	);
+ Qsocket(	domain , type 	);
  r= socket(	domain , type , protocol 	);
  e= errno;
  vb.used= 0;

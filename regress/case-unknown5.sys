@@ -1,7 +1,7 @@
 ./adnshost default
 -t type5 pop.chiark.greenend.org.uk
  start 1144369700.944069
- socket type=SOCK_DGRAM
+ socket domain=PF_INET type=SOCK_DGRAM
  socket=6
  +0.000074
  fcntl fd=6 cmd=F_GETFL

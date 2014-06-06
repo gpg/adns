@@ -100,6 +100,10 @@ void Q$1(hm_args_massage($3,void)) {
  m4_define(`hm_arg_must', `')
  m4_define(`hm_arg_socktype', `
   Tvbf($'`1==SOCK_STREAM ? " $'`1=SOCK_STREAM" : " $'`1=SOCK_DGRAM");')
+ m4_define(`hm_arg_addrfam', `
+  Tvbf($'`1==PF_INET ? " $'`1=PF_INET" :
+	  $'`1==PF_INET6 ? " $'`1=PF_INET6" :
+	  " $'`1=AF_???");')
  m4_define(`hm_arg_ign', `')
  m4_define(`hm_arg_fd', `Tvbf(" $'`1=%d",$'`1);')
  m4_define(`hm_arg_fcntl_cmd_arg', `

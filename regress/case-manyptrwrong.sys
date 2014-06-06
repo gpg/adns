@@ -1,7 +1,7 @@
 adnstest ncipher
 254.0.99.203.in-addr.arpa
  start 933269010.293417
- socket type=SOCK_DGRAM
+ socket domain=PF_INET type=SOCK_DGRAM
  socket=4
  +0.000166
  fcntl fd=4 cmd=F_GETFL
@@ -107,7 +107,7 @@ adnstest ncipher
      000c0001 00013b96 000f026e 7309756e 64657268 6f7572c0 43c00c00 0c000100
      013b9600 06036263 63c043.
  +0.001498
- socket type=SOCK_STREAM
+ socket domain=PF_INET type=SOCK_STREAM
  socket=5
  +0.000954
  fcntl fd=5 cmd=F_GETFL

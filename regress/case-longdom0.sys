@@ -1,7 +1,7 @@
 adnstest default
 :1 1/0rndrobwlxxxxxxxxxxlllantysiliogog.llanfairpwllgwyngyllgogerychwyrndrobwlxxxxxxxxxxlllantysiliogog.llanfairpwllgwyngyllgogerychwyrndrobwlxxxxxxxxxxlllantysiliogog.llanfairpwllgwyngyllgogerychwyrndrobwlxxxxxxxxxxlllantysiliogog.relativity.greenend.org.uk.
  start 951955651.857473
- socket type=SOCK_DGRAM
+ socket domain=PF_INET type=SOCK_DGRAM
  socket=4
  +0.000126
  fcntl fd=4 cmd=F_GETFL

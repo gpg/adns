@@ -1,7 +1,7 @@
 adnstest default
 292/254.0.99.203.in-addr.arpa
  start 933289772.727140
- socket type=SOCK_DGRAM
+ socket domain=PF_INET type=SOCK_DGRAM
  socket=4
  +0.000265
  fcntl fd=4 cmd=F_GETFL
@@ -385,7 +385,7 @@ adnstest default
      000c0001 00004ecb 000f026e 7309756e 64657268 6f7572c0 43c00c00 0c000100
      004ecb00 06036263 63c043.
  +0.003463
- socket type=SOCK_STREAM
+ socket domain=PF_INET type=SOCK_STREAM
  socket=5
  +0.001488
  fcntl fd=5 cmd=F_GETFL

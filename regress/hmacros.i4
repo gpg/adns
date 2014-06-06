@@ -46,6 +46,7 @@ m4_define(`hm_create_nothing', `
  m4_define(`hm_arg_timeval_in_rel_null',`')
  m4_define(`hm_arg_must', `')
  m4_define(`hm_arg_socktype',`')
+ m4_define(`hm_arg_addrfam',`')
  m4_define(`hm_arg_ign', `')
  m4_define(`hm_arg_fd', `')
  m4_define(`hm_arg_fcntl_cmd_arg',`')
@@ -64,6 +65,7 @@ m4_define(`hm_create_proto_h',`
  m4_define(`hm_arg_timeval_in_rel_null', `struct timeval *$'`1')
  m4_define(`hm_arg_must', `$'`1 $'`2')
  m4_define(`hm_arg_socktype', `int $'`1')
+ m4_define(`hm_arg_addrfam', `int $'`1')
  m4_define(`hm_arg_ign', `$'`1 $'`2')
  m4_define(`hm_arg_fd', `int $'`1')
  m4_define(`hm_arg_fcntl_cmd_arg', `int $'`1 hm_comma ...')
@@ -96,6 +98,8 @@ m4_define(`hm_create_hqcall_init',`
  m4_define(`hm_arg_must', `Tmust("$1","$'`2",$'`2==$'`3);')
  m4_define(`hm_arg_socktype',`
   Tmust("$1","$'`1",$'`1==SOCK_STREAM || $'`1==SOCK_DGRAM);')
+ m4_define(`hm_arg_addrfam',`
+  Tmust("$1","$'`1",$'`1==PF_INET || $'`1==PF_INET6);')
  m4_define(`hm_arg_fcntl_cmd_arg',`
   Tmust("$1","$'`1",$'`1==F_SETFL || $'`1==F_GETFL);
   if ($'`1 == F_SETFL) {
@@ -115,6 +119,7 @@ m4_define(`hm_create_realcall_args',`
  m4_define(`hm_arg_timeval_in_rel_null', `$'`1')
  m4_define(`hm_arg_must', `$'`2')
  m4_define(`hm_arg_socktype', `$'`1')
+ m4_define(`hm_arg_addrfam', `$'`1')
  m4_define(`hm_arg_ign', `$'`2')
  m4_define(`hm_arg_fd', `$'`1')
  m4_define(`hm_arg_fcntl_cmd_arg', `$'`1 hm_comma $'`2')

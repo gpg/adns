@@ -1,7 +1,7 @@
 adnstest default
 :131089 silly-rp.test.iwj.relativity.greenend.org.uk
  start 923859567.899146
- socket type=SOCK_DGRAM
+ socket domain=PF_INET type=SOCK_DGRAM
  socket=4
  +0.000411
  fcntl fd=4 cmd=F_GETFL

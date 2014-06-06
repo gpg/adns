@@ -1,7 +1,7 @@
 adnstest default
 :131078 . 1/.
  start 924364442.672925
- socket type=SOCK_DGRAM
+ socket domain=PF_INET type=SOCK_DGRAM
  socket=4
  +0.000222
  fcntl fd=4 cmd=F_GETFL

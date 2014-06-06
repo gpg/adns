@@ -1,7 +1,7 @@
 adnstest anarres -0x300
 2/test.iwj.relativity.greenend.org.uk.
  start 962143388.709150
- socket type=SOCK_DGRAM
+ socket domain=PF_INET type=SOCK_DGRAM
  socket=5
  +0.000434
  fcntl fd=5 cmd=F_GETFL
@@ -10,7 +10,7 @@ adnstest anarres -0x300
  fcntl fd=5 cmd=F_SETFL O_NONBLOCK|...
  fcntl=OK
  +0.000439
- socket type=SOCK_STREAM
+ socket domain=PF_INET type=SOCK_STREAM
  socket=6
  +0.001725
  fcntl fd=6 cmd=F_GETFL
@@ -110,7 +110,7 @@ adnstest anarres -0x300
  select max=6 rfds=[5] wfds=[] efds=[] to=0.000000
  select=0 rfds=[] wfds=[] efds=[]
  +0.000702
- socket type=SOCK_STREAM
+ socket domain=PF_INET type=SOCK_STREAM
  socket=6
  +0.001734
  fcntl fd=6 cmd=F_GETFL

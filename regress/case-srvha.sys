@@ -1,7 +1,7 @@
 ./adnshost default
 -t srv _srv._tcp.test.iwj.relativity.greenend.org.uk. _jabber._tcp.jabber.org _sip._udp.voip.net.cam.ac.uk.
  start 1144348939.753711
- socket type=SOCK_DGRAM
+ socket domain=PF_INET type=SOCK_DGRAM
  socket=6
  +0.000080
  fcntl fd=6 cmd=F_GETFL

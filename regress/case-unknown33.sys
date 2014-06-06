@@ -1,7 +1,7 @@
 ./adnshost default
 -t type33 -Qq _jabber._tcp.jabber.org
  start 1144369693.043661
- socket type=SOCK_DGRAM
+ socket domain=PF_INET type=SOCK_DGRAM
  socket=6
  +0.000080
  fcntl fd=6 cmd=F_GETFL

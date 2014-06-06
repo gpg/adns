@@ -1,7 +1,7 @@
 adnstest default
 ,a/greenend.org.uk
  start 929580078.542974
- socket type=SOCK_DGRAM
+ socket domain=PF_INET type=SOCK_DGRAM
  socket=4
  +0.000202
  fcntl fd=4 cmd=F_GETFL

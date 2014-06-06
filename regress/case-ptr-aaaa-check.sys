@@ -1,7 +1,7 @@
 ./adnstest distorted
 :65548 4.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.2.0.0.0.9.d.1.0.8.a.b.0.1.0.0.2.ip6.arpa
  start 1401919115.064959
- socket type=SOCK_DGRAM
+ socket domain=PF_INET type=SOCK_DGRAM
  socket=6
  +0.000064
  fcntl fd=6 cmd=F_GETFL

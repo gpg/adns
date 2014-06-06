@@ -7,7 +7,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/time.h>
-#include <netdb.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include "harness.h"
@@ -154,9 +153,10 @@ static void Ppollfds(struct pollfd *fds, int nfds) {
 }
 #endif
 static void Paddr(struct sockaddr *addr, int *lenr) {
-  struct addrinfo *ai, hint = { 0 };
+  adns_rr_addr a;
   char *p, *q, *ep;
   int err;
+  unsigned long ul;
   p= vb2.buf+vb2.used;
   if (*p!='[') {
     q= strchr(p,':');
@@ -170,18 +170,15 @@ static void Paddr(struct sockaddr *addr, int *lenr) {
     if (*q!=':') Psyntax("expected : after ]");
     q++;
   }
-  for (ep=q; ctype_digit(*ep); ep++);
-  if (ep==q || (*ep && *ep!=' ')) Psyntax("invalid port number");
-  *ep= 0;
-  hint.ai_socktype= SOCK_DGRAM;
-  hint.ai_family= AF_UNSPEC;
-  hint.ai_flags= AI_NUMERICHOST | AI_NUMERICSERV;
-  err= getaddrinfo(p, q, &hint, &ai);
+  ul= strtoul(q,&ep,10);
+  if (*ep && *ep != ' ') Psyntax("invalid port (bad syntax)");
+  if (ul >= 65536) Psyntax("port too large");
+  a.len= sizeof(a.addr);
+  err= adns_text2addr(p, (int)ul, 0, &a.addr.sa,&a.len);
   if (err) Psyntax("invalid address");
-  assert(*lenr >= ai->ai_addrlen);
-  memcpy(addr, ai->ai_addr, ai->ai_addrlen);
-  *lenr= ai->ai_addrlen;
-  freeaddrinfo(ai);
+  assert(*lenr >= a.len);
+  memcpy(addr, &a.addr, a.len);
+  *lenr= a.len;
   vb2.used= ep - (char*)vb2.buf;
 }
 static int Pbytes(byte *buf, int maxlen) {
@@ -296,9 +293,9 @@ int Hpoll(	struct pollfd *fds , int nfds , int timeout 	) {
 int Hsocket(	int domain , int type , int protocol 	) {
  int r, amtread;
  char *ep;
-	Tmust("socket","domain",domain==AF_INET); 
+  Tmust("socket","domain",domain==PF_INET || domain==PF_INET6); 
   Tmust("socket","type",type==SOCK_STREAM || type==SOCK_DGRAM); 
- Qsocket(	 type 	);
+ Qsocket(	domain , type 	);
  if (!adns__vbuf_ensure(&vb2,1000)) Tnomem();
  fgets(vb2.buf,vb2.avail,Tinputfile); Pcheckinput();
  Tensurereportfile();

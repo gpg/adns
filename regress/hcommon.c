@@ -67,9 +67,12 @@ void Qpoll(	const struct pollfd *fds , int nfds , int timeout 	) {
   Q_vb();
 }
 #endif
-void Qsocket(	 int type 	) {
+void Qsocket(	int domain , int type 	) {
  vb.used= 0;
  Tvba("socket");
+  Tvbf(domain==PF_INET ? " domain=PF_INET" :
+	  domain==PF_INET6 ? " domain=PF_INET6" :
+	  " domain=AF_???"); 
   Tvbf(type==SOCK_STREAM ? " type=SOCK_STREAM" : " type=SOCK_DGRAM"); 
   Q_vb();
 }

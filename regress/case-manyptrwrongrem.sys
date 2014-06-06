@@ -1,7 +1,7 @@
 adnstest manyptrwrong
 292/254.0.99.203.in-addr.arpa
  start 933286859.476326
- socket type=SOCK_DGRAM
+ socket domain=PF_INET type=SOCK_DGRAM
  socket=4
  +0.000271
  fcntl fd=4 cmd=F_GETFL
@@ -172,7 +172,7 @@ adnstest manyptrwrong
      000c0001 00015180 000f026e 7309756e 64657268 6f7572c0 43c00c00 0c000100
      01518000 06036263 63c043.
  +0.003324
- socket type=SOCK_STREAM
+ socket domain=PF_INET type=SOCK_STREAM
  socket=5
  +0.001351
  fcntl fd=5 cmd=F_GETFL

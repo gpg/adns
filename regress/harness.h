@@ -10,7 +10,7 @@ void Qselect(	int max , const fd_set *rfds , const fd_set *wfds , const fd_set *
 #ifdef HAVE_POLL
 void Qpoll(	const struct pollfd *fds , int nfds , int timeout 	);
 #endif
-void Qsocket(	 int type 	);
+void Qsocket(	int domain , int type 	);
 void Qfcntl(	int fd , int cmd , long arg 	);
 void Qconnect(	int fd , const struct sockaddr *addr , int addrlen 	);
 void Qbind(	int fd , const struct sockaddr *addr , int addrlen 	);

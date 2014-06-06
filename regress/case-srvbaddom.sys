@@ -1,7 +1,7 @@
 ./adnshost default
 -t srv- srv.tcp.test.iwj.relativity.greenend.org.uk. spong. _foo._bar. _s*a._tcp.ucam.org. _s*a._tcp.pi&ckle.ucam.org
  start 1144349027.926430
- socket type=SOCK_DGRAM
+ socket domain=PF_INET type=SOCK_DGRAM
  socket=6
  +0.000082
  fcntl fd=6 cmd=F_GETFL

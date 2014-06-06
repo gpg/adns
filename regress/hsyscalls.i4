@@ -38,6 +38,7 @@ m4_dnl  hm_arg_fdset_io(<arg>,<max>)    fd_set, max bit set is in max
 m4_dnl  hm_arg_timeval_in_rel_null(<t>) struct timeval*, pass in, relative, may be null
 m4_dnl  hm_arg_must(<type>,<arg>,<val>) must have correct value, or abort test
 m4_dnl  hm_arg_socktype(<arg>)          SOCK_STREAM or SOCK_DGRAM (an int)
+m4_dnl  hm_arg_addrfam(<arg>)           a supported address family
 m4_dnl  hm_arg_ign(<type>,<arg>)        input parameter ignored
 m4_dnl  hm_arg_fd(<arg>)                fd
 m4_dnl  hm_arg_fcntl_cmd_arg(<ca>,<aa>) syscall is fcntl, do special processing
@@ -70,7 +71,7 @@ hm_syscall(
 
 hm_syscall(
 	socket, `hm_rv_fd', `
-	hm_arg_must(int,domain,AF_INET) hm_na
+	hm_arg_addrfam(domain) hm_na
 	hm_arg_socktype(type) hm_na
 	hm_arg_ign(int,protocol) hm_na
 ')

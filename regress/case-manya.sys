@@ -1,7 +1,7 @@
 adnstest default
 :1 manyaddrs.test.iwj.relativity.greenend.org.uk
  start 912888920.123769
- socket type=SOCK_DGRAM
+ socket domain=PF_INET type=SOCK_DGRAM
  socket=4
  +0.000245
  fcntl fd=4 cmd=F_GETFL

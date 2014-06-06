@@ -1,7 +1,7 @@
 adnstest anarres
 2/test.iwj.relativity.greenend.org.uk.
  start 962142174.403028
- socket type=SOCK_DGRAM
+ socket domain=PF_INET type=SOCK_DGRAM
  socket=4
  +0.000120
  fcntl fd=4 cmd=F_GETFL
@@ -10,7 +10,7 @@ adnstest anarres
  fcntl fd=4 cmd=F_SETFL O_NONBLOCK|...
  fcntl=OK
  +0.000034
- socket type=SOCK_STREAM
+ socket domain=PF_INET type=SOCK_STREAM
  socket=5
  +0.000479
  fcntl fd=5 cmd=F_GETFL
@@ -34,7 +34,7 @@ adnstest anarres
  select max=5 rfds=[4] wfds=[] efds=[] to=0.000000
  select=0 rfds=[] wfds=[] efds=[]
  +0.000103
- socket type=SOCK_STREAM
+ socket domain=PF_INET type=SOCK_STREAM
  socket=5
  +0.000392
  fcntl fd=5 cmd=F_GETFL

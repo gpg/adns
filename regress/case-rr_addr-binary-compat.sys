@@ -1,7 +1,7 @@
 ./adnstest distorted
 :16842753,65537 maddr.dnserr.distorted.org.uk
  start 1402443258.469312
- socket type=SOCK_DGRAM
+ socket domain=PF_INET type=SOCK_DGRAM
  socket=6
  +0.000064
  fcntl fd=6 cmd=F_GETFL
