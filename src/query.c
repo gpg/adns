@@ -148,8 +148,8 @@ static adns_status check_domain_name(adns_state ads, adns_queryflags flags,
 }
 
 adns_status adns__internal_submit(adns_state ads, adns_query *query_r,
-				  const typeinfo *typei, vbuf *qumsg_vb,
-				  int id,
+				  const typeinfo *typei, adns_rrtype type,
+				  vbuf *qumsg_vb, int id,
 				  adns_queryflags flags, struct timeval now,
 				  qcontext *ctx) {
   adns_query qu;
@@ -157,7 +157,7 @@ adns_status adns__internal_submit(adns_state ads, adns_query *query_r,
 
   err= check_domain_name(ads, flags,ctx,typei, qumsg_vb->buf,qumsg_vb->used);
   if (err) goto x_err;
-  qu= query_alloc(ads,typei,typei->typekey,flags,now);
+  qu= query_alloc(ads,typei,type,flags,now);
   if (!qu) { err = adns_s_nomemory; goto x_err; }
   *query_r= qu;
 
