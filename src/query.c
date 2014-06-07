@@ -104,8 +104,8 @@ static void query_submit(adns_state ads, adns_query qu,
   qu->id= id;
   qu->query_dglen= qu->vb.used;
   memcpy(qu->query_dgram,qu->vb.buf,qu->vb.used);
-  
-  adns__query_send(qu,now);
+
+  typei->query_send(qu,now);
 }
 
 adns_status adns__ckl_hostname(adns_state ads, adns_queryflags flags,

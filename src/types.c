@@ -85,6 +85,7 @@
  *    cs_*
  *    gsz_*
  *    postsort_*
+ *    qs_*
  */
 
 /*
@@ -1267,11 +1268,13 @@ static void mf_flat(adns_query qu, void *data) { }
 #define DEEP_TYPE(code,rrt,fmt,memb,parser,comparer,/*printer*/...)	\
  { adns_r_##code&adns_rrt_reprmask, rrt,fmt,TYPESZ_M(memb), mf_##memb,	\
      GLUE(cs_, CAR(__VA_ARGS__)),pa_##parser,di_##comparer,		\
-     adns__ckl_hostname, 0, adns__getrrsz_default, CDR(__VA_ARGS__) }
+     adns__ckl_hostname, 0, adns__getrrsz_default, adns__query_send,	\
+     CDR(__VA_ARGS__) }
 #define FLAT_TYPE(code,rrt,fmt,memb,parser,comparer,/*printer*/...)	\
  { adns_r_##code&adns_rrt_reprmask, rrt,fmt,TYPESZ_M(memb), mf_flat,	\
      GLUE(cs_, CAR(__VA_ARGS__)),pa_##parser,di_##comparer,		\
-     adns__ckl_hostname, 0, adns__getrrsz_default, CDR(__VA_ARGS__) }
+     adns__ckl_hostname, 0, adns__getrrsz_default, adns__query_send,	\
+     CDR(__VA_ARGS__) }
 
 #define di_0 0
 

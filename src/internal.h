@@ -217,6 +217,12 @@ typedef struct typeinfo {
   /* Return the output resource-record element size; if this is null, then
    * the rrsz member can be used.
    */
+
+  void (*query_send)(adns_query qu, struct timeval now);
+  /* Send the query to nameservers, and hook it into the appropriate queue.
+   * Normal behaviour is to call adns__query_send, but this can be overridden
+   * for special effects.
+   */
 } typeinfo;
 
 adns_status adns__ckl_hostname(adns_state ads, adns_queryflags flags,
