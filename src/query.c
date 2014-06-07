@@ -464,7 +464,7 @@ void *adns__alloc_final(adns_query qu, size_t sz) {
   return rp;
 }
 
-static void cancel_children(adns_query qu) {
+void adns__cancel_children(adns_query qu) {
   adns_query cqu, ncqu;
 
   for (cqu= qu->children.head; cqu; cqu= ncqu) {
@@ -475,7 +475,7 @@ static void cancel_children(adns_query qu) {
 
 void adns__reset_preserved(adns_query qu) {
   assert(!qu->final_allocspace);
-  cancel_children(qu);
+  adns__cancel_children(qu);
   qu->answer->nrrs= 0;
   qu->answer->rrs.untyped= 0;
   qu->interim_allocd= qu->preserved_allocd;
@@ -484,7 +484,7 @@ void adns__reset_preserved(adns_query qu) {
 static void free_query_allocs(adns_query qu) {
   allocnode *an, *ann;
 
-  cancel_children(qu);
+  adns__cancel_children(qu);
   for (an= qu->allocations.head; an; an= ann) { ann= an->next; free(an); }
   LIST_INIT(qu->allocations);
   adns__vbuf_free(&qu->vb);
@@ -572,7 +572,7 @@ void adns__query_done(adns_query qu) {
   adns_answer *ans;
   adns_query parent;
 
-  cancel_children(qu);
+  adns__cancel_children(qu);
 
   qu->id= -1;
   ans= qu->answer;
