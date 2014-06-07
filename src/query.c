@@ -382,6 +382,7 @@ static void *alloc_common(adns_query qu, size_t sz) {
   an= malloc(MEM_ROUND(MEM_ROUND(sizeof(*an)) + sz));
   if (!an) return 0;
   LIST_LINK_TAIL(qu->allocations,an);
+  an->sz= sz;
   return (byte*)an + MEM_ROUND(sizeof(*an));
 }
 
@@ -405,16 +406,24 @@ void *adns__alloc_preserved(adns_query qu, size_t sz) {
   return rv;
 }
 
+static allocnode *alloc_info(adns_query qu, void *p, size_t *sz_r) {
+  allocnode *an;
+
+  if (!p || p == qu) { *sz_r= 0; return 0; }
+  an= (allocnode *)((byte *)p - MEM_ROUND(sizeof(allocnode)));
+  *sz_r= MEM_ROUND(an->sz);
+  return an;
+}
+
 void *adns__alloc_mine(adns_query qu, size_t sz) {
   return alloc_common(qu,MEM_ROUND(sz));
 }
 
-void adns__transfer_interim(adns_query from, adns_query to,
-			    void *block, size_t sz) {
-  allocnode *an;
+void adns__transfer_interim(adns_query from, adns_query to, void *block) {
+  size_t sz;
+  allocnode *an= alloc_info(from, block, &sz);
 
-  if (!block) return;
-  an= (void*)((byte*)block - MEM_ROUND(sizeof(*an)));
+  if (!an) return;
 
   assert(!to->final_allocspace);
   assert(!from->final_allocspace);
@@ -422,7 +431,6 @@ void adns__transfer_interim(adns_query from, adns_query to,
   LIST_UNLINK(from->allocations,an);
   LIST_LINK_TAIL(to->allocations,an);
 
-  sz= MEM_ROUND(sz);
   from->interim_allocd -= sz;
   to->interim_allocd += sz;
 

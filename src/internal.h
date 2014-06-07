@@ -229,6 +229,7 @@ adns_status adns__ckl_hostname(adns_state ads, adns_queryflags flags,
 
 typedef struct allocnode {
   struct allocnode *next, *back;
+  size_t sz;
 } allocnode;
 
 union maxalign {
@@ -657,8 +658,7 @@ void *adns__alloc_preserved(adns_query qu, size_t sz);
  *  answer->cname and answer->owner are _preserved.
  */
 
-void adns__transfer_interim(adns_query from, adns_query to,
-			    void *block, size_t sz);
+void adns__transfer_interim(adns_query from, adns_query to, void *block);
 /* Transfers an interim allocation from one query to another, so that
  * the `to' query will have room for the data when we get to makefinal
  * and so that the free will happen when the `to' query is freed

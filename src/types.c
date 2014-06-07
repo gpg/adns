@@ -514,13 +514,12 @@ static void icb_hostaddr(adns_query parent, adns_query child) {
   adns_rr_hostaddr *rrp= child->ctx.pinfo.hostaddr;
   adns_state ads= parent->ads;
   adns_status st;
-  size_t addrsz= gsz_addr(0, parent->answer->type);
 
   st= cans->status;
   rrp->astatus= st;
   rrp->naddrs= (st>0 && st<=adns_s_max_tempfail) ? -1 : cans->nrrs;
   rrp->addrs= cans->rrs.addr;
-  adns__transfer_interim(child, parent, rrp->addrs, rrp->naddrs*addrsz);
+  adns__transfer_interim(child, parent, rrp->addrs);
 
   if (parent->children.head) {
     LIST_LINK_TAIL(ads->childw,parent);
