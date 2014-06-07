@@ -14,6 +14,7 @@ greenend.org.uk flags 0 type 65548 PTR(checked) submitted
 greenend.org.uk flags 0 type 65551 MX(+addr) submitted
 greenend.org.uk flags 0 type 131078 SOA(822) submitted
 greenend.org.uk flags 0 type 131089 RP(822) submitted
+greenend.org.uk flags 0 type PTR(checked) ownflags=a: querydomainwrong; nrrs=0; cname=$; owner=$; ttl=604800
 greenend.org.uk flags 0 type A(-) ownflags=a: timeout; nrrs=0; cname=$; owner=$; ttl=604770
 greenend.org.uk flags 0 type NS(raw) ownflags=a: timeout; nrrs=0; cname=$; owner=$; ttl=604770
 greenend.org.uk flags 0 type CNAME(-) ownflags=a: timeout; nrrs=0; cname=$; owner=$; ttl=604770
@@ -25,7 +26,6 @@ greenend.org.uk flags 0 type TXT(-) ownflags=a: timeout; nrrs=0; cname=$; owner=
 greenend.org.uk flags 0 type RP(raw) ownflags=a: timeout; nrrs=0; cname=$; owner=$; ttl=604770
 greenend.org.uk flags 0 type A(addr) ownflags=a: timeout; nrrs=0; cname=$; owner=$; ttl=604770
 greenend.org.uk flags 0 type NS(+addr) ownflags=a: timeout; nrrs=0; cname=$; owner=$; ttl=604770
-greenend.org.uk flags 0 type PTR(checked) ownflags=a: timeout; nrrs=0; cname=$; owner=$; ttl=604770
 greenend.org.uk flags 0 type MX(+addr) ownflags=a: timeout; nrrs=0; cname=$; owner=$; ttl=604770
 greenend.org.uk flags 0 type SOA(822) ownflags=a: timeout; nrrs=0; cname=$; owner=$; ttl=604770
 greenend.org.uk flags 0 type RP(822) ownflags=a: timeout; nrrs=0; cname=$; owner=$; ttl=604770

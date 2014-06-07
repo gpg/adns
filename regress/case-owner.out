@@ -14,6 +14,7 @@ chiark.greenend.org.uk flags 4 type 65548 PTR(checked) submitted
 chiark.greenend.org.uk flags 4 type 65551 MX(+addr) submitted
 chiark.greenend.org.uk flags 4 type 131078 SOA(822) submitted
 chiark.greenend.org.uk flags 4 type 131089 RP(822) submitted
+chiark.greenend.org.uk flags 4 type PTR(checked): Domain invalid for particular DNS query type; nrrs=0; cname=$; owner=chiark.greenend.org.uk; ttl=604800
 chiark.greenend.org.uk flags 4 type A(-): OK; nrrs=1; cname=$; owner=chiark.greenend.org.uk; ttl=86400
  195.224.76.132
 chiark.greenend.org.uk flags 4 type NS(raw): No such data; nrrs=0; cname=$; owner=chiark.greenend.org.uk; ttl=86400
@@ -28,7 +29,6 @@ chiark.greenend.org.uk flags 4 type RP(raw): No such data; nrrs=0; cname=$; owne
 chiark.greenend.org.uk flags 4 type A(addr): OK; nrrs=1; cname=$; owner=chiark.greenend.org.uk; ttl=86400
  INET 195.224.76.132
 chiark.greenend.org.uk flags 4 type NS(+addr): No such data; nrrs=0; cname=$; owner=chiark.greenend.org.uk; ttl=86400
-chiark.greenend.org.uk flags 4 type PTR(checked): No such data; nrrs=0; cname=$; owner=chiark.greenend.org.uk; ttl=86400
 chiark.greenend.org.uk flags 4 type MX(+addr): OK; nrrs=1; cname=$; owner=chiark.greenend.org.uk; ttl=86400
  5 permutation-city.greenend.org.uk ok 0 ok "OK" ( INET 195.224.76.134 )
 chiark.greenend.org.uk flags 4 type SOA(822): No such data; nrrs=0; cname=$; owner=chiark.greenend.org.uk; ttl=86400

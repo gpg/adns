@@ -14,6 +14,7 @@ greenend.org.uk flags 0 type 65548 PTR(checked) submitted
 greenend.org.uk flags 0 type 65551 MX(+addr) submitted
 greenend.org.uk flags 0 type 131078 SOA(822) submitted
 greenend.org.uk flags 0 type 131089 RP(822) submitted
+greenend.org.uk flags 0 type PTR(checked) ownflags=a: querydomainwrong; nrrs=0; cname=$; owner=$; ttl=604800
 greenend.org.uk flags 0 type A(-) ownflags=a: nodata; nrrs=0; cname=$; owner=$; ttl=86400
 greenend.org.uk flags 0 type NS(raw) ownflags=a: ok; nrrs=2; cname=$; owner=$; ttl=86400
  ns1.relativity.greenend.org.uk
@@ -31,7 +32,6 @@ greenend.org.uk flags 0 type A(addr) ownflags=a: nodata; nrrs=0; cname=$; owner=
 greenend.org.uk flags 0 type NS(+addr) ownflags=a: ok; nrrs=2; cname=$; owner=$; ttl=86400
  ns0.relativity.greenend.org.uk ok 0 ok "OK" ( INET 172.18.45.6 )
  ns1.relativity.greenend.org.uk ok 0 ok "OK" ( INET 172.18.45.65 )
-greenend.org.uk flags 0 type PTR(checked) ownflags=a: nodata; nrrs=0; cname=$; owner=$; ttl=86400
 greenend.org.uk flags 0 type MX(+addr) ownflags=a: ok; nrrs=1; cname=$; owner=$; ttl=86400
  10 chiark.greenend.org.uk ok 0 ok "OK" ( INET 195.224.76.132 )
 greenend.org.uk flags 0 type SOA(822) ownflags=a: ok; nrrs=1; cname=$; owner=$; ttl=86400

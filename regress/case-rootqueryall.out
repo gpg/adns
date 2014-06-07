@@ -71,7 +71,7 @@ adns debug: reply not found, id 312e, query owner  (NS=172.18.45.6)
  C.ROOT-SERVERS.NET ok 0 ok "OK" ( INET 192.33.4.12 )
  D.ROOT-SERVERS.NET ok 0 ok "OK" ( INET 128.8.10.90 )
  E.ROOT-SERVERS.NET ok 0 ok "OK" ( INET 192.203.230.10 )
-. flags 0 type PTR(checked): No such data; nrrs=0; cname=$; owner=$; ttl=599
+. flags 0 type PTR(checked): Domain invalid for particular DNS query type; nrrs=0; cname=$; owner=$; ttl=604793
 . flags 0 type MX(+addr): No such data; nrrs=0; cname=$; owner=$; ttl=86400
 . flags 0 type SOA(822): OK; nrrs=1; cname=$; owner=$; ttl=51616
  A.ROOT-SERVERS.NET hostmaster@INTERNIC.NET 1999041600 1800 900 604800 86400
@@ -119,7 +119,7 @@ adns debug: reply not found, id 3139, query owner  (NS=172.18.45.6)
  E.ROOT-SERVERS.NET ok 0 ok "OK" ( INET 192.203.230.10 )
  I.ROOT-SERVERS.NET ok 0 ok "OK" ( INET 192.36.148.17 )
  F.ROOT-SERVERS.NET ok 0 ok "OK" ( INET 192.5.5.241 )
-. flags 1 type PTR(checked): No such data; nrrs=0; cname=$; owner=$; ttl=598
+. flags 1 type PTR(checked): Domain invalid for particular DNS query type; nrrs=0; cname=$; owner=$; ttl=604792
 . flags 1 type MX(+addr): No such data; nrrs=0; cname=$; owner=$; ttl=598
 . flags 1 type SOA(822): OK; nrrs=1; cname=$; owner=$; ttl=46580
  A.ROOT-SERVERS.NET hostmaster@INTERNIC.NET 1999041600 1800 900 604800 86400

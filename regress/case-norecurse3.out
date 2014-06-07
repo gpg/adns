@@ -14,11 +14,11 @@ adns debug: using nameserver 172.18.45.6
 2.203.156.195.in-addr.arpa1 flags 0 type 65551 MX(+addr) submitted
 2.203.156.195.in-addr.arpa1 flags 0 type 131078 SOA(822) submitted
 2.203.156.195.in-addr.arpa1 flags 0 type 131089 RP(822) submitted
+2.203.156.195.in-addr.arpa1 flags 0 type PTR(checked): Domain invalid for particular DNS query type; nrrs=0; cname=$; owner=$; ttl=604800
 2.203.156.195.in-addr.arpa1 flags 0 type A(-): No such domain; nrrs=0; cname=$; owner=$; ttl=86400
 2.203.156.195.in-addr.arpa1 flags 0 type RP(822): No such domain; nrrs=0; cname=$; owner=$; ttl=86400
 2.203.156.195.in-addr.arpa1 flags 0 type SOA(822): No such domain; nrrs=0; cname=$; owner=$; ttl=86400
 2.203.156.195.in-addr.arpa1 flags 0 type MX(+addr): No such domain; nrrs=0; cname=$; owner=$; ttl=86400
-2.203.156.195.in-addr.arpa1 flags 0 type PTR(checked): No such domain; nrrs=0; cname=$; owner=$; ttl=86400
 2.203.156.195.in-addr.arpa1 flags 0 type NS(+addr): No such domain; nrrs=0; cname=$; owner=$; ttl=86400
 2.203.156.195.in-addr.arpa1 flags 0 type A(addr): No such domain; nrrs=0; cname=$; owner=$; ttl=86400
 2.203.156.195.in-addr.arpa1 flags 0 type RP(raw): No such domain; nrrs=0; cname=$; owner=$; ttl=86400

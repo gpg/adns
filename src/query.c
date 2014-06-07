@@ -294,7 +294,17 @@ int adns_submit(adns_state ads,
     ol--;
   }
 
+/* temporary hack */
+#define CHECK_PTR do {							\
+  if (type == adns_r_ptr && (ol < 5 ||					\
+			     strncmp(owner + ol - 5, ".arpa", 5))) {	\
+    ads->nextid++; adns__autosys(ads,now);				\
+    stat= adns_s_querydomainwrong; goto x_adnsfail;			\
+  }									\
+} while (0)
+
   if (flags & adns_qf_search) {
+    CHECK_PTR;
     r= adns__vbuf_append(&qu->search_vb,owner,ol);
     if (!r) { stat= adns_s_nomemory; goto x_adnsfail; }
 
@@ -306,11 +316,14 @@ int adns_submit(adns_state ads,
     if (flags & adns_qf_owner) {
       if (!save_owner(qu,owner,ol)) { stat= adns_s_nomemory; goto x_adnsfail; }
     }
+    CHECK_PTR;
     query_simple(ads,qu, owner,ol, typei,flags, now);
   }
   adns__autosys(ads,now);
   adns__consistency(ads,qu,cc_entex);
   return 0;
+
+#undef CHECK_PTR
 
  x_adnsfail:
   adns__query_fail(qu,stat);
