@@ -672,6 +672,10 @@ void adns__transfer_interim(adns_query from, adns_query to, void *block);
  * TTLs get inherited by their parents.
  */
 
+void adns__free_interim(adns_query qu, void *p);
+/* Forget about a block allocated by adns__alloc_interim.
+ */
+
 void *adns__alloc_mine(adns_query qu, size_t sz);
 /* Like _interim, but does not record the length for later
  * copying into the answer.  This just ensures that the memory

@@ -415,6 +415,17 @@ static allocnode *alloc_info(adns_query qu, void *p, size_t *sz_r) {
   return an;
 }
 
+void adns__free_interim(adns_query qu, void *p) {
+  size_t sz;
+  allocnode *an= alloc_info(qu, p, &sz);
+
+  if (!an) return;
+  assert(!qu->final_allocspace);
+  LIST_UNLINK(qu->allocations, an);
+  free(an);
+  qu->interim_allocd -= sz;
+}
+
 void *adns__alloc_mine(adns_query qu, size_t sz) {
   return alloc_common(qu,MEM_ROUND(sz));
 }
