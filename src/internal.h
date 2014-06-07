@@ -91,15 +91,6 @@ typedef enum {
 
 /* Shared data structures */
 
-typedef union {
-  adns_status status;
-  char *cp;
-  adns_rrtype type;
-  int i;
-  struct in_addr ia;
-  unsigned long ul;
-} rr_align;
-
 typedef struct {
   int used, avail;
   byte *buf;
