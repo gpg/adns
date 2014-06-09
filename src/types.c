@@ -49,22 +49,25 @@
  * _intstr                    (mf,csp,cs)
  * _manyistr                  (mf,cs)
  * _txt                       (pa)
- * _inaddr                    (pa,dip,di)
- * _addr                      (pa,di,csp,cs)
- * _domain                    (pap)
+ * _inaddr                    (pa,dip,di,cs +search_sortlist)
+ * _addr                      (pa,di,div,csp,cs)
+ * _domain                    (pap,csp,cs)
+ * _dom_raw		      (pa)
  * _host_raw                  (pa)
- * _hostaddr                  (pap,pa,dip,di,mfp,mf,csp,cs +pap_findaddrs)
+ * _hostaddr                  (pap,pa,dip,di,mfp,mf,csp,cs
+ *				+pap_findaddrs, icb_hostaddr)
  * _mx_raw                    (pa,di)
  * _mx                        (pa,di)
  * _inthostaddr               (mf,cs)
+ * _inthost		      (cs)
  * _ptr                       (pa)
- * _strpair                   (mf,cs)
- * _intstrpair                (mf,cs)
+ * _strpair                   (mf)
+ * _intstrpair                (mf)
  * _hinfo                     (pa)
- * _mailbox                   (pap +pap_mailbox822)
- * _rp                        (pa)
+ * _mailbox                   (pap,csp +pap_mailbox822)
+ * _rp                        (pa,cs)
  * _soa                       (pa,mf,cs)
- * _srv*                      (qdpl,(pap),pa,mf,di,(csp),cs,postsort)
+ * _srv*                      (qdpl,(pap),pa*2,mf*2,di,(csp),cs*2,postsort)
  * _byteblock                 (mf)
  * _opaque                    (pa,cs)
  * _flat                      (mf)
@@ -241,7 +244,7 @@ static adns_status cs_hinfo(vbuf *vb, const void *datap) {
 }
 
 /*
- * _inaddr   (pa,dip,di)
+ * _inaddr   (pa,dip,di,cs +search_sortlist)
  */
 
 static adns_status pa_inaddr(const parseinfo *pai, int cbyte,
@@ -365,7 +368,7 @@ static adns_status cs_in6addr(vbuf *vb, const void *datap) {
 
 
 /*
- * _addr   (pa,di,csp,cs)
+ * _addr   (pa,di,div,csp,cs)
  */
 
 static adns_status pa_addr(const parseinfo *pai, int cbyte,
@@ -484,7 +487,7 @@ static adns_status pa_host_raw(const parseinfo *pai, int cbyte,
 }
 
 /*
- * _hostaddr   (pap,pa,dip,di,mfp,mf,csp,cs +icb_hostaddr, pap_findaddrs)
+ * _hostaddr   (pap,pa,dip,di,mfp,mf,csp,cs +pap_findaddrs, icb_hostaddr)
  */
 
 static adns_status pap_findaddrs(const parseinfo *pai, adns_rr_hostaddr *ha,
@@ -924,7 +927,7 @@ static adns_status pa_hinfo(const parseinfo *pai, int cbyte,
 }
 
 /*
- * _mailbox   (pap,cs)
+ * _mailbox   (pap,cs +pap_mailbox822)
  */
 
 static adns_status pap_mailbox822(const parseinfo *pai,
@@ -1081,7 +1084,7 @@ static adns_status cs_soa(vbuf *vb, const void *datap) {
 }
 
 /*
- * _srv*  (pa*2,di,cs*2,qdpl,postsort)
+ * _srv*  (qdpl,(pap),pa*2,mf*2,di,(csp),cs*2,postsort)
  */
 
 static adns_status qdpl_srv(adns_state ads,
