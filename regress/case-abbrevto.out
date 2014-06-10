@@ -24,9 +24,9 @@ greenend.org.uk flags 0 type HINFO(-) ownflags=a: timeout; nrrs=0; cname=$; owne
 greenend.org.uk flags 0 type MX(raw) ownflags=a: timeout; nrrs=0; cname=$; owner=$; ttl=604770
 greenend.org.uk flags 0 type TXT(-) ownflags=a: timeout; nrrs=0; cname=$; owner=$; ttl=604770
 greenend.org.uk flags 0 type RP(raw) ownflags=a: timeout; nrrs=0; cname=$; owner=$; ttl=604770
-greenend.org.uk flags 0 type A(addr) ownflags=a: timeout; nrrs=0; cname=$; owner=$; ttl=604770
 greenend.org.uk flags 0 type NS(+addr) ownflags=a: timeout; nrrs=0; cname=$; owner=$; ttl=604770
 greenend.org.uk flags 0 type MX(+addr) ownflags=a: timeout; nrrs=0; cname=$; owner=$; ttl=604770
 greenend.org.uk flags 0 type SOA(822) ownflags=a: timeout; nrrs=0; cname=$; owner=$; ttl=604770
 greenend.org.uk flags 0 type RP(822) ownflags=a: timeout; nrrs=0; cname=$; owner=$; ttl=604770
+greenend.org.uk flags 0 type A(addr) ownflags=a: timeout; nrrs=0; cname=$; owner=$; ttl=604770
 rc=0

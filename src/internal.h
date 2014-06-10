@@ -151,6 +151,9 @@ typedef struct {
       adns_rrtype rev_rrtype;
       struct af_addr addr;
     } ptr;
+    struct {
+      unsigned want, have;
+    } addr;
   } tinfo; /* type-specific state for the query itself: zero-init if you
 	    * don't know better. */
 

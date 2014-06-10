@@ -50,8 +50,9 @@
  * _inaddr                    (pa,di,cs
  *				+search_sortlist, dip_genaddr, csp_genaddr)
  * _in6addr		      (pa,di,cs)
- * _addr                      (pa,di,div,csp,cs,gsz
- *				+search_sortlist_sa, dip_sockaddr)
+ * _addr                      (pa,di,div,csp,cs,gsz,qs
+ *				+search_sortlst_sa, dip_sockaddr,
+ *				 addr_rrtypes, icb_addr)
  * _domain                    (pap,csp,cs)
  * _dom_raw		      (pa)
  * _host_raw                  (pa)
@@ -342,8 +343,38 @@ static adns_status cs_in6addr(vbuf *vb, const void *datap) {
 }
 
 /*
- * _addr   (pa,di,div,csp,cs,gsz +search_sortlist_sa, dip_sockaddr)
+ * _addr   (pa,di,div,csp,cs,gsz,qs
+ *		+search_sortlist_sa, dip_sockaddr, addr_rrtypes, icb_addr)
  */
+
+static const typeinfo tinfo_addrsub;
+
+#define ADDR_RRTYPES(_) _(a)
+
+static const adns_rrtype addr_all_rrtypes[] = {
+#define RRTY_CODE(ty) adns_r_##ty,
+  ADDR_RRTYPES(RRTY_CODE)
+#undef RRTY_CODE
+};
+
+enum {
+#define RRTY_INDEX(ty) addr__ri_##ty,
+  ADDR_RRTYPES(RRTY_INDEX)
+#undef RRTY_INDEX
+  addr_nrrtypes,
+#define RRTY_FLAG(ty) addr_rf_##ty = 1 << addr__ri_##ty,
+  ADDR_RRTYPES(RRTY_FLAG)
+  addr__rrty_hunoz
+#undef RRTY_FLAG
+};
+
+static unsigned addr_rrtypeflag(adns_rrtype type) {
+  int i;
+
+  type &= adns_rrt_typemask;
+  for (i=0; i<addr_nrrtypes && type!=addr_all_rrtypes[i]; i++);
+  return i < addr_nrrtypes ? 1 << i : 0;
+}
 
 static adns_status pa_addr(const parseinfo *pai, int cbyte,
 			   int max, void *datap) {
@@ -415,6 +446,149 @@ static adns_status cs_addr(vbuf *vb, const void *datap) {
 static int gsz_addr(const typeinfo *typei, adns_rrtype type) {
   return type & adns__qtf_bigaddr ?
     sizeof(adns_rr_addr) : sizeof(adns_rr_addr_v4only);
+}
+
+static unsigned addr_rrtypes(adns_state ads, adns_rrtype type,
+			     adns_queryflags qf) {
+  /* Return a mask of addr_rf_... flags indicating which address families are
+   * wanted, given a query type and flags.
+   */
+  return addr_rf_a;
+}
+
+static void icb_addr(adns_query parent, adns_query child);
+
+static void addr_subqueries(adns_query qu, struct timeval now,
+			    adns_queryflags qf_extra,
+			    const byte *qd_dgram, int qd_dglen) {
+  int i, err, id;
+  adns_query cqu;
+  adns_queryflags qf= (qu->flags & ~adns_qf_search) | qf_extra;
+  adns_rrtype qtf= qu->answer->type & adns__qtf_deref;
+  unsigned which= qu->ctx.tinfo.addr.want & ~qu->ctx.tinfo.addr.have;
+  qcontext ctx;
+
+  memset(&ctx, 0, sizeof(ctx));
+  ctx.callback= icb_addr;
+  for (i=0; i<addr_nrrtypes; i++) {
+    if (!(which & (1 << i))) continue;
+    err= adns__mkquery_frdgram(qu->ads, &qu->vb, &id, qd_dgram,qd_dglen,
+			       DNS_HDRSIZE, addr_all_rrtypes[i], qf);
+    if (err) goto x_error;
+    err= adns__internal_submit(qu->ads, &cqu, qu, &tinfo_addrsub,
+			       addr_all_rrtypes[i] | qtf,
+			       &qu->vb, id, qf, now, &ctx);
+    if (err) goto x_error;
+    cqu->answer->rrsz= qu->answer->rrsz;
+  }
+  qu->state= query_childw;
+  LIST_LINK_TAIL(qu->ads->childw, qu);
+  return;
+
+x_error:
+  adns__query_fail(qu, err);
+}
+
+static adns_status append_addrs(adns_query qu, size_t rrsz,
+				adns_rr_addr **dp, int *dlen,
+				const adns_rr_addr *sp, int slen) {
+  /* Append a vector of slen addr records, each of size rrsz, starting at ap,
+   * to a vector starting at *dp, of length *dlen.  On successful completion,
+   * *dp and *dlen are updated.
+   */
+
+  size_t drrsz= *dlen*rrsz, srrsz= slen*rrsz;
+  byte *p;
+
+  if (!slen) return adns_s_ok;
+  p= adns__alloc_interim(qu, drrsz + srrsz);
+  if (!p) R_NOMEM;
+  if (*dlen) {
+    memcpy(p, *dp, drrsz);
+    adns__free_interim(qu, *dp);
+  }
+  memcpy(p + drrsz, sp, srrsz);
+  *dlen += slen;
+  *dp= (adns_rr_addr *)p;
+  return adns_s_ok;
+}
+
+static void propagate_ttl(adns_query to, adns_query from)
+  { if (to->expires > from->expires) to->expires= from->expires; }
+
+static adns_status copy_cname_from_child(adns_query parent, adns_query child) {
+  adns_answer *pans= parent->answer, *cans= child->answer;
+  size_t n= strlen(cans->cname) + 1;
+
+  pans->cname= adns__alloc_preserved(parent, n);
+  if (!pans->cname) R_NOMEM;
+  memcpy(pans->cname, cans->cname, n);
+  return adns_s_ok;
+}
+
+static void done_addr_type(adns_query qu, adns_rrtype type) {
+  unsigned f= addr_rrtypeflag(type);
+  assert(f); qu->ctx.tinfo.addr.have |= f;
+}
+
+static void icb_addr(adns_query parent, adns_query child) {
+  adns_state ads= parent->ads;
+  adns_answer *pans= parent->answer, *cans= child->answer;
+  struct timeval now;
+  adns_status err;
+
+  propagate_ttl(parent, child);
+
+  if (cans->cname && !pans->cname) {
+    err= copy_cname_from_child(parent, child);
+    if (err) goto x_err;
+  }
+
+  if ((parent->flags & adns_qf_search) &&
+      !pans->cname && cans->status == adns_s_nxdomain) {
+    /* We're searching a list of suffixes, and the name doesn't exist.  Try
+     * the next one.
+     */
+
+    adns__cancel_children(parent);
+    adns__free_interim(parent, pans->rrs.bytes);
+    pans->rrs.bytes= 0; pans->nrrs= 0;
+    if (gettimeofday(&now, 0)) goto x_gtod;
+    adns__search_next(ads, parent, now);
+    return;
+  }
+
+  if (cans->status && cans->status != adns_s_nodata)
+    { err= cans->status; goto x_err; }
+
+  assert(pans->rrsz == cans->rrsz);
+  err= append_addrs(parent, pans->rrsz,
+		    &pans->rrs.addr, &pans->nrrs,
+		    cans->rrs.addr, cans->nrrs);
+  if (err) goto x_err;
+  done_addr_type(parent, cans->type);
+
+  if (parent->children.head) LIST_LINK_TAIL(ads->childw, parent);
+  else if (!pans->nrrs) adns__query_fail(parent, adns_s_nodata);
+  else adns__query_done(parent);
+  return;
+
+x_gtod:
+  adns__diag(ads, -1, parent, "gettimeofday failed: %s", strerror(errno));
+  err= adns_s_systemfail;
+  goto x_err;
+
+x_err:
+  adns__query_fail(parent, err);
+}
+
+static void qs_addr(adns_query qu, struct timeval now) {
+  if (!qu->ctx.tinfo.addr.want) {
+    qu->ctx.tinfo.addr.want= addr_rrtypes(qu->ads, qu->answer->type,
+					  qu->flags);
+    qu->ctx.tinfo.addr.have= 0;
+  }
+  addr_subqueries(qu, now, 0, qu->query_dgram, qu->query_dglen);
 }
 
 /*
@@ -1309,7 +1483,7 @@ DEEP_TYPE(srv_raw,"SRV",  "raw",srvraw ,   srvraw,  srv,   srvraw,
 			      .checklabel= ckl_srv, .postsort= postsort_srv),
 
 FLAT_TYPE(addr,   "A",  "addr", addr,      addr,    addr,  addr,
-							 .getrrsz= gsz_addr),
+				   .getrrsz= gsz_addr, .query_send= qs_addr),
 DEEP_TYPE(ns,     "NS", "+addr",hostaddr,  hostaddr,hostaddr,hostaddr      ),
 DEEP_TYPE(ptr,    "PTR","checked",str,     ptr,     0,     domain,
 						       .checklabel= ckl_ptr),
@@ -1320,6 +1494,10 @@ DEEP_TYPE(srv,    "SRV","+addr",srvha,     srvha,   srv,   srvha,
 DEEP_TYPE(soa,    "SOA","822",  soa,       soa,     0,     soa             ),
 DEEP_TYPE(rp,     "RP", "822",  strpair,   rp,      0,     rp              ),
 };
+
+static const typeinfo tinfo_addrsub =
+FLAT_TYPE(none,	  "<addr>","sub",addr,	   addr,    0,	   addr,
+							 .getrrsz= gsz_addr);
 
 static const typeinfo typeinfo_unknown=
 DEEP_TYPE(unknown,0, "unknown",byteblock,opaque,  0,     opaque            );

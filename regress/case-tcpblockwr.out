@@ -59,7 +59,6 @@ test.iwj.relativity.greenend.org.uk. flags 2 type HINFO(-): No such data; nrrs=0
 test.iwj.relativity.greenend.org.uk. flags 2 type MX(raw): No such data; nrrs=0; cname=$; owner=$; ttl=59
 test.iwj.relativity.greenend.org.uk. flags 2 type TXT(-): No such data; nrrs=0; cname=$; owner=$; ttl=59
 test.iwj.relativity.greenend.org.uk. flags 2 type RP(raw): No such data; nrrs=0; cname=$; owner=$; ttl=59
-test.iwj.relativity.greenend.org.uk. flags 2 type A(addr): No such data; nrrs=0; cname=$; owner=$; ttl=59
 test.iwj.relativity.greenend.org.uk. flags 2 type NS(+addr): OK; nrrs=1; cname=$; owner=$; ttl=59
  ns0.relativity.greenend.org.uk ok 0 ok "OK" ( INET 172.18.45.6 )
 test.iwj.relativity.greenend.org.uk. flags 2 type MX(+addr): No such data; nrrs=0; cname=$; owner=$; ttl=59
@@ -77,7 +76,6 @@ test.iwj.relativity.greenend.org.uk. flags 2 type HINFO(-): No such data; nrrs=0
 test.iwj.relativity.greenend.org.uk. flags 2 type MX(raw): No such data; nrrs=0; cname=$; owner=$; ttl=59
 test.iwj.relativity.greenend.org.uk. flags 2 type TXT(-): No such data; nrrs=0; cname=$; owner=$; ttl=59
 test.iwj.relativity.greenend.org.uk. flags 2 type RP(raw): No such data; nrrs=0; cname=$; owner=$; ttl=59
-test.iwj.relativity.greenend.org.uk. flags 2 type A(addr): No such data; nrrs=0; cname=$; owner=$; ttl=59
 test.iwj.relativity.greenend.org.uk. flags 2 type NS(+addr): OK; nrrs=1; cname=$; owner=$; ttl=59
  ns0.relativity.greenend.org.uk ok 0 ok "OK" ( INET 172.18.45.6 )
 test.iwj.relativity.greenend.org.uk. flags 2 type MX(+addr): No such data; nrrs=0; cname=$; owner=$; ttl=59
@@ -95,11 +93,13 @@ test.iwj.relativity.greenend.org.uk. flags 2 type HINFO(-): No such data; nrrs=0
 test.iwj.relativity.greenend.org.uk. flags 2 type MX(raw): No such data; nrrs=0; cname=$; owner=$; ttl=59
 test.iwj.relativity.greenend.org.uk. flags 2 type TXT(-): No such data; nrrs=0; cname=$; owner=$; ttl=59
 test.iwj.relativity.greenend.org.uk. flags 2 type RP(raw): No such data; nrrs=0; cname=$; owner=$; ttl=59
-test.iwj.relativity.greenend.org.uk. flags 2 type A(addr): No such data; nrrs=0; cname=$; owner=$; ttl=59
 test.iwj.relativity.greenend.org.uk. flags 2 type NS(+addr): OK; nrrs=1; cname=$; owner=$; ttl=59
  ns0.relativity.greenend.org.uk ok 0 ok "OK" ( INET 172.18.45.6 )
 test.iwj.relativity.greenend.org.uk. flags 2 type MX(+addr): No such data; nrrs=0; cname=$; owner=$; ttl=59
 test.iwj.relativity.greenend.org.uk. flags 2 type SOA(822): OK; nrrs=1; cname=$; owner=$; ttl=59
  ns0.relativity.greenend.org.uk hostmaster@relativity.greenend.org.uk 42 3600 120 6604800 60
+test.iwj.relativity.greenend.org.uk. flags 2 type A(addr): No such data; nrrs=0; cname=$; owner=$; ttl=59
+test.iwj.relativity.greenend.org.uk. flags 2 type A(addr): No such data; nrrs=0; cname=$; owner=$; ttl=59
+test.iwj.relativity.greenend.org.uk. flags 2 type A(addr): No such data; nrrs=0; cname=$; owner=$; ttl=59
 test.iwj.relativity.greenend.org.uk. flags 2 type RP(822): No such data; nrrs=0; cname=$; owner=$; ttl=60
 rc=0

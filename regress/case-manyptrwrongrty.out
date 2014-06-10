@@ -117,11 +117,11 @@ adns debug: TCP connected (NS=172.18.45.6)
  ns.asis.org.nz
  ns.bouquets.co.nz
  agate.co.nz
-254.0.99.203.in-addr.arpa flags 292 type A(addr): No such data; nrrs=0; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=539
 254.0.99.203.in-addr.arpa flags 292 type NS(+addr): No such data; nrrs=0; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=539
 254.0.99.203.in-addr.arpa flags 292 type MX(+addr): No such data; nrrs=0; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=540
 254.0.99.203.in-addr.arpa flags 292 type SOA(822): No such data; nrrs=0; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=540
 254.0.99.203.in-addr.arpa flags 292 type RP(822): No such data; nrrs=0; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=539
+254.0.99.203.in-addr.arpa flags 292 type A(addr): No such data; nrrs=0; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=539
 254.0.99.203.in-addr.arpa flags 292 type PTR(checked): Inconsistent resource records in DNS; nrrs=0; cname=$; owner=254.0.99.203.in-addr.arpa; ttl=86351
 adns debug: reply not found, id 3151, query owner mail.safes.co.nz (NS=172.18.45.6)
 adns debug: reply not found, id 3152, query owner ns.bcc.co.nz (NS=172.18.45.6)

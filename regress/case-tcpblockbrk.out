@@ -27,9 +27,9 @@ test.iwj.relativity.greenend.org.uk. flags 2 type HINFO(-): All nameservers fail
 test.iwj.relativity.greenend.org.uk. flags 2 type MX(raw): All nameservers failed; nrrs=0; cname=$; owner=$; ttl=604798
 test.iwj.relativity.greenend.org.uk. flags 2 type TXT(-): All nameservers failed; nrrs=0; cname=$; owner=$; ttl=604798
 test.iwj.relativity.greenend.org.uk. flags 2 type RP(raw): All nameservers failed; nrrs=0; cname=$; owner=$; ttl=604798
-test.iwj.relativity.greenend.org.uk. flags 2 type A(addr): All nameservers failed; nrrs=0; cname=$; owner=$; ttl=604798
 test.iwj.relativity.greenend.org.uk. flags 2 type NS(+addr): All nameservers failed; nrrs=0; cname=$; owner=$; ttl=604798
 test.iwj.relativity.greenend.org.uk. flags 2 type MX(+addr): All nameservers failed; nrrs=0; cname=$; owner=$; ttl=604798
 test.iwj.relativity.greenend.org.uk. flags 2 type SOA(822): All nameservers failed; nrrs=0; cname=$; owner=$; ttl=604798
 test.iwj.relativity.greenend.org.uk. flags 2 type RP(822): All nameservers failed; nrrs=0; cname=$; owner=$; ttl=604798
+test.iwj.relativity.greenend.org.uk. flags 2 type A(addr): All nameservers failed; nrrs=0; cname=$; owner=$; ttl=604798
 rc=0
