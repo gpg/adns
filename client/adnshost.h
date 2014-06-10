@@ -80,7 +80,7 @@ extern int ov_env, ov_pipe, ov_asynch;
 extern int ov_verbose;
 extern adns_rrtype ov_type;
 extern int ov_search, ov_qc_query, ov_qc_anshost, ov_qc_cname;
-extern int ov_tcp, ov_cname, ov_format;
+extern int ov_tcp, ov_cname, ov_format, ov_v6map;
 extern char *ov_id;
 extern struct perqueryflags_remember ov_pqfr;
 

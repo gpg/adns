@@ -382,6 +382,7 @@ static adns_status pap_addr(const parseinfo *pai, int rrty, size_t rrsz,
 			    int *cbyte_io, int max, adns_rr_addr *storeto) {
   const byte *dgram= pai->dgram;
   int af, addrlen, salen;
+  struct in6_addr v6map;
   const void *oaddr= dgram + *cbyte_io;
   int avail= max - *cbyte_io;
   int step= -1;
@@ -389,9 +390,25 @@ static adns_status pap_addr(const parseinfo *pai, int rrty, size_t rrsz,
 
   switch (rrty) {
   case adns_r_a:
+    if ((pai->qu->flags & adns_qf_ipv6_mapv4) &&
+	(pai->qu->answer->type & adns__qtf_bigaddr)) {
+      if (avail < 4) return adns_s_invaliddata;
+      memset(v6map.s6_addr +  0, 0x00, 10);
+      memset(v6map.s6_addr + 10, 0xff,  2);
+      memcpy(v6map.s6_addr + 12, oaddr, 4);
+      oaddr= v6map.s6_addr; avail= sizeof(v6map.s6_addr);
+      if (step < 0) step= 4;
+      goto aaaa;
+    }
     af= AF_INET; addrlen= 4;
     addrp= &storeto->addr.inet.sin_addr;
     salen= sizeof(storeto->addr.inet);
+    break;
+  case adns_r_aaaa:
+  aaaa:
+    af= AF_INET6; addrlen= 16;
+    addrp= storeto->addr.inet6.sin6_addr.s6_addr;
+    salen= sizeof(storeto->addr.inet6);
     break;
   }
   assert(addrp);
@@ -842,7 +859,7 @@ static adns_status pap_hostaddr(const parseinfo *pai, int *cbyte_io,
   ctx.callback= icb_hostaddr;
   ctx.pinfo.hostaddr= rrp;
   
-  nflags= adns_qf_quoteok_query;
+  nflags= adns_qf_quoteok_query | (pai->qu->flags & adns_qf_ipv6_mapv4);
   if (!(pai->qu->flags & adns_qf_cname_loose)) nflags |= adns_qf_cname_forbid;
   
   st= addr_submit(pai->qu, &nqu, &pai->qu->vb, id, want,

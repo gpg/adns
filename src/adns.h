@@ -102,6 +102,7 @@ typedef enum { /* In general, or together the desired flags: */
  adns_qf_quotefail_cname=0x00000080,/* refuse if quote-req chars in CNAME we go via */
  adns_qf_cname_loose=    0x00000100,/* allow refs to CNAMEs - without, get _s_cname */
  adns_qf_cname_forbid=   0x00000200,/* don't follow CNAMEs, instead give _s_cname */
+ adns_qf_ipv6_mapv4=	 0x00001000,/*  ... return IPv4 addresses as v6-mapped */
  adns_qf_addrlit_scope_forbid=0x00002000,/* forbid %<scope> in IPv6 literals */
  adns_qf_addrlit_scope_numeric=0x00004000,/* %<scope> may only be numeric */
  adns_qf_addrlit_ipv4_quadonly=0x00008000,/* reject non-dotted-quad ipv4 */

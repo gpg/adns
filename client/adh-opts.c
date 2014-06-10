@@ -31,7 +31,7 @@ int ov_env=1, ov_pipe=0, ov_asynch=0;
 int ov_verbose= 0;
 adns_rrtype ov_type= adns_r_none;
 int ov_search=0, ov_qc_query=0, ov_qc_anshost=0, ov_qc_cname=1;
-int ov_tcp=0, ov_cname=0, ov_format=fmt_default;
+int ov_tcp=0, ov_cname=0, ov_v6map=0, ov_format=fmt_default;
 char *ov_id= 0;
 struct perqueryflags_remember ov_pqfr = { 1,1,1, tm_none };
 
@@ -105,6 +105,9 @@ static const struct optioninfo perquery_options[]= {
     "Ta", "ttl-abs",       &ov_pqfr.ttl, tm_abs },
   { ot_value,            "Do not show the TTL (default)",
     "Tn", "no-ttl",        &ov_pqfr.ttl, tm_none },
+
+  { ot_flag,		 "Return IPv4 addresses as IPv6-mapped",
+    "Am", "--addr-ipv6-mapped", &ov_v6map, 1 },
   
   { ot_desconly, "per-query CNAME handling mode:" },
   { ot_value,            "Call it an error if a CNAME is found",
