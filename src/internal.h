@@ -109,6 +109,11 @@ typedef enum {
   rcode_refused
 } dns_rcode;
 
+enum {
+  adns__qf_addr_answer= 0x01000000,/* addr query received an answer */
+  adns__qf_addr_cname = 0x02000000 /* addr subquery performed on cname */
+};
+
 /* Shared data structures */
 
 typedef struct {

@@ -378,6 +378,27 @@ static unsigned addr_rrtypeflag(adns_rrtype type) {
   return i < addr_nrrtypes ? 1 << i : 0;
 }
 
+/* About CNAME handling in addr queries.
+ *
+ * A user-level addr query is translated into a number of protocol-level
+ * queries, and its job is to reassemble the results.  This gets tricky if
+ * the answers aren't consistent.  In particular, if the answers report
+ * inconsistent indirection via CNAME records (e.g., different CNAMEs, or
+ * some indirect via a CNAME, and some don't) then we have trouble.
+ *
+ * Once we've received an answer, even if it was NODATA, we set
+ * adns__qf_addr_answer on the parent query.  This will let us detect a
+ * conflict between a no-CNAME-with-NODATA reply and a subsequent CNAME.
+ *
+ * If we detect a conflict of any kind, then at least one answer came back
+ * with a CNAME record, so we pick the first such answer (somewhat
+ * arbitrarily) as being the `right' canonical name, and set this in the
+ * parent query's answer->cname slot.  We discard address records from the
+ * wrong name.  And finally we cancel the outstanding child queries, and
+ * resubmit address queries for the address families we don't yet have, with
+ * adns__qf_addr_cname set so that we know that we're in the fixup state.
+ */
+
 static adns_status pap_addr(const parseinfo *pai, int rrty, size_t rrsz,
 			    int *cbyte_io, int max, adns_rr_addr *storeto) {
   const byte *dgram= pai->dgram;
@@ -613,8 +634,54 @@ static void icb_addr(adns_query parent, adns_query child) {
   adns_answer *pans= parent->answer, *cans= child->answer;
   struct timeval now;
   adns_status err;
+  adns_queryflags qf;
+  int id;
 
   propagate_ttl(parent, child);
+
+  if (!(child->flags & adns__qf_addr_cname) &&
+      (parent->flags & adns__qf_addr_answer) &&
+      (!!pans->cname != !!cans->cname ||
+       (pans->cname && strcmp(pans->cname, cans->cname)))) {
+    /* We've detected an inconsistency in CNAME records, and must deploy
+     * countermeasures.
+     */
+
+    if (!pans->cname) {
+      /* The child has a CNAME record, but the parent doesn't.  We must
+       * discard all of the parent's addresses, and substitute the child's.
+       */
+
+      assert(pans->rrsz == cans->rrsz);
+      adns__free_interim(parent, pans->rrs.bytes);
+      adns__transfer_interim(child, parent, cans->rrs.bytes);
+      pans->rrs.bytes= cans->rrs.bytes;
+      pans->nrrs= cans->nrrs;
+      parent->ctx.tinfo.addr.have= 0;
+      done_addr_type(parent, cans->type);
+      err= copy_cname_from_child(parent, child); if (err) goto x_err;
+    }
+
+    /* We've settled on the CNAME (now) associated with the parent, which
+     * already has appropriate address records.  Build a query datagram for
+     * this name so that we can issue child queries for the missing address
+     * families.  The child's vbuf looks handy for this.
+     */
+    err= adns__mkquery(ads, &child->vb, &id, pans->cname,
+		       strlen(pans->cname), &tinfo_addrsub,
+		       adns_r_addr, parent->flags);
+    if (err) goto x_err;
+
+    /* Now cancel the remaining children, and try again with the CNAME we've
+     * settled on.
+     */
+    adns__cancel_children(parent);
+    if (gettimeofday(&now, 0)) goto x_gtod;
+    qf= adns__qf_addr_cname;
+    if (!(parent->flags & adns_qf_cname_loose)) qf |= adns_qf_cname_forbid;
+    addr_subqueries(parent, now, qf, child->vb.buf, child->vb.used);
+    return;
+  }
 
   if (cans->cname && !pans->cname) {
     err= copy_cname_from_child(parent, child);
@@ -648,6 +715,7 @@ static void icb_addr(adns_query parent, adns_query child) {
   if (parent->children.head) LIST_LINK_TAIL(ads->childw, parent);
   else if (!pans->nrrs) adns__query_fail(parent, adns_s_nodata);
   else adns__query_done(parent);
+  parent->flags |= adns__qf_addr_answer;
   return;
 
 x_gtod:
