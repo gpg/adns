@@ -24,6 +24,7 @@
  *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
  */
 
+#include <stddef.h>
 #include <stdlib.h>
 
 #include <sys/types.h>
@@ -50,7 +51,7 @@
  * _inaddr                    (pa,di,cs
  *				+search_sortlist, dip_genaddr, csp_genaddr)
  * _in6addr		      (pa,di,cs)
- * _addr                      (pa,di,div,csp,cs,gsz,qs
+ * _addr                      (pap,pa,di,div,csp,cs,gsz,qs
  *				+search_sortlst_sa, dip_sockaddr,
  *				 addr_rrtypes, icb_addr)
  * _domain                    (pap,csp,cs)
@@ -343,7 +344,7 @@ static adns_status cs_in6addr(vbuf *vb, const void *datap) {
 }
 
 /*
- * _addr   (pa,di,div,csp,cs,gsz,qs
+ * _addr   (pap,pa,di,div,csp,cs,gsz,qs
  *		+search_sortlist_sa, dip_sockaddr, addr_rrtypes, icb_addr)
  */
 
@@ -376,16 +377,42 @@ static unsigned addr_rrtypeflag(adns_rrtype type) {
   return i < addr_nrrtypes ? 1 << i : 0;
 }
 
+static adns_status pap_addr(const parseinfo *pai, int rrty, size_t rrsz,
+			    int *cbyte_io, int max, adns_rr_addr *storeto) {
+  const byte *dgram= pai->dgram;
+  int af, addrlen, salen;
+  const void *oaddr= dgram + *cbyte_io;
+  int avail= max - *cbyte_io;
+  int step= -1;
+  void *addrp= 0;
+
+  switch (rrty) {
+  case adns_r_a:
+    af= AF_INET; addrlen= 4;
+    addrp= &storeto->addr.inet.sin_addr;
+    salen= sizeof(storeto->addr.inet);
+    break;
+  }
+  assert(addrp);
+
+  assert(offsetof(adns_rr_addr, addr) + salen <= rrsz);
+  if (addrlen < avail) return adns_s_invaliddata;
+  if (step < 0) step= addrlen;
+  *cbyte_io += step;
+  memset(&storeto->addr, 0, salen);
+  storeto->len= salen;
+  storeto->addr.sa.sa_family= af;
+  memcpy(addrp, oaddr, addrlen);
+
+  return adns_s_ok;
+}
+
 static adns_status pa_addr(const parseinfo *pai, int cbyte,
 			   int max, void *datap) {
-  adns_rr_addr *storeto= datap;
-  const byte *dgram= pai->dgram;
-
-  if (max-cbyte != 4) return adns_s_invaliddata;
-  storeto->len= sizeof(storeto->addr.inet);
-  memset(&storeto->addr,0,sizeof(storeto->addr.inet));
-  storeto->addr.inet.sin_family= AF_INET;
-  memcpy(&storeto->addr.inet.sin_addr,dgram+cbyte,4);
+  int err= pap_addr(pai, pai->qu->answer->type & adns_rrt_typemask,
+		    pai->qu->answer->rrsz, &cbyte, max, datap);
+  if (err) return err;
+  if (cbyte != max) return adns_s_invaliddata;
   return adns_s_ok;
 }
 
@@ -664,7 +691,7 @@ static adns_status pap_findaddrs(const parseinfo *pai, adns_rr_hostaddr *ha,
 				 size_t addrsz,
 				 int *cbyte_io, int count, int dmstart) {
   int rri, naddrs;
-  int type, class, rdlen, rdstart, ownermatched;
+  int type, class, rdlen, rdstart, rdend, ownermatched;
   unsigned long ttl;
   adns_status st;
   
@@ -683,8 +710,11 @@ static adns_status pap_findaddrs(const parseinfo *pai, adns_rr_hostaddr *ha,
     if (!adns__vbuf_ensure(&pai->qu->vb, (naddrs+1)*addrsz))
       R_NOMEM;
     adns__update_expires(pai->qu,ttl,pai->now);
-    st= pa_addr(pai, rdstart,rdstart+rdlen, pai->qu->vb.buf + naddrs*addrsz);
+    rdend= rdstart + rdlen;
+    st= pap_addr(pai, adns_r_a, addrsz, &rdstart, rdend,
+		 (adns_rr_addr *)(pai->qu->vb.buf + naddrs*addrsz));
     if (st) return st;
+    if (rdstart != rdend) return adns_s_invaliddata;
     naddrs++;
   }
   if (naddrs >= 0) {
