@@ -261,11 +261,27 @@ static adns_status pa_inaddr(const parseinfo *pai, int cbyte,
 
 static int search_sortlist(adns_state ads, int af, const void *ad) {
   const struct sortlist *slp;
+  const struct in6_addr *a6;
+  union gen_addr a;
   int i;
-  
+  int v6mappedp= 0;
+
+  if (af == AF_INET6) {
+    a6= ad;
+    if (IN6_IS_ADDR_V4MAPPED(a6)) {
+      a.v4.s_addr= htonl(((unsigned long)a6->s6_addr[12] << 24) |
+			 ((unsigned long)a6->s6_addr[13] << 16) |
+			 ((unsigned long)a6->s6_addr[14] <<  8) |
+			 ((unsigned long)a6->s6_addr[15] <<  0));
+      v6mappedp= 1;
+    }
+  }
+
   for (i=0, slp=ads->sortlist;
        i<ads->nsortlist &&
-	 !adns__addr_match_p(af,ad, slp->af,&slp->base,&slp->mask);
+	 !adns__addr_match_p(af,ad, slp->af,&slp->base,&slp->mask) &&
+	 !(v6mappedp &&
+	   adns__addr_match_p(AF_INET,&a, slp->af,&slp->base,&slp->mask));
        i++, slp++);
   return i;
 }
