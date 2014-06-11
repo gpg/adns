@@ -1,4 +1,4 @@
-adnstest noserver
+adnstest noserver -0x400
 ,a/greenend.org.uk
  start 929580082.699581
  socket domain=PF_INET type=SOCK_DGRAM

@@ -264,7 +264,7 @@ static void ccf_options(adns_state ads, const char *fn,
   const char *word;
   char *ep;
   unsigned long v;
-  int l;
+  int i,l;
 
   if (!buf) return;
 
@@ -295,6 +295,26 @@ static void ccf_options(adns_state ads, const char *fn,
       } else {
 	configparseerr(ads,fn,lno, "option adns_checkc has bad value `%s' "
 		       "(must be none, entex or freq", word+12);
+      }
+      continue;
+    }
+    if (l>=8 && !memcmp(word,"adns_af:",8)) {
+      word += 8;
+      ads->iflags &= ~adns_if_afmask;
+      if (strcmp(word,"any")) for (;;) {
+	i= strcspn(word,",");
+	if (i>=4 && !memcmp(word,"ipv4",4))
+	  ads->iflags |= adns_if_permit_ipv4;
+	else if (i>=4 && !memcmp(word,"ipv6",4))
+	  ads->iflags |= adns_if_permit_ipv6;
+	else {
+	  configparseerr(ads,fn,lno, "option adns_af has bad value `%.*s' "
+			 "(must be `any' or list {`ipv4',`ipv6'},...)",
+			 i, word);
+	  break;
+	}
+	if (!word[i]) break;
+	word= word + i + 1;
       }
       continue;
     }

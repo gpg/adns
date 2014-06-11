@@ -72,6 +72,25 @@
 extern "C" { /* I really dislike this - iwj. */
 #endif
 
+/* Whether to support address families other than IPv4 in responses which use
+ * the `adns_rr_addr' structure.  This is a source-compatibility issue: old
+ * clients may not expect to find address families other than AF_INET in
+ * their query results.  There's a separate binary compatibility issue to do
+ * with the size of the `adns_rr_addr' structure, but we'll assume you can
+ * cope with that because you have this header file.  Define
+ * `ADNS_FEATURE_IPV4ONLY' if you only want to see AF_INET addresses by
+ * default, or `ADNS_FEATURE_MANYAF' to allow multiple address families; the
+ * default is currently to stick with AF_INET only, but this is likely to
+ * change in a later release of ADNS.  Note that any adns_qf_want_... flags
+ * in your query are observed: this setting affects only the default address
+ * families.
+ */
+#if !defined(ADNS_FEATURE_IPV4ONLY) && !defined(ADNS_FEATURE_MANYAF)
+#  define ADNS_FEATURE_IPV4ONLY
+#elif defined(ADNS_FEATURE_IPV4ONLY) && defined(ADNS_FEATURE_MANYAF)
+#  error "Feature flags ADNS_FEATURE_IPV4ONLY and ..._MANYAF are incompatible"
+#endif
+
 /* All struct in_addr anywhere in adns are in NETWORK byte order. */
 
 typedef struct adns__state *adns_state;
@@ -88,7 +107,17 @@ typedef enum { /* In general, or together the desired flags: */
  adns_if_eintr=       0x0020,/* allow _wait and _synchronous to return EINTR */
  adns_if_nosigpipe=   0x0040,/* applic has SIGPIPE ignored, do not protect */
  adns_if_checkc_entex=0x0100,/* consistency checks on entry/exit to adns fns */
- adns_if_checkc_freq= 0x0300 /* consistency checks very frequently (slow!) */
+ adns_if_checkc_freq= 0x0300,/* consistency checks very frequently (slow!) */
+
+ adns_if_permit_ipv4= 0x0400,/* allow _addr queries to return IPv4 addresses  */
+ adns_if_permit_ipv6= 0x0800,/* allow _addr queries to return IPv6 addresses */
+ adns_if_afmask=      0x0c00
+   /* These are policy flags, and overridden by the adns_af:... option in
+    * resolv.conf.  If the adns_qf_want_... query flags are incompatible with
+    * these settings (in the sense that no address families are permitted at
+    * all) then the query flags take precedence; otherwise only records which
+    * satisfy all of the stated requirements are allowed.
+    */
 } adns_initflags;
 
 typedef enum { /* In general, or together the desired flags: */
@@ -102,10 +131,21 @@ typedef enum { /* In general, or together the desired flags: */
  adns_qf_quotefail_cname=0x00000080,/* refuse if quote-req chars in CNAME we go via */
  adns_qf_cname_loose=    0x00000100,/* allow refs to CNAMEs - without, get _s_cname */
  adns_qf_cname_forbid=   0x00000200,/* don't follow CNAMEs, instead give _s_cname */
+
+ adns_qf_want_ipv4=	 0x00000400,/* try to return IPv4 addresses */
+ adns_qf_want_ipv6=	 0x00000800,/* try to return IPv6 addresses */
+ adns_qf_want_allaf=	 0x00000c00,/* all the above flag bits */
+   /* Without any of the _qf_want_... flags, _qtf_deref queries try to return
+    * all address families permitted by _if_permit_... (as overridden by the
+    * `adns_af:...'  configuration option).  Set flags to restrict the
+    * returned address families to the ones selected.
+    */
  adns_qf_ipv6_mapv4=	 0x00001000,/*  ... return IPv4 addresses as v6-mapped */
+
  adns_qf_addrlit_scope_forbid=0x00002000,/* forbid %<scope> in IPv6 literals */
  adns_qf_addrlit_scope_numeric=0x00004000,/* %<scope> may only be numeric */
  adns_qf_addrlit_ipv4_quadonly=0x00008000,/* reject non-dotted-quad ipv4 */
+
  adns__qf_internalmask=  0x0ff00000
 } adns_queryflags;
 
@@ -116,8 +156,12 @@ typedef enum {
  adns__qtf_mail822=  0x20000,/* return mailboxes in RFC822 rcpt field fmt   */
 
  adns__qtf_bigaddr=0x1000000,/* use the new larger sockaddr union */
+ adns__qtf_manyaf= 0x2000000,/* permitted to return multiple address families */
 
  adns__qtf_deref=    adns__qtf_deref_bit|adns__qtf_bigaddr
+#ifdef ADNS_FEATURE_MANYAF
+		     |adns__qtf_manyaf
+#endif
 			    ,/* dereference domains; perhaps get extra data */
 
  adns_r_unknown=     0x40000,
@@ -534,6 +578,15 @@ int adns_init_logfn(adns_state *newstate_r, adns_initflags flags,
  *   Changes the consistency checking frequency; this overrides the
  *   setting of adns_if_check_entex, adns_if_check_freq, or neither,
  *   in the flags passed to adns_init.
+ *
+ *  adns_af:{ipv4,ipv6},...  adns_af:any
+ *   Determines which address families ADNS looks up (either as an
+ *   adns_r_addr query, or when dereferencing an answer yielding hostnames
+ *   (e.g., adns_r_mx).  The argument is a comma-separated list: only the
+ *   address families listed will be looked up.  The default is `any'.
+ *   Lookups occur (logically) concurrently; use the `sortlist' directive to
+ *   control the relative order of addresses in answers.  This option
+ *   overrides the corresponding init flags (covered by adns_if_afmask).
  * 
  * There are a number of environment variables which can modify the
  * behaviour of adns.  They take effect only if adns_init is used, and

@@ -1,4 +1,4 @@
-adnstest ncipher
+adnstest ncipher -0x400
 254.0.99.203.in-addr.arpa
  start 933269010.293417
  socket domain=PF_INET type=SOCK_DGRAM

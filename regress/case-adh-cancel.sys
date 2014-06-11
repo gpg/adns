@@ -1,4 +1,4 @@
-./adnshost default -f
+./adnshost default -f -A4
 
  start 969124425.922896
  socket domain=PF_INET type=SOCK_DGRAM

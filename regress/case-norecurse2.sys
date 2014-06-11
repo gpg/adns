@@ -1,4 +1,4 @@
-adnstest default -0x16
+adnstest default -0x416
 4.204.50.158.in-addr.arpa
  start 939764277.018636
  socket domain=PF_INET type=SOCK_DGRAM

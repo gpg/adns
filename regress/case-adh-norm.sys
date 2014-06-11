@@ -1,4 +1,4 @@
-./adnshost default
+./adnshost default -A4
 chiark.greenend.org.uk
  start 969122933.609498
  socket domain=PF_INET type=SOCK_DGRAM

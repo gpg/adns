@@ -32,6 +32,7 @@
 #include <string.h>
 #include <errno.h>
 
+#define ADNS_FEATURE_MANYAF
 #include "config.h"
 #include "adns.h"
 

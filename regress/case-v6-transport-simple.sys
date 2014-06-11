@@ -1,4 +1,4 @@
-./adnstest distorted-v6
+./adnstest distorted-v6 -0x400
 www.distorted.org.uk
  start 1402047441.083542
  socket domain=PF_INET6 type=SOCK_DGRAM

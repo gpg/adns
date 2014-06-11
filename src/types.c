@@ -519,7 +519,26 @@ static unsigned addr_rrtypes(adns_state ads, adns_rrtype type,
   /* Return a mask of addr_rf_... flags indicating which address families are
    * wanted, given a query type and flags.
    */
-  return addr_rf_a;
+
+  adns_queryflags permitaf= 0;
+  unsigned want= 0;
+
+  if (!(type & adns__qtf_bigaddr))
+    qf= (qf & ~adns_qf_want_allaf) | adns_qf_want_ipv4;
+  else {
+    if (!(qf & adns_qf_want_allaf)) {
+      qf |= (type & adns__qtf_manyaf) ?
+	adns_qf_want_allaf : adns_qf_want_ipv4;
+    }
+    if (ads->iflags & adns_if_permit_ipv4) permitaf |= adns_qf_want_ipv4;
+    if (ads->iflags & adns_if_permit_ipv6) permitaf |= adns_qf_want_ipv6;
+    if (qf & permitaf) qf &= permitaf | ~adns_qf_want_allaf;
+  }
+
+  if (qf & adns_qf_want_ipv4) want |= addr_rf_a;
+  if (qf & adns_qf_want_ipv6) want |= addr_rf_aaaa;
+
+  return want;
 }
 
 static void icb_addr(adns_query parent, adns_query child);
@@ -927,7 +946,8 @@ static adns_status pap_hostaddr(const parseinfo *pai, int *cbyte_io,
   ctx.callback= icb_hostaddr;
   ctx.pinfo.hostaddr= rrp;
   
-  nflags= adns_qf_quoteok_query | (pai->qu->flags & adns_qf_ipv6_mapv4);
+  nflags= adns_qf_quoteok_query | (pai->qu->flags & (adns_qf_want_allaf |
+						     adns_qf_ipv6_mapv4));
   if (!(pai->qu->flags & adns_qf_cname_loose)) nflags |= adns_qf_cname_forbid;
   
   st= addr_submit(pai->qu, &nqu, &pai->qu->vb, id, want,

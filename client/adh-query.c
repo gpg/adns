@@ -93,7 +93,7 @@ static void prep_query(struct query_node **qun_r, int *quflags_r) {
     (ov_qc_anshost ? adns_qf_quoteok_anshost : 0) |
     (ov_qc_cname ? 0 : adns_qf_quoteok_cname) |
     (ov_v6map ? adns_qf_ipv6_mapv4 : 0) |
-    ov_cname;
+    ov_cname | ov_afflags;
     
   *qun_r= qun;
 }

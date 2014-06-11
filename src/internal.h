@@ -42,6 +42,7 @@ typedef unsigned char byte;
 
 #include <sys/time.h>
 
+#define ADNS_FEATURE_MANYAF
 #include "adns.h"
 #include "dlist.h"
 

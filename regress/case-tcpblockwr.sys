@@ -1,4 +1,4 @@
-adnstest anarres -0x300
+adnstest anarres -0x700
 2/test.iwj.relativity.greenend.org.uk. 2/test.iwj.relativity.greenend.org.uk. 2/test.iwj.relativity.greenend.org.uk.
  start 962143438.172669
  socket domain=PF_INET type=SOCK_DGRAM

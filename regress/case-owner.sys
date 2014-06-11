@@ -1,4 +1,4 @@
-adnstest default
+adnstest default -0x400
 4/chiark.greenend.org.uk
  start 933206012.504679
  socket domain=PF_INET type=SOCK_DGRAM

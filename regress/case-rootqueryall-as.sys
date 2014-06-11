@@ -1,4 +1,4 @@
-adnstest default
+adnstest default -0x400
 . 1/.
  start 931992019.753022
  socket domain=PF_INET type=SOCK_DGRAM

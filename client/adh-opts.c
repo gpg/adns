@@ -31,7 +31,7 @@ int ov_env=1, ov_pipe=0, ov_asynch=0;
 int ov_verbose= 0;
 adns_rrtype ov_type= adns_r_none;
 int ov_search=0, ov_qc_query=0, ov_qc_anshost=0, ov_qc_cname=1;
-int ov_tcp=0, ov_cname=0, ov_v6map=0, ov_format=fmt_default;
+int ov_tcp=0, ov_cname=0, ov_afflags=0, ov_v6map=0, ov_format=fmt_default;
 char *ov_id= 0;
 struct perqueryflags_remember ov_pqfr = { 1,1,1, tm_none };
 
@@ -106,6 +106,13 @@ static const struct optioninfo perquery_options[]= {
   { ot_value,            "Do not show the TTL (default)",
     "Tn", "no-ttl",        &ov_pqfr.ttl, tm_none },
 
+  { ot_desconly, "per-query address family options (for `addr' etc.):" },
+  { ot_value,		 "Only return IPv4 addresses",
+    "A4", "--addr-ipv4-only", &ov_afflags, adns_qf_want_ipv4 },
+  { ot_value,		 "Only return IPv6 addresses",
+    "A6", "--addr-ipv6-only", &ov_afflags, adns_qf_want_ipv6 },
+  { ot_value,		 "Return all available addresses (default)",
+    "Aa", "--addr-all",	   &ov_afflags, 0 },
   { ot_flag,		 "Return IPv4 addresses as IPv6-mapped",
     "Am", "--addr-ipv6-mapped", &ov_v6map, 1 },
   
