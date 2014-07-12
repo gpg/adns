@@ -62,39 +62,43 @@ static void unknown_af(int af) {
   abort();
 }
 
-#define IN6_ADDR_EQUALP(a, b)						\
-  (!memcmp((a).s6_addr, (b).s6_addr, sizeof((a).s6_addr)))
-
-int adns__genaddr_equal_p(int af, const union gen_addr *a,
-			  int bf, const void *b) {
-  const union gen_addr *bb= b;
-  if (af != bf) return 0;
-  switch (af) {
+int adns__addrs_equal_raw(const struct sockaddr *a,
+			 int bf, const void *b) {
+  if (a->sa_family != bf) return 0;
+  switch (a->sa_family) {
   AF_CASES(af);
-  af_inet: return a->v4.s_addr == bb->v4.s_addr;
-  af_inet6: return IN6_ADDR_EQUALP(a->v6, bb->v6);
-  default: unknown_af(af); return -1;
+  af_inet:
+    return ((const struct sockaddr_in*)a)->sin_addr.s_addr ==
+           ((const struct in_addr*)b)->s_addr;
+  af_inet6:
+    return !memcmp(&((const struct sockaddr_in6*)a)->sin6_addr,
+		   b, sizeof(struct in6_addr));
+  default: unknown_af(a->sa_family); return -1;
   }
 }
 
-int adns__sockaddr_equal_p(const struct sockaddr *sa,
-			   const struct sockaddr *sb) {
-  if (sa->sa_family != sb->sa_family) return 0;
+int adns__addrs_equal(const adns_sockaddr *a, const adns_sockaddr *b) {
+  return adns__addrs_equal_raw(&a->sa, b->sa.sa_family,
+			       adns__sockaddr_addr(&b->sa));
+}
+
+int adns__sockaddrs_equal(const struct sockaddr *sa,
+			  const struct sockaddr *sb) {
+  if (!adns__addrs_equal_raw(sa, sb->sa_family, adns__sockaddr_addr(sb)))
+    return 0;
   switch (sa->sa_family) {
   AF_CASES(af);
   af_inet: {
     const struct sockaddr_in *sina= CSIN(sa), *sinb= CSIN(sb);
-    return (sina->sin_addr.s_addr == sinb->sin_addr.s_addr &&
-	    sina->sin_port == sinb->sin_port);
+    return sina->sin_port == sinb->sin_port;
   }
   af_inet6: {
     /* Don't check the flowlabel.  That's apparently useful for routing
      * performance, but doesn't affect the address in any important
      * respect. */
     const struct sockaddr_in6 *sin6a= CSIN6(sa), *sin6b= CSIN6(sb);
-    return (IN6_ADDR_EQUALP(sin6a->sin6_addr, sin6b->sin6_addr) &&
-	    sin6a->sin6_port == sin6b->sin6_port &&
-	    sin6a->sin6_scope_id == sin6b->sin6_scope_id);
+    return sin6a->sin6_port == sin6b->sin6_port &&
+           sin6a->sin6_scope_id == sin6b->sin6_scope_id;
   }
   default:
     unknown_af(sa->sa_family);
@@ -111,16 +115,17 @@ int adns__addr_width(int af) {
   }
 }
 
-void adns__prefix_mask(int af, int len, union gen_addr *mask_r) {
+void adns__prefix_mask(adns_sockaddr *sa, int len) {
+  int af= sa->sa.sa_family;
   switch (af) {
   AF_CASES(af);
   af_inet:
     assert(len <= 32);
-    mask_r->v4.s_addr= htonl(!len ? 0 : 0xffffffff << (32-len));
+    sa->inet.sin_addr.s_addr= htonl(!len ? 0 : 0xffffffff << (32-len));
     break;
   af_inet6: {
     int i= len/8, j= len%8;
-    unsigned char *m= mask_r->v6.s6_addr;
+    unsigned char *m= sa->inet6.sin6_addr.s6_addr;
     assert(len <= 128);
     memset(m, 0xff, i);
     if (j) m[i++]= (0xff << (8-j)) & 0xff;
@@ -132,11 +137,12 @@ void adns__prefix_mask(int af, int len, union gen_addr *mask_r) {
   }
 }
 
-int adns__guess_prefix_length(int af, const union gen_addr *addr) {
+int adns__guess_prefix_length(const adns_sockaddr *sa) {
+  int af= sa->sa.sa_family;
   switch (af) {
   AF_CASES(af);
   af_inet: {
-    unsigned a= (ntohl(addr->v4.s_addr) >> 24) & 0xff;
+    unsigned a= (ntohl(sa->inet.sin_addr.s_addr) >> 24) & 0xff;
     if (a < 128) return 8;
     else if (a < 192) return 16;
     else if (a < 224) return 24;
@@ -150,69 +156,64 @@ int adns__guess_prefix_length(int af, const union gen_addr *addr) {
   }
 }
 
-int adns__addr_match_p(int addraf, const union gen_addr *addr,
-		       int netaf, const union gen_addr *base,
-		       const union gen_addr *mask)
+int adns__addr_matches(int af, const void *addr,
+		       const adns_sockaddr *base, const adns_sockaddr *mask)
 {
-  if (addraf != netaf) return 0;
-  switch (addraf) {
+  assert(base->sa.sa_family == mask->sa.sa_family);
+  if (af != base->sa.sa_family) return 0;
+  switch (af) {
   AF_CASES(af);
-  af_inet:
-    return (addr->v4.s_addr & mask->v4.s_addr) == base->v4.s_addr;
+  af_inet: {
+    const struct in_addr *v4 = addr;
+    return (v4->s_addr & mask->inet.sin_addr.s_addr)
+      == base->inet.sin_addr.s_addr;
+  }
   af_inet6: {
     int i;
-    const char *a= addr->v6.s6_addr;
-    const char *b= base->v6.s6_addr;
-    const char *m= mask->v6.s6_addr;
+    const char *a= addr;
+    const char *b= base->inet6.sin6_addr.s6_addr;
+    const char *m= mask->inet6.sin6_addr.s6_addr;
     for (i = 0; i < 16; i++)
       if ((a[i] & m[i]) != b[i]) return 0;
     return 1;
   } break;
   default:
-    unknown_af(addraf);
+    unknown_af(af);
     return -1;
   }
 }
 
-void adns__sockaddr_extract(const struct sockaddr *sa,
-			    union gen_addr *a_r, int *port_r) {
+const void *adns__sockaddr_addr(const struct sockaddr *sa) {
   switch (sa->sa_family) {
   AF_CASES(af);
   af_inet: {
     const struct sockaddr_in *sin = CSIN(sa);
-    if (port_r) *port_r= ntohs(sin->sin_port);
-    if (a_r) a_r->v4= sin->sin_addr;
-    break;
+    return &sin->sin_addr;
   }
   af_inet6: {
     const struct sockaddr_in6 *sin6 = CSIN6(sa);
-    if (port_r) *port_r= ntohs(sin6->sin6_port);
-    if (a_r) a_r->v6= sin6->sin6_addr;
-    break;
+    return &sin6->sin6_addr;
   }
   default:
     unknown_af(sa->sa_family);
   }
 }
 
-void adns__sockaddr_inject(const union gen_addr *a, int port,
-			   struct sockaddr *sa) {
-  switch (sa->sa_family) {
+void adns__addr_inject(const void *a, adns_sockaddr *sa) {
+  switch (sa->sa.sa_family) {
   AF_CASES(af);
   af_inet: {
-    struct sockaddr_in *sin = SIN(sa);
-    if (port != -1) sin->sin_port= htons(port);
-    if (a) sin->sin_addr= a->v4;
+    struct sockaddr_in *sin = &sa->inet;
+    memcpy(&sin->sin_addr, a, sizeof(sin->sin_addr));
     break;
   }
   af_inet6: {
-    struct sockaddr_in6 *sin6 = SIN6(sa);
-    if (port != -1) sin6->sin6_port= htons(port);
-    if (a) sin6->sin6_addr= a->v6;
+    struct sockaddr_in6 *sin6 = &sa->inet6;
+    memcpy(&sin6->sin6_addr, a, sizeof(sin6->sin6_addr));
     break;
   }
   default:
-    unknown_af(sa->sa_family);
+    unknown_af(sa->sa.sa_family);
   }
 }
 
@@ -536,9 +537,10 @@ static int inet_rev_parsecomp(const char *p, size_t n) {
   return i;
 }
 
-static void inet_rev_mkaddr(union gen_addr *addr, const byte *ipv) {
-  addr->v4.s_addr= htonl((ipv[3]<<24) | (ipv[2]<<16) |
-			 (ipv[1]<<8) | (ipv[0]));
+static void inet_rev_mkaddr(adns_sockaddr *addr, const byte *ipv) {
+  struct in_addr *v4 = &addr->inet.sin_addr;
+  v4->s_addr= htonl((ipv[3]<<24) | (ipv[2]<<16) |
+		    (ipv[1]<<8) | (ipv[0]));
 }
 
 static int inet6_rev_parsecomp(const char *p, size_t n) {
@@ -549,8 +551,9 @@ static int inet6_rev_parsecomp(const char *p, size_t n) {
   else return -1;
 }
 
-static void inet6_rev_mkaddr(union gen_addr *addr, const byte *ipv) {
-  unsigned char *a= addr->v6.s6_addr;
+static void inet6_rev_mkaddr(adns_sockaddr *addr, const byte *ipv) {
+  struct in6_addr *v6 = &addr->inet6.sin6_addr;
+  unsigned char *a= v6->s6_addr;
   int i;
 
   for (i=0; i<16; i++)
@@ -567,8 +570,8 @@ static const struct revparse_domain {
    * if it was unintelligible.
    */
 
-  void (*rev_mkaddr)(union gen_addr *addr, const byte *ipv);
-  /* write out the parsed address from a vector of parsed components */
+  void (*rev_mkaddr)(adns_sockaddr *addr, const byte *ipv);
+  /* write out the parsed protocol address from a vector of parsed components */
 
   const char *const tail[3];		/* tail label names */
 } revparse_domains[NREVDOMAINS] = {
@@ -613,7 +616,7 @@ int adns__revparse_label(struct revparse_state *rps, int labnum,
 }
 
 int adns__revparse_done(struct revparse_state *rps, int nlabels,
-			adns_rrtype *rrtype_r, struct af_addr *addr_r) {
+			adns_rrtype *rrtype_r, adns_sockaddr *addr_r) {
   unsigned f= REVDOMAIN_MAP(rps, nlabels);
   const struct revparse_domain *rpd;
   unsigned d;
@@ -630,7 +633,7 @@ int adns__revparse_done(struct revparse_state *rps, int nlabels,
 
   rpd= &revparse_domains[found];
   *rrtype_r= rpd->rrtype;
-  addr_r->af= rpd->af;
-  rpd->rev_mkaddr(&addr_r->addr, rps->ipv[found]);
+  addr_r->sa.sa_family= rpd->af;
+  rpd->rev_mkaddr(addr_r, rps->ipv[found]);
   return 0;
 }

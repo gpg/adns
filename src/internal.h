@@ -131,13 +131,6 @@ typedef struct {
   struct timeval now;
 } parseinfo;
 
-union gen_addr {
-  struct in_addr v4;
-  struct in6_addr v6;
-};
-
-struct af_addr { int af; union gen_addr addr; };
-
 #define NREVDOMAINS 2			/* keep in sync with addrfam! */
 struct revparse_state {
   unsigned map;				/* which domains are still live */
@@ -155,7 +148,7 @@ typedef struct {
   union {
     struct {
       adns_rrtype rev_rrtype;
-      struct af_addr addr;
+      adns_sockaddr addr;
     } ptr;
     struct {
       unsigned want, have;
@@ -399,8 +392,7 @@ struct adns__state {
   struct pollfd pollfds_buf[MAX_POLLFDS];
   adns_rr_addr servers[MAXSERVERS];
   struct sortlist {
-    int af;
-    union gen_addr base, mask;
+    adns_sockaddr base, mask;
   } sortlist[MAXSORTLIST];
   char **searchlist;
   unsigned short rand48xsubi[3];
@@ -408,21 +400,20 @@ struct adns__state {
 
 /* From addrfam.c: */
 
-extern int adns__af_supported_p(int af);
-/* Return nonzero if the address family af known to the library and supported
- * by the other addrfam operations.  Note that the other operations will
- * abort on an unrecognized address family rather than returning an error
- * code.
- */
-
-extern int adns__genaddr_equal_p(int af, const union gen_addr *a,
+extern int adns__addrs_equal_raw(const struct sockaddr *a,
 				 int bf, const void *b);
-/* b should point to a `struct in_addr' or equivalent for the address family
- * bf.  Returns nonzero if the two addresses are equal.
+/* Returns nonzero a's family is bf and a's protocol address field
+ * refers to the same protocol address as that stored at ba.
  */
 
-extern int adns__sockaddr_equal_p(const struct sockaddr *sa,
-				  const struct sockaddr *sb);
+extern int adns__addrs_equal(const adns_sockaddr *a,
+			     const adns_sockaddr *b);
+/* Returns nonzero if the two refer to the same protocol address
+ * (disregarding port, IPv6 scope, etc).
+ */
+
+extern int adns__sockaddrs_equal(const struct sockaddr *sa,
+				 const struct sockaddr *sb);
 /* Return nonzero if the two socket addresses are equal (in all significant
  * respects).
  */
@@ -430,39 +421,33 @@ extern int adns__sockaddr_equal_p(const struct sockaddr *sa,
 extern int adns__addr_width(int af);
 /* Return the width of addresses of family af, in bits. */
 
-extern void adns__prefix_mask(int af, int len, union gen_addr *mask_r);
-/* Store in mask_r an address mask for address family af, whose first len
- * bits are set and the remainder are clear.  This is what you want for
- * converting a prefix length into a netmask.
+extern void adns__prefix_mask(adns_sockaddr *sa, int len);
+/* Stores in sa's protocol address field an address mask for address
+ * family af, whose first len bits are set and the remainder are
+ * clear.  On entry, sa's af field must be set.  This is what you want
+ * for converting a prefix length into a netmask.
  */
 
-extern int adns__guess_prefix_length(int af, const union gen_addr *addr);
+extern int adns__guess_prefix_length(const adns_sockaddr *addr);
 /* Given a network base address, guess the appropriate prefix length based on
  * the appropriate rules for the address family (e.g., for IPv4, this uses
  * the old address classes).
  */
 
-extern int adns__addr_match_p(int addraf, const union gen_addr *addr,
-			      int netaf, const union gen_addr *base,
-			      const union gen_addr *mask);
-/* Given an address af (with family addraf) and a network (with family netaf,
- * base address base, and netmask mask), return nonzero if the address lies
- * within the network.
+extern int adns__addr_matches(int af, const void *addr,
+			      const adns_sockaddr *base,
+			      const adns_sockaddr *mask);
+/* Return nonzero if the protocol address specified by af and addr
+ * lies within the network specified by base and mask.
  */
 
-extern void adns__sockaddr_extract(const struct sockaddr *sa,
-				   union gen_addr *a_r, int *port_r);
-/* Extract fields from the socket address, filling in *a_r and *port_r with
- * the address and (integer, host byte-order) port number, respectively.
- * Either (or, pointlessly, both) of a_r and port_r may be null to mean
- * `don't care'.
+extern void adns__addr_inject(const void *a, adns_sockaddr *sa);
+/* Injects the protocol address *a into the socket adress sa.  Assumes
+ * that sa->sa_family is already set correctly.
  */
 
-extern void adns__sockaddr_inject(const union gen_addr *a, int port,
-				  struct sockaddr *sa);
-/* Inject fields into the socket adress sa.  If a is not null, copy the
- * address in; if port is not -1, then copy the port (converting from host
- * byte-order).  Assumes that sa->sa_family is already set correctly.
+extern const void *adns__sockaddr_addr(const struct sockaddr *sa);
+/* Returns the address of the protocol address field in sa.
  */
 
 char *adns__sockaddr_ntoa(const struct sockaddr *sa, char *buf);
@@ -497,11 +482,12 @@ extern int adns__revparse_label(struct revparse_state *rps, int labnum,
  */
 
 extern int adns__revparse_done(struct revparse_state *rps, int nlabels,
-			       adns_rrtype *rrtype_r, struct af_addr *addr_r);
-/* Finishes parsing a reverse-domain name, given the total number of labels
- * in the name.  On success, fills in the address in *addr_r, and the forward
- * query type in *rrtype_r (because that turns out to be useful).  Returns
- * nonzero if the parse must be abandoned.
+			       adns_rrtype *rrtype_r, adns_sockaddr *addr_r);
+/* Finishes parsing a reverse-domain name, given the total number of
+ * labels in the name.  On success, fills in the af and protocol
+ * address in *addr_r, and the forward query type in *rrtype_r
+ * (because that turns out to be useful).  Returns nonzero if the
+ * parse must be abandoned.
  */
 
 /* From setup.c: */

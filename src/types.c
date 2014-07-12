@@ -263,27 +263,26 @@ static adns_status pa_inaddr(const parseinfo *pai, int cbyte,
 
 static int search_sortlist(adns_state ads, int af, const void *ad) {
   const struct sortlist *slp;
-  const struct in6_addr *a6;
-  union gen_addr a;
+  struct in_addr a4;
   int i;
   int v6mappedp= 0;
 
   if (af == AF_INET6) {
-    a6= ad;
+    const struct in6_addr *a6= ad;
     if (IN6_IS_ADDR_V4MAPPED(a6)) {
-      a.v4.s_addr= htonl(((unsigned long)a6->s6_addr[12] << 24) |
-			 ((unsigned long)a6->s6_addr[13] << 16) |
-			 ((unsigned long)a6->s6_addr[14] <<  8) |
-			 ((unsigned long)a6->s6_addr[15] <<  0));
+      a4.s_addr= htonl(((unsigned long)a6->s6_addr[12] << 24) |
+		       ((unsigned long)a6->s6_addr[13] << 16) |
+		       ((unsigned long)a6->s6_addr[14] <<  8) |
+		       ((unsigned long)a6->s6_addr[15] <<  0));
       v6mappedp= 1;
     }
   }
 
   for (i=0, slp=ads->sortlist;
        i<ads->nsortlist &&
-	 !adns__addr_match_p(af,ad, slp->af,&slp->base,&slp->mask) &&
+	 !adns__addr_matches(af,ad, &slp->base,&slp->mask) &&
 	 !(v6mappedp &&
-	   adns__addr_match_p(AF_INET,&a, slp->af,&slp->base,&slp->mask));
+	   adns__addr_matches(AF_INET,&a4, &slp->base,&slp->mask));
        i++, slp++);
   return i;
 }
@@ -311,7 +310,7 @@ static adns_status csp_genaddr(vbuf *vb, int af, const void *p) {
 
   memset(&a, 0, sizeof(a));
   a.addr.sa.sa_family= af;
-  adns__sockaddr_inject(p, 0, &a.addr.sa);
+  adns__addr_inject(p, &a.addr);
   err= adns_addr2text(&a.addr.sa,0, buf,&len, 0); assert(!err);
   CSP_ADDSTR(buf);
   return adns_s_ok;
@@ -456,9 +455,8 @@ static adns_status pa_addr(const parseinfo *pai, int cbyte,
 }
 
 static int search_sortlist_sa(adns_state ads, const struct sockaddr *sa) {
-  union gen_addr a;
-  adns__sockaddr_extract(sa, &a, 0);
-  return search_sortlist(ads, sa->sa_family, &a);
+  const void *pa = adns__sockaddr_addr(sa);
+  return search_sortlist(ads, sa->sa_family, pa);
 }
 
 static int dip_sockaddr(adns_state ads,
@@ -1152,7 +1150,7 @@ static adns_status ckl_ptr(adns_state ads, adns_queryflags flags,
 
 static void icb_ptr(adns_query parent, adns_query child) {
   adns_answer *cans= child->answer;
-  const struct af_addr *queried;
+  const adns_sockaddr *queried;
   const unsigned char *found;
   adns_state ads= parent->ads;
   int i;
@@ -1167,8 +1165,8 @@ static void icb_ptr(adns_query parent, adns_query child) {
 
   queried= &parent->ctx.tinfo.ptr.addr;
   for (i=0, found=cans->rrs.bytes; i<cans->nrrs; i++, found+=cans->rrsz) {
-    if (adns__genaddr_equal_p(queried->af,&queried->addr,
-			      parent->ctx.tinfo.ptr.addr.af,found)) {
+    if (adns__addrs_equal_raw(&queried->sa,
+			  parent->ctx.tinfo.ptr.addr.sa.sa_family,found)) {
       if (!parent->children.head) {
 	adns__query_done(parent);
 	return;

@@ -82,7 +82,9 @@ static void checkc_global(adns_state ads) {
 
   for (i=0; i<ads->nsortlist; i++) {
     sl= &ads->sortlist[i];
-    assert(adns__addr_match_p(sl->af,&sl->base, sl->af,&sl->base,&sl->mask));
+    assert(adns__addr_matches(sl->base.sa.sa_family,
+			      adns__sockaddr_addr(&sl->base.sa),
+			      &sl->base,&sl->mask));
   }
 
   assert(ads->tcpserver >= 0 && ads->tcpserver < ads->nservers);
