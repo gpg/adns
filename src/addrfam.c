@@ -56,6 +56,7 @@
   case AF_INET: goto pre##_inet;					\
   case AF_INET6: goto pre##_inet6
 
+static void unknown_af(int af) NONRETURNING;
 static void unknown_af(int af) {
   fprintf(stderr, "ADNS INTERNAL: unknown address family %d\n", af);
   abort();
