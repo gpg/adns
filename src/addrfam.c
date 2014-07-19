@@ -44,11 +44,8 @@
  * General address-family operations.
  */
 
-#define SIN(sa) ((struct sockaddr_in *)(sa))
-#define CSIN(sa) ((const struct sockaddr_in *)(sa))
-
-#define SIN6(sa) ((struct sockaddr_in6 *)(sa))
-#define CSIN6(sa) ((const struct sockaddr_in6 *)(sa))
+#define SIN(cnst, sa) ((void)(sa)->sa_family, (cnst struct sockaddr_in *)(sa))
+#define SIN6(cnst, sa) ((void)(sa)->sa_family, (cnst struct sockaddr_in6 *)(sa))
 
 static void unknown_af(int af) NONRETURNING;
 static void unknown_af(int af) {
@@ -98,11 +95,11 @@ static void unknown_af(int af) {
     other							\
   }
 #define SOCKADDR_IN_IN6_OTHER(cnst, sa, sin, for_inet, for_inet6, other) \
-  AF_IN_IN6_OTHER((sa)->sa_family, {				\
-      cnst struct sockaddr_in *const sin = (cnst void*)(sa);		\
+  AF_IN_IN6_OTHER((sa)->sa_family, {					\
+      cnst struct sockaddr_in *const sin = SIN(cnst,(sa));		\
       for_inet								\
   }, {									\
-      cnst struct sockaddr_in6 *const sin##6 = (cnst void*)(sa);	\
+      cnst struct sockaddr_in6 *const sin##6 = SIN6(cnst,(sa));		\
       for_inet6								\
   },									\
     other								\
@@ -115,10 +112,10 @@ static void unknown_af(int af) {
   do{									\
     assert((sa)->sa_family == (sb)->sa_family);				\
     SOCKADDR_IN_IN6(cnst, sa, sina, {					\
-	cnst struct sockaddr_in *const sinb = (cnst void*)(sb);		\
+        cnst struct sockaddr_in *const sinb = SIN(cnst,(sb));		\
 	for_inet							\
-    }, {								\
-	cnst struct sockaddr_in6 *const sinb##6 = (cnst void*)(sb);	\
+      }, {								\
+        cnst struct sockaddr_in6 *const sinb##6 = SIN6(cnst,(sb));	\
 	for_inet6							\
     });									\
   }while(0)
@@ -253,7 +250,7 @@ static bool addrtext_our_errno(int e) {
 }
 
 static bool addrtext_scope_use_ifname(const struct sockaddr *sa) {
-  const struct in6_addr *in6= &CSIN6(sa)->sin6_addr;
+  const struct in6_addr *in6= &SIN6(const,sa)->sin6_addr;
   return
     IN6_IS_ADDR_LINKLOCAL(in6) ||
     IN6_IS_ADDR_MC_LINKLOCAL(in6);
@@ -276,9 +273,9 @@ int adns_text2addr(const char *text, uint16_t port, adns_queryflags flags,
 
 #define AFCORE(INETx,SINx,sinx)			\
     af= AF_##INETx;				\
-    dst = &SINx(sa)->sinx##_addr;		\
-    portp = &SINx(sa)->sinx##_port;		\
-    needlen= sizeof(*SINx(sa));
+    dst = &SINx(,sa)->sinx##_addr;		\
+    portp = &SINx(,sa)->sinx##_port;		\
+    needlen= sizeof(*SINx(,sa));
 
   if (!strchr(text, ':')) { /* INET */
 
@@ -320,7 +317,7 @@ int adns_text2addr(const char *text, uint16_t port, adns_queryflags flags,
 
   if (af == AF_INET && !(flags & adns_qf_addrlit_ipv4_quadonly)) {
     /* we have to use inet_aton to deal with non-dotted-quad literals */
-    int r= inet_aton(parse,&SIN(sa)->sin_addr);
+    int r= inet_aton(parse,&SIN(,sa)->sin_addr);
     if (!r) INVAL("inet_aton rejected");
   } else {
     int r= inet_pton(af,parse,dst);
@@ -382,7 +379,7 @@ int adns_text2addr(const char *text, uint16_t port, adns_queryflags flags,
       }
     } /* else; !!*ep */
 
-    SIN6(sa)->sin6_scope_id= scope;
+    SIN6(,sa)->sin6_scope_id= scope;
   } /* if (scopestr) */
 
   *salen_io = needlen;
@@ -411,7 +408,7 @@ int adns_addr2text(const struct sockaddr *sa, adns_queryflags flags,
   assert(ok);
 
   if (sa->sa_family == AF_INET6) {
-    uint32_t scope = CSIN6(sa)->sin6_scope_id;
+    uint32_t scope = SIN6(const,sa)->sin6_scope_id;
     if (scope) {
       if (flags & adns_qf_addrlit_scope_forbid)
 	return EINVAL;
