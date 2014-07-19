@@ -50,31 +50,88 @@
 #define SIN6(sa) ((struct sockaddr_in6 *)(sa))
 #define CSIN6(sa) ((const struct sockaddr_in6 *)(sa))
 
-/* This gadget (thanks, Richard Kettlewell) makes sure that we handle the
- * same set of address families in each switch. */
-#define AF_CASES(pre)							\
-  case AF_INET: goto pre##_inet;					\
-  case AF_INET6: goto pre##_inet6
-
 static void unknown_af(int af) NONRETURNING;
 static void unknown_af(int af) {
   fprintf(stderr, "ADNS INTERNAL: unknown address family %d\n", af);
   abort();
 }
 
+/*
+ * SOCKADDR_IN_IN6(CNST, struct sockaddr *sa, SIN, {
+ *     // struct sockaddr_in *const SIN; // implicitly
+ *     code for inet;
+ *   }, {
+ *     // struct sockaddr_in6 *const SIN6; // implicitly
+ *     code for inet6;
+ *   })
+ *
+ * SOCKADDR_IN_IN6_PAIR(CNST, struct sockaddr *sa, SINA,
+ *                            struct sockaddr *sb, SINB, {
+ *     // struct sockaddr_in *const SINA; // implicitly
+ *     // struct sockaddr_in *const SINB; // implicitly
+ *     code for inet;
+ *   },{
+ *     // struct sockaddr_in6 *const SINA6; // implicitly
+ *     // struct sockaddr_in6 *const SINB6; // implicitly
+ *     code for inet6;
+ *   });
+ *
+ * SOCKADDR_IN_IN6_OTHER(CNST, struct sockaddr *sa, SIN, { in }, { in6 }, {
+ *     code for other address family
+ *   })
+ *
+ * AF_IN_IN6_OTHER(af, { in }, { in6 }, { other })
+ *
+ * Executes the first or second block according to the AF in sa.  CNST
+ * may be `const' or empty.  For _PAIR, sa and sb must be same AF.
+ *
+ * All except _OTHER handle unknown AFs with unknown_af.
+ *
+ * Code blocks may not contain , outside parens.
+ */
+#define AF_IN_IN6_OTHER(af, for_inet, for_inet6, other)	\
+  if ((af) == AF_INET) {					\
+    for_inet							\
+  } else if ((af) == AF_INET6) {				\
+    for_inet6							\
+  } else {							\
+    other							\
+  }
+#define SOCKADDR_IN_IN6_OTHER(cnst, sa, sin, for_inet, for_inet6, other) \
+  AF_IN_IN6_OTHER((sa)->sa_family, {				\
+      cnst struct sockaddr_in *const sin = (cnst void*)(sa);		\
+      for_inet								\
+  }, {									\
+      cnst struct sockaddr_in6 *const sin##6 = (cnst void*)(sa);	\
+      for_inet6								\
+  },									\
+    other								\
+  )
+#define SOCKADDR_IN_IN6(cnst, sa, sin, for_inet, for_inet6)		\
+  SOCKADDR_IN_IN6_OTHER(cnst, sa, sin, for_inet, for_inet6, {	\
+      unknown_af((sa)->sa_family);					\
+  })
+#define SOCKADDR_IN_IN6_PAIR(cnst, sa, sina, sb, sinb, for_inet, for_inet6) \
+  do{									\
+    assert((sa)->sa_family == (sb)->sa_family);				\
+    SOCKADDR_IN_IN6(cnst, sa, sina, {					\
+	cnst struct sockaddr_in *const sinb = (cnst void*)(sb);		\
+	for_inet							\
+    }, {								\
+	cnst struct sockaddr_in6 *const sinb##6 = (cnst void*)(sb);	\
+	for_inet6							\
+    });									\
+  }while(0)
+
 int adns__addrs_equal_raw(const struct sockaddr *a,
 			 int bf, const void *b) {
   if (a->sa_family != bf) return 0;
-  switch (a->sa_family) {
-  AF_CASES(af);
-  af_inet:
-    return ((const struct sockaddr_in*)a)->sin_addr.s_addr ==
-           ((const struct in_addr*)b)->s_addr;
-  af_inet6:
-    return !memcmp(&((const struct sockaddr_in6*)a)->sin6_addr,
-		   b, sizeof(struct in6_addr));
-  default: unknown_af(a->sa_family); return -1;
-  }
+
+  SOCKADDR_IN_IN6(const, a, sin, {
+    return sin->sin_addr.s_addr == ((const struct in_addr*)b)->s_addr;
+  }, {
+    return !memcmp(&sin6->sin6_addr, b, sizeof(struct in6_addr));
+  });
 }
 
 int adns__addrs_equal(const adns_sockaddr *a, const adns_sockaddr *b) {
@@ -86,135 +143,85 @@ int adns__sockaddrs_equal(const struct sockaddr *sa,
 			  const struct sockaddr *sb) {
   if (!adns__addrs_equal_raw(sa, sb->sa_family, adns__sockaddr_addr(sb)))
     return 0;
-  switch (sa->sa_family) {
-  AF_CASES(af);
-  af_inet: {
-    const struct sockaddr_in *sina= CSIN(sa), *sinb= CSIN(sb);
-    return sina->sin_port == sinb->sin_port;
-  }
-  af_inet6: {
-    /* Don't check the flowlabel.  That's apparently useful for routing
-     * performance, but doesn't affect the address in any important
-     * respect. */
-    const struct sockaddr_in6 *sin6a= CSIN6(sa), *sin6b= CSIN6(sb);
-    return sin6a->sin6_port == sin6b->sin6_port &&
-           sin6a->sin6_scope_id == sin6b->sin6_scope_id;
-  }
-  default:
-    unknown_af(sa->sa_family);
-    return -1;
-  }
+  SOCKADDR_IN_IN6_PAIR(const, sa, sina, sb, sinb, {
+      return sina->sin_port == sinb->sin_port;
+    }, {
+      return sina6->sin6_port == sinb6->sin6_port &&
+             sina6->sin6_scope_id == sinb6->sin6_scope_id;
+    });
 }
 
 int adns__addr_width(int af) {
-  switch (af) {
-  AF_CASES(af);
-  af_inet: return 32;
-  af_inet6: return 128;
-  default: unknown_af(af); return -1;
-  }
+  AF_IN_IN6_OTHER(af, {
+      return 32;
+    }, {
+      return 128;
+    }, {
+      unknown_af(af);
+    });
 }
 
 void adns__prefix_mask(adns_sockaddr *sa, int len) {
-  int af= sa->sa.sa_family;
-  switch (af) {
-  AF_CASES(af);
-  af_inet:
-    assert(len <= 32);
-    sa->inet.sin_addr.s_addr= htonl(!len ? 0 : 0xffffffff << (32-len));
-    break;
-  af_inet6: {
-    int i= len/8, j= len%8;
-    unsigned char *m= sa->inet6.sin6_addr.s6_addr;
-    assert(len <= 128);
-    memset(m, 0xff, i);
-    if (j) m[i++]= (0xff << (8-j)) & 0xff;
-    memset(m+i, 0, 16-i);
-  } break;
-  default:
-    unknown_af(af);
-    break;
-  }
+  SOCKADDR_IN_IN6(, &sa->sa, sin, {
+      assert(len <= 32);
+      sin->sin_addr.s_addr= htonl(!len ? 0 : 0xffffffff << (32-len));
+    }, {
+      int i= len/8;
+      int j= len%8;
+      unsigned char *m= sin6->sin6_addr.s6_addr;
+      assert(len <= 128);
+      memset(m, 0xff, i);
+      if (j) m[i++]= (0xff << (8-j)) & 0xff;
+      memset(m+i, 0, 16-i);
+    });
 }
 
 int adns__guess_prefix_length(const adns_sockaddr *sa) {
-  int af= sa->sa.sa_family;
-  switch (af) {
-  AF_CASES(af);
-  af_inet: {
-    unsigned a= (ntohl(sa->inet.sin_addr.s_addr) >> 24) & 0xff;
-    if (a < 128) return 8;
-    else if (a < 192) return 16;
-    else if (a < 224) return 24;
-    else return -1;
-  } break;
-  af_inet6:
-    return 64;
-  default:
-    unknown_af(af);
-    return -1;
-  }
+  SOCKADDR_IN_IN6(const, &sa->sa, sin, {
+      unsigned a= (ntohl(sin->sin_addr.s_addr) >> 24) & 0xff;
+      if (a < 128) return 8;
+      else if (a < 192) return 16;
+      else if (a < 224) return 24;
+      else return -1;
+    }, {
+      (void)sin6;
+      return 64;
+    });
 }
 
 int adns__addr_matches(int af, const void *addr,
 		       const adns_sockaddr *base, const adns_sockaddr *mask)
 {
-  assert(base->sa.sa_family == mask->sa.sa_family);
   if (af != base->sa.sa_family) return 0;
-  switch (af) {
-  AF_CASES(af);
-  af_inet: {
-    const struct in_addr *v4 = addr;
-    return (v4->s_addr & mask->inet.sin_addr.s_addr)
-      == base->inet.sin_addr.s_addr;
-  }
-  af_inet6: {
-    int i;
-    const char *a= addr;
-    const char *b= base->inet6.sin6_addr.s6_addr;
-    const char *m= mask->inet6.sin6_addr.s6_addr;
-    for (i = 0; i < 16; i++)
-      if ((a[i] & m[i]) != b[i]) return 0;
-    return 1;
-  } break;
-  default:
-    unknown_af(af);
-    return -1;
-  }
+  SOCKADDR_IN_IN6_PAIR(const, &base->sa, sbase, &mask->sa, smask, {
+      const struct in_addr *v4 = addr;
+      return (v4->s_addr & smask->sin_addr.s_addr)
+	== sbase->sin_addr.s_addr;
+    }, {
+      int i;
+      const char *a= addr;
+      const char *b= sbase6->sin6_addr.s6_addr;
+      const char *m= smask6->sin6_addr.s6_addr;
+      for (i = 0; i < 16; i++)
+	if ((a[i] & m[i]) != b[i]) return 0;
+      return 1;
+    });
 }
 
 const void *adns__sockaddr_addr(const struct sockaddr *sa) {
-  switch (sa->sa_family) {
-  AF_CASES(af);
-  af_inet: {
-    const struct sockaddr_in *sin = CSIN(sa);
-    return &sin->sin_addr;
-  }
-  af_inet6: {
-    const struct sockaddr_in6 *sin6 = CSIN6(sa);
-    return &sin6->sin6_addr;
-  }
-  default:
-    unknown_af(sa->sa_family);
-  }
+  SOCKADDR_IN_IN6(const, sa, sin, {
+      return &sin->sin_addr;
+    }, {
+      return &sin6->sin6_addr;
+    });
 }
 
 void adns__addr_inject(const void *a, adns_sockaddr *sa) {
-  switch (sa->sa.sa_family) {
-  AF_CASES(af);
-  af_inet: {
-    struct sockaddr_in *sin = &sa->inet;
-    memcpy(&sin->sin_addr, a, sizeof(sin->sin_addr));
-    break;
-  }
-  af_inet6: {
-    struct sockaddr_in6 *sin6 = &sa->inet6;
-    memcpy(&sin6->sin6_addr, a, sizeof(sin6->sin6_addr));
-    break;
-  }
-  default:
-    unknown_af(sa->sa.sa_family);
-  }
+  SOCKADDR_IN_IN6( , &sa->sa, sin, {
+      memcpy(&sin->sin_addr, a, sizeof(sin->sin_addr));
+    }, {
+      memcpy(&sin6->sin6_addr, a, sizeof(sin6->sin6_addr));
+    });
 }
 
 /*
@@ -392,12 +399,13 @@ int adns_addr2text(const struct sockaddr *sa, adns_queryflags flags,
     return ENOSPC;
   }
 
-  switch (sa->sa_family) {
-    AF_CASES(af);
-    af_inet:  src= &CSIN(sa)->sin_addr;    port= CSIN(sa)->sin_port;    break;
-    af_inet6: src= &CSIN6(sa)->sin6_addr;  port= CSIN6(sa)->sin6_port;  break;
-    default: return EAFNOSUPPORT;
-  }
+  SOCKADDR_IN_IN6_OTHER(const, sa, sin, {
+      src= &sin->sin_addr;    port= sin->sin_port;
+    }, {
+      src= &sin6->sin6_addr;  port= sin6->sin6_port;
+    }, {
+      return EAFNOSUPPORT;
+    });
 
   const char *ok= inet_ntop(sa->sa_family, src, buffer, *buflen_io);
   assert(ok);
@@ -472,19 +480,15 @@ int adns__make_reverse_domain(const struct sockaddr *sa, const char *zone,
   const unsigned char *ap;
   int i, j;
 
-  switch (sa->sa_family) {
-  AF_CASES(af);
-  af_inet:
-    req= 4 * 4;
-    if (!zone) zone= "in-addr.arpa";
-    break;
-  af_inet6:
-    req = 2 * 32;
-    if (!zone) zone= "ip6.arpa";
-    break;
-  default:
-    return ENOSYS;
-  }
+  AF_IN_IN6_OTHER(sa->sa_family, {
+      req= 4 * 4;
+      if (!zone) zone= "in-addr.arpa";
+    }, {
+      req = 2 * 32;
+      if (!zone) zone= "ip6.arpa";
+    }, {
+      return ENOSYS;
+    });
 
   req += strlen(zone) + 1;
   if (req <= bufsz)
@@ -495,31 +499,25 @@ int adns__make_reverse_domain(const struct sockaddr *sa, const char *zone,
   }
 
   *buf_io= p;
-  switch (sa->sa_family) {
-  AF_CASES(bf);
-  bf_inet:
-    aa= ntohl(CSIN(sa)->sin_addr.s_addr);
-    for (i=0; i<4; i++) {
-      p += sprintf(p, "%d", (int)(aa & 0xff));
-      *p++= '.';
-      aa >>= 8;
-    }
-    break;
-  bf_inet6:
-    ap= CSIN6(sa)->sin6_addr.s6_addr + 16;
-    for (i=0; i<16; i++) {
-      c= *--ap;
-      for (j=0; j<2; j++) {
-	y= c & 0xf;
-	*p++= (y < 10) ? y + '0' : y - 10 + 'a';
-	c >>= 4;
+  SOCKADDR_IN_IN6(const, sa, sin, {
+      aa= ntohl(sin->sin_addr.s_addr);
+      for (i=0; i<4; i++) {
+	p += sprintf(p, "%d", (int)(aa & 0xff));
 	*p++= '.';
+	aa >>= 8;
       }
-    }
-    break;
-  default:
-    unknown_af(sa->sa_family);
-  }
+    }, {
+      ap= sin6->sin6_addr.s6_addr + 16;
+      for (i=0; i<16; i++) {
+	c= *--ap;
+	for (j=0; j<2; j++) {
+	  y= c & 0xf;
+	  *p++= (y < 10) ? y + '0' : y - 10 + 'a';
+	  c >>= 4;
+	  *p++= '.';
+	}
+      }
+    });
 
   strcpy(p, zone);
   return 0;
