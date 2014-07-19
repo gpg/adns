@@ -11,8 +11,9 @@ settings.make
 *.a
 *~
 client/Makefile
-client/adnstest
 client/adnstest_s
+client/fanftest_s
+client/addrtext_s
 client/adnslogres
 client/adnslogres_s
 client/adnsheloex
@@ -21,8 +22,6 @@ client/adnshost
 client/adnshost_s
 client/adnsresfilter
 client/adnsresfilter_s
-client/fanftest
-client/fanftest_s
 dynamic/Makefile
 dynamic/libadns.so.*
 regress/Makefile
