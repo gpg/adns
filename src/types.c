@@ -1138,12 +1138,12 @@ static adns_status ckl_ptr(adns_state ads, adns_queryflags flags,
 			   int labnum, const char *dgram,
 			   int labstart, int lablen) {
   if (lablen) {
-    if (adns__revparse_label(&cls->ptr, labnum, dgram,labstart,lablen))
+    if (!adns__revparse_label(&cls->ptr, labnum, dgram,labstart,lablen))
       return adns_s_querydomainwrong;
   } else {
-    if (adns__revparse_done(&cls->ptr, dgram, labnum,
-			    &ctx->tinfo.ptr.rev_rrtype,
-			    &ctx->tinfo.ptr.addr))
+    if (!adns__revparse_done(&cls->ptr, dgram, labnum,
+			     &ctx->tinfo.ptr.rev_rrtype,
+			     &ctx->tinfo.ptr.addr))
       return adns_s_querydomainwrong;
   }
   return adns_s_ok;

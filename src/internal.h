@@ -472,26 +472,26 @@ extern int adns__make_reverse_domain(const struct sockaddr *sa,
  * allocate an output buffer failed.
  */
 
-extern int adns__revparse_label(struct revparse_state *rps, int labnum,
-				const char *dgram,
-				int labstart, int lablen);
+extern bool adns__revparse_label(struct revparse_state *rps, int labnum,
+				 const char *dgram,
+				 int labstart, int lablen);
 /* Parse a label in a reverse-domain name, given its index labnum (starting
  * from zero), a pointer to its contents (which need not be null-terminated),
  * and its length.  The state in *rps is initialized implicitly when labnum
  * is zero.
  *
- * Returns zero if the parse was successful, nonzero if the domain name is
- * definitely invalid and the parse must be abandoned.
+ * Returns 1 if the parse is proceeding successfully, 0 if the domain
+ * name is definitely invalid and the parse must be abandoned.
  */
 
-extern int adns__revparse_done(struct revparse_state *rps,
-			       const char *dgram, int nlabels,
-			       adns_rrtype *rrtype_r, adns_sockaddr *addr_r);
+extern bool adns__revparse_done(struct revparse_state *rps,
+				const char *dgram, int nlabels,
+				adns_rrtype *rrtype_r, adns_sockaddr *addr_r);
 /* Finishes parsing a reverse-domain name, given the total number of
  * labels in the name.  On success, fills in the af and protocol
  * address in *addr_r, and the forward query type in *rrtype_r
- * (because that turns out to be useful).  Returns nonzero if the
- * parse must be abandoned.
+ * (because that turns out to be useful).  Returns 1 if the parse
+ * was successful.
  */
 
 /* From setup.c: */

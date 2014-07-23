@@ -579,8 +579,8 @@ static const struct revparse_domain {
 #define REVDOMAIN_MAP(rps, labnum)					\
   ((labnum) ? (rps)->map : (1 << NREVDOMAINS) - 1)
 
-int adns__revparse_label(struct revparse_state *rps, int labnum,
-			 const char *dgram, int labstart, int lablen) {
+bool adns__revparse_label(struct revparse_state *rps, int labnum,
+			  const char *dgram, int labstart, int lablen) {
   const char *label = dgram+labstart;
   unsigned f= REVDOMAIN_MAP(rps, labnum);
   const struct revparse_domain *rpd;
@@ -604,16 +604,16 @@ int adns__revparse_label(struct revparse_state *rps, int labnum,
 
   mismatch:
     f &= ~d;
-    if (!f) return -1;
+    if (!f) return 0;
   }
 
   rps->map= f;
-  return 0;
+  return 1;
 }
 
-int adns__revparse_done(struct revparse_state *rps,
-			const char *dgram, int nlabels,
-			adns_rrtype *rrtype_r, adns_sockaddr *addr_r) {
+bool adns__revparse_done(struct revparse_state *rps,
+			 const char *dgram, int nlabels,
+			 adns_rrtype *rrtype_r, adns_sockaddr *addr_r) {
   unsigned f= REVDOMAIN_MAP(rps, nlabels);
   const struct revparse_domain *rpd;
   unsigned d;
@@ -624,7 +624,7 @@ int adns__revparse_done(struct revparse_state *rps,
     if (nlabels >= rpd->nrevlab && !rpd->tail[nlabels - rpd->nrevlab])
       { found = i; continue; }
     f &= ~d;
-    if (!f) return -1;
+    if (!f) return 0;
   }
   assert(found >= 0); assert(f == (1 << found));
 
@@ -632,5 +632,5 @@ int adns__revparse_done(struct revparse_state *rps,
   *rrtype_r= rpd->rrtype;
   addr_r->sa.sa_family= rpd->af;
   rpd->rev_mkaddr(addr_r, rps->ipv[found]);
-  return 0;
+  return 1;
 }
