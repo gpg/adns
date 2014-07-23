@@ -580,7 +580,8 @@ static const struct revparse_domain {
   ((labnum) ? (rps)->map : (1 << NREVDOMAINS) - 1)
 
 int adns__revparse_label(struct revparse_state *rps, int labnum,
-			 const char *label, int lablen) {
+			 const char *dgram, int labstart, int lablen) {
+  const char *label = dgram+labstart;
   unsigned f= REVDOMAIN_MAP(rps, labnum);
   const struct revparse_domain *rpd;
   const char *tp;
@@ -610,7 +611,8 @@ int adns__revparse_label(struct revparse_state *rps, int labnum,
   return 0;
 }
 
-int adns__revparse_done(struct revparse_state *rps, int nlabels,
+int adns__revparse_done(struct revparse_state *rps,
+			const char *dgram, int nlabels,
 			adns_rrtype *rrtype_r, adns_sockaddr *addr_r) {
   unsigned f= REVDOMAIN_MAP(rps, nlabels);
   const struct revparse_domain *rpd;

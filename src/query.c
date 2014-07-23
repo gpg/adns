@@ -111,9 +111,10 @@ static void query_submit(adns_state ads, adns_query qu,
 adns_status adns__ckl_hostname(adns_state ads, adns_queryflags flags,
 			       union checklabel_state *cls,
 			       qcontext *ctx, int labnum,
-			       const char *label, int lablen)
+			       const char *dgram, int labstart, int lablen)
 {
   int i, c;
+  const char *label = dgram+labstart;
 
   if (flags & adns_qf_quoteok_query) return adns_s_ok;
   for (i=0; i<lablen; i++) {
@@ -141,7 +142,7 @@ static adns_status check_domain_name(adns_state ads, adns_queryflags flags,
     err= adns__findlabel_next(&fls, &lablen,&labstart);
     assert(!err); assert(lablen >= 0);
     err= typei->checklabel(ads,flags, &cls,ctx,
-			   labnum++, dgram+labstart,lablen);
+			   labnum++, dgram,labstart,lablen);
     if (err) return err;
   } while (lablen);
   return adns_s_ok;

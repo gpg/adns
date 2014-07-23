@@ -1135,12 +1135,13 @@ static adns_status cs_inthost(vbuf *vb, const void *datap) {
 
 static adns_status ckl_ptr(adns_state ads, adns_queryflags flags,
 			   union checklabel_state *cls, qcontext *ctx,
-			   int labnum, const char *label, int lablen) {
+			   int labnum, const char *dgram,
+			   int labstart, int lablen) {
   if (lablen) {
-    if (adns__revparse_label(&cls->ptr, labnum, label,lablen))
+    if (adns__revparse_label(&cls->ptr, labnum, dgram,labstart,lablen))
       return adns_s_querydomainwrong;
   } else {
-    if (adns__revparse_done(&cls->ptr, labnum,
+    if (adns__revparse_done(&cls->ptr, dgram, labnum,
 			    &ctx->tinfo.ptr.rev_rrtype,
 			    &ctx->tinfo.ptr.addr))
       return adns_s_querydomainwrong;
@@ -1418,12 +1419,14 @@ static adns_status cs_soa(vbuf *vb, const void *datap) {
 
 static adns_status ckl_srv(adns_state ads, adns_queryflags flags,
 			   union checklabel_state *cls, qcontext *ctx,
-			   int labnum, const char *label, int lablen) {
+			   int labnum, const char *dgram,
+			   int labstart, int lablen) {
+  const char *label = dgram+labstart;
   if (labnum < 2 && !(flags & adns_qf_quoteok_query)) {
     if (!lablen || label[0] != '_') return adns_s_querydomaininvalid;
     return adns_s_ok;
   }
-  return adns__ckl_hostname(ads, flags, cls, ctx, labnum, label, lablen);
+  return adns__ckl_hostname(ads,flags, cls,ctx, labnum, dgram,labstart,lablen);
 }
 
 static adns_status pap_srv_begin(const parseinfo *pai, int *cbyte_io, int max,

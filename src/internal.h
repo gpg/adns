@@ -199,7 +199,8 @@ typedef struct typeinfo {
 
   adns_status (*checklabel)(adns_state ads, adns_queryflags flags,
 			    union checklabel_state *cls, qcontext *ctx,
-			    int labnum, const char *label, int lablen);
+			    int labnum, const char *dgram,
+			    int labstart, int lablen);
   /* Check a label from the query domain string.  The label is not
    * necessarily null-terminated.  The hook can refuse the query's submission
    * by returning a nonzero status.  State can be stored in *cls between
@@ -231,7 +232,7 @@ typedef struct typeinfo {
 adns_status adns__ckl_hostname(adns_state ads, adns_queryflags flags,
 			       union checklabel_state *cls,
 			       qcontext *ctx, int labnum,
-			       const char *label, int lablen);
+			       const char *dgram, int labstart, int lablen);
   /* implemented in query.c, used by types.c as default
    * and as part of implementation for some fancier types
    * doesn't require any state */
@@ -472,7 +473,8 @@ extern int adns__make_reverse_domain(const struct sockaddr *sa,
  */
 
 extern int adns__revparse_label(struct revparse_state *rps, int labnum,
-				const char *label, int lablen);
+				const char *dgram,
+				int labstart, int lablen);
 /* Parse a label in a reverse-domain name, given its index labnum (starting
  * from zero), a pointer to its contents (which need not be null-terminated),
  * and its length.  The state in *rps is initialized implicitly when labnum
@@ -482,7 +484,8 @@ extern int adns__revparse_label(struct revparse_state *rps, int labnum,
  * definitely invalid and the parse must be abandoned.
  */
 
-extern int adns__revparse_done(struct revparse_state *rps, int nlabels,
+extern int adns__revparse_done(struct revparse_state *rps,
+			       const char *dgram, int nlabels,
 			       adns_rrtype *rrtype_r, adns_sockaddr *addr_r);
 /* Finishes parsing a reverse-domain name, given the total number of
  * labels in the name.  On success, fills in the af and protocol
