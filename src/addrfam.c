@@ -521,116 +521,113 @@ int adns__make_reverse_domain(const struct sockaddr *sa, const char *zone,
 }
 
 
-static int inet_rev_parsecomp(const char *p, size_t n) {
-  int i= 0;
-  if (n > 3) return -1;
-
-  while (n--) {
-    if ('0' <= *p && *p <= '9') i= 10*i + *p++ - '0';
-    else return -1;
-  }
-  return i;
-}
-
-static void inet_rev_mkaddr(adns_sockaddr *addr, const byte *ipv) {
-  struct in_addr *v4 = &addr->inet.sin_addr;
-  v4->s_addr= htonl((ipv[3]<<24) | (ipv[2]<<16) |
-		    (ipv[1]<<8) | (ipv[0]));
-}
-
-static int inet6_rev_parsecomp(const char *p, size_t n) {
-  if (n != 1) return -1;
-  else if ('0' <= *p && *p <= '9') return *p - '0';
-  else if ('a' <= *p && *p <= 'f') return *p - 'a' + 10;
-  else if ('A' <= *p && *p <= 'F') return *p - 'a' + 10;
-  else return -1;
-}
-
-static void inet6_rev_mkaddr(adns_sockaddr *addr, const byte *ipv) {
-  struct in6_addr *v6 = &addr->inet6.sin6_addr;
-  unsigned char *a= v6->s6_addr;
-  int i;
-
-  for (i=0; i<16; i++)
-    a[i]= (ipv[31-2*i] << 4) | (ipv[30-2*i] << 0);
-}
-
-static const struct revparse_domain {
-  int af;				/* address family */
-  int nrevlab;				/* n of reverse-address labels */
-  adns_rrtype rrtype;			/* forward-lookup type */
-
-  int (*rev_parsecomp)(const char *p, size_t n);
-  /* parse a single component from a label; return the integer value, or -1
-   * if it was unintelligible.
+#define REVPARSE_P_L(labnum)			\
+  const char *p= dgram + rps->labstart[labnum];	\
+  int l= rps->lablen[labnum]
+  /*
+   * REVPARSE_P_L(int labnum);
+   *   expects:
+   *     const char *dgram;
+   *     const struct revparse_state *rps;
+   *   produces:
+   *     const char *p; // start of label labnum in dgram
+   *     int l; // length of label in dgram
    */
 
-  void (*rev_mkaddr)(adns_sockaddr *addr, const byte *ipv);
-  /* write out the parsed protocol address from a vector of parsed components */
+static bool revparse_check_tail(struct revparse_state *rps,
+				const char *dgram, int nlabels,
+				int bodylen, const char *inarpa) {
+  int i;
 
-  const char *const tail[3];		/* tail label names */
-} revparse_domains[NREVDOMAINS] = {
-  { AF_INET, 4, adns_r_a, inet_rev_parsecomp, inet_rev_mkaddr,
-    { DNS_INADDR_ARPA, 0 } },
-  { AF_INET6, 32, adns_r_aaaa, inet6_rev_parsecomp, inet6_rev_mkaddr,
-    { DNS_IP6_ARPA, 0 } },
-};
+  if (nlabels != bodylen+2) return 0;
+  for (i=0; i<2; i++) {
+    REVPARSE_P_L(bodylen+i);
+    const char *want= !i ? inarpa : "arpa";
+    if (!adns__labels_equal(p,l, want,strlen(want))) return 0;
+  }
+  return 1;
+}
 
-#define REVDOMAIN_MAP(rps, labnum)					\
-  ((labnum) ? (rps)->map : (1 << NREVDOMAINS) - 1)
+static bool revparse_atoi(const char *p, int l, int base,
+			  unsigned max, unsigned *v_r) {
+  if (l>3) return 0;
+  if (l>1 && p[0]=='0') return 0;
+  unsigned v=0;
+  while (l-- > 0) {
+    int tv;
+    int c= ctype_toupper(*p++);
+    if ('0'<=c && c<='9') tv = c-'0';
+    else if ('A'<=c && c<='Z') tv = c-'A'+10;
+    else return 0;
+    if (tv >= base) return 0;
+    v *= base;
+    v += tv;
+  }
+  if (v>max) return 0;
+  *v_r= v;
+  return 1;
+}
+
+static bool revparse_inet(struct revparse_state *rps,
+			  const char *dgram, int nlabels,
+			  adns_rrtype *rrtype_r, adns_sockaddr *addr_r) {
+  if (!revparse_check_tail(rps,dgram,nlabels,4,"in-addr")) return 0;
+
+  uint32_t a=0;
+  int i;
+  for (i=3; i>=0; i--) {
+    REVPARSE_P_L(i);
+    unsigned v;
+    if (!revparse_atoi(p,l,10,255,&v)) return 0;
+    a <<= 8;
+    a |= v;
+  }
+  *rrtype_r= adns_r_a;
+  addr_r->inet.sin_family= AF_INET;
+  addr_r->inet.sin_addr.s_addr= htonl(a);
+  return 1;
+}
+
+static bool revparse_inet6(struct revparse_state *rps,
+			   const char *dgram, int nlabels,
+			   adns_rrtype *rrtype_r, adns_sockaddr *addr_r) {
+  if (!revparse_check_tail(rps,dgram,nlabels,32,"ip6")) return 0;
+
+  int i, j;
+  memset(addr_r,0,sizeof(*addr_r));
+  unsigned char *a= addr_r->inet6.sin6_addr.s6_addr+16;
+  for (i=0; i<32; ) { /* i incremented in inner loop */
+    unsigned b=0;
+    for (j=0; j<2; j++, i++) {
+      REVPARSE_P_L(i);
+      unsigned v;
+      if (!revparse_atoi(p,l,16,15,&v)) return 0;
+      b >>= 4;
+      b |= v << 4;
+    }
+    *--a= b;
+  }
+  *rrtype_r= adns_r_aaaa;
+  addr_r->inet.sin_family= AF_INET6;
+  return 1;
+}
 
 bool adns__revparse_label(struct revparse_state *rps, int labnum,
 			  const char *dgram, int labstart, int lablen) {
-  const char *label = dgram+labstart;
-  unsigned f= REVDOMAIN_MAP(rps, labnum);
-  const struct revparse_domain *rpd;
-  const char *tp;
-  unsigned d;
-  int i, ac;
+  if (labnum >= MAXREVLABELS)
+    return 0;
 
-  for (rpd=revparse_domains, i=0, d=1; i<NREVDOMAINS; rpd++, i++, d <<= 1) {
-    if (!(f & d)) continue;
-    if (labnum >= rpd->nrevlab) {
-      tp = rpd->tail[labnum - rpd->nrevlab];
-      if (!tp || strncmp(label, tp, lablen) != 0 || tp[lablen])
-	goto mismatch;
-    } else {
-      ac= rpd->rev_parsecomp(label, lablen);
-      if (ac < 0) goto mismatch;
-      assert(labnum < sizeof(rps->ipv[i]));
-      rps->ipv[i][labnum]= ac;
-    }
-    continue;
-
-  mismatch:
-    f &= ~d;
-    if (!f) return 0;
-  }
-
-  rps->map= f;
+  assert(labstart <= 65535);
+  assert(lablen <= 255);
+  rps->labstart[labnum] = labstart;
+  rps->lablen[labnum] = lablen;
   return 1;
 }
 
 bool adns__revparse_done(struct revparse_state *rps,
 			 const char *dgram, int nlabels,
 			 adns_rrtype *rrtype_r, adns_sockaddr *addr_r) {
-  unsigned f= REVDOMAIN_MAP(rps, nlabels);
-  const struct revparse_domain *rpd;
-  unsigned d;
-  int i, found= -1;
-
-  for (rpd=revparse_domains, i=0, d=1; i<NREVDOMAINS; rpd++, i++, d <<= 1) {
-    if (!(f & d)) continue;
-    if (nlabels >= rpd->nrevlab && !rpd->tail[nlabels - rpd->nrevlab])
-      { found = i; continue; }
-    f &= ~d;
-    if (!f) return 0;
-  }
-  assert(found >= 0); assert(f == (1 << found));
-
-  rpd= &revparse_domains[found];
-  *rrtype_r= rpd->rrtype;
-  addr_r->sa.sa_family= rpd->af;
-  rpd->rev_mkaddr(addr_r, rps->ipv[found]);
-  return 1;
+  return
+    revparse_inet(rps,dgram,nlabels,rrtype_r,addr_r) ||
+    revparse_inet6(rps,dgram,nlabels,rrtype_r,addr_r);
 }

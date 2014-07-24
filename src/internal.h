@@ -70,9 +70,6 @@ typedef unsigned char byte;
 #define DNS_IDOFFSET 0
 #define DNS_CLASS_IN 1
 
-#define DNS_INADDR_ARPA "in-addr", "arpa"
-#define DNS_IP6_ARPA "ip6", "arpa"
-
 #define MAX_POLLFDS  ADNS_POLLFDS_RECOMMENDED
 
 /* Some preprocessor hackery */
@@ -132,10 +129,10 @@ typedef struct {
   struct timeval now;
 } parseinfo;
 
-#define NREVDOMAINS 2			/* keep in sync with addrfam! */
+#define MAXREVLABELS 34		/* keep in sync with addrfam! */
 struct revparse_state {
-  unsigned map;				/* which domains are still live */
-  byte ipv[NREVDOMAINS][32];		/* address components so far */
+  uint16_t labstart[MAXREVLABELS];
+  uint8_t lablen[MAXREVLABELS];
 };
 
 union checklabel_state {
