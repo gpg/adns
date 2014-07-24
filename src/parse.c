@@ -160,7 +160,17 @@ adns_status adns__parse_domain_more(findlabel_state *fls, adns_state ads,
   if (!adns__vbuf_append(vb,"",1)) return adns_s_nomemory;
   return adns_s_ok;
 }
-	
+
+bool adns__labels_equal(const byte *a, int al, const byte *b, int bl) {
+  if (al != bl) return 0;
+  while (al-- > 0) {
+    int ac= ctype_toupper(*a++);
+    int bc= ctype_toupper(*b++);
+    if (ac != bc) return 0;
+  }
+  return 1;
+}
+
 adns_status adns__findrr_anychk(adns_query qu, int serv,
 				const byte *dgram, int dglen, int *cbyte_io,
 				int *type_r, int *class_r,
@@ -174,8 +184,8 @@ adns_status adns__findrr_anychk(adns_query qu, int serv,
   
   int tmp, rdlen;
   unsigned long ttl;
-  int lablen, labstart, ch;
-  int eo_lablen, eo_labstart, eo_ch;
+  int lablen, labstart;
+  int eo_lablen, eo_labstart;
   adns_status st;
 
   cbyte= *cbyte_io;
@@ -197,12 +207,9 @@ adns_status adns__findrr_anychk(adns_query qu, int serv,
     if (eo_fls) {
       st= adns__findlabel_next(eo_fls,&eo_lablen,&eo_labstart);
       assert(!st); assert(eo_lablen>=0);
-      if (lablen != eo_lablen) eo_fls= 0;
-      while (eo_fls && eo_lablen-- > 0) {
-	ch= dgram[labstart++]; if (ctype_alpha(ch)) ch &= ~32;
-	eo_ch= eo_dgram[eo_labstart++]; if (ctype_alpha(eo_ch)) eo_ch &= ~32;
-	if (ch != eo_ch) eo_fls= 0;
-      }
+      if (!adns__labels_equal(dgram+labstart, lablen,
+			      eo_dgram+eo_labstart, eo_lablen))
+	eo_fls= 0;
     }
     if (!lablen) break;
   }

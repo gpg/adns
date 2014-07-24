@@ -39,6 +39,7 @@ typedef unsigned char byte;
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #include <sys/time.h>
 
@@ -865,6 +866,8 @@ void adns__update_expires(adns_query qu, unsigned long ttl,
 
 int vbuf__append_quoted1035(vbuf *vb, const byte *buf, int len);
 
+bool adns__labels_equal(const byte *a, int al, const byte *b, int bl);
+
 /* From event.c: */
 
 void adns__tcp_broken(adns_state ads, const char *what, const char *why);
@@ -912,6 +915,9 @@ static inline int ctype_whitespace(int c) {
 static inline int ctype_digit(int c) { return c>='0' && c<='9'; }
 static inline int ctype_alpha(int c) {
   return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+}
+static inline int ctype_toupper(int c) {
+  return ctype_alpha(c) ? (c & ~32) : c;
 }
 static inline int ctype_822special(int c) {
   return strchr("()<>@,;:\\\".[]",c) != 0;
