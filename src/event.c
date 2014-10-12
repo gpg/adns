@@ -286,7 +286,7 @@ void adns_firsttimeout(adns_state ads,
 		       struct timeval now) {
   adns__consistency(ads,0,cc_entex);
   adns__timeouts(ads, 0, tv_io,tvbuf, now);
-  adns__consistency(ads,0,cc_entex);
+  adns__returning(ads,0);
 }
 
 void adns_processtimeouts(adns_state ads, const struct timeval *now) {
@@ -295,7 +295,7 @@ void adns_processtimeouts(adns_state ads, const struct timeval *now) {
   adns__consistency(ads,0,cc_entex);
   adns__must_gettimeofday(ads,&now,&tv_buf);
   if (now) adns__timeouts(ads, 1, 0,0, *now);
-  adns__consistency(ads,0,cc_entex);
+  adns__returning(ads,0);
 }
 
 /* fd handling functions.  These are the top-level of the real work of
@@ -426,7 +426,7 @@ int adns_processreadable(adns_state ads, int fd, const struct timeval *now) {
   }
   r= 0;
 xit:
-  adns__consistency(ads,0,cc_entex);
+  adns__returning(ads,0);
   return r;
 }
 
@@ -483,7 +483,7 @@ int adns_processwriteable(adns_state ads, int fd, const struct timeval *now) {
   }
   r= 0;
 xit:
-  adns__consistency(ads,0,cc_entex);
+  adns__returning(ads,0);
   return r;
 }
   
@@ -502,7 +502,7 @@ int adns_processexceptional(adns_state ads, int fd,
   default:
     abort();
   }
-  adns__consistency(ads,0,cc_entex);
+  adns__returning(ads,0);
   return 0;
 }
 
@@ -579,7 +579,7 @@ void adns_beforeselect(adns_state ads, int *maxfd_io, fd_set *readfds_io,
   *maxfd_io= maxfd;
 
 xit:
-  adns__consistency(ads,0,cc_entex);
+  adns__returning(ads,0);
 }
 
 void adns_afterselect(adns_state ads, int maxfd, const fd_set *readfds,
@@ -601,7 +601,7 @@ void adns_afterselect(adns_state ads, int maxfd, const fd_set *readfds,
 		 maxfd,readfds,writefds,exceptfds,
 		 *now, 0);
 xit:
-  adns__consistency(ads,0,cc_entex);
+  adns__returning(ads,0);
 }
 
 /* General helpful functions. */
@@ -623,7 +623,7 @@ void adns_globalsystemfailure(adns_state ads) {
   default:
     abort();
   }
-  adns__consistency(ads,0,cc_entex);
+  adns__returning(ads,0);
 }
 
 int adns_processany(adns_state ads) {
@@ -648,7 +648,7 @@ int adns_processany(adns_state ads) {
 		 0,0,0,0,
 		 now,&r);
 
-  adns__consistency(ads,0,cc_entex);
+  adns__returning(ads,0);
   return 0;
 }
 
@@ -712,7 +712,7 @@ int adns_wait(adns_state ads,
       adns_afterselect(ads,maxfd,&readfds,&writefds,&exceptfds,0);
     }
   }
-  adns__consistency(ads,0,cc_entex);
+  adns__returning(ads,0);
   return r;
 }
 
@@ -728,6 +728,6 @@ int adns_check(adns_state ads,
   if (!r) adns__autosys(ads,now);
 
   r= adns__internal_check(ads,query_io,answer_r,context_r);
-  adns__consistency(ads,0,cc_entex);
+  adns__returning(ads,0);
   return r;
 }

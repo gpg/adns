@@ -77,7 +77,7 @@ int adns_beforepoll(adns_state ads, struct pollfd *fds, int *nfds_io,
   }
   r= 0;
 xit:
-  adns__consistency(ads,0,cc_entex);
+  adns__returning(ads,0);
   return r;
 }
 
@@ -91,7 +91,7 @@ void adns_afterpoll(adns_state ads, const struct pollfd *fds, int nfds,
     adns__timeouts(ads, 1, 0,0, *now);
     adns__fdevents(ads, fds,nfds, 0,0,0,0, *now,0);
   }
-  adns__consistency(ads,0,cc_entex);
+  adns__returning(ads,0);
 }
 
 int adns_wait_poll(adns_state ads,
@@ -123,7 +123,7 @@ int adns_wait_poll(adns_state ads,
   }
 
  xit:
-  adns__consistency(ads,0,cc_entex);
+  adns__returning(ads,0);
   return r;
 }
 

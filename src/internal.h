@@ -708,6 +708,10 @@ void adns__query_done(adns_query qu);
 void adns__query_fail(adns_query qu, adns_status stat);
 void adns__cancel_children(adns_query qu);
 
+void adns__returning(adns_state ads, adns_query qu);
+/* Must be called before returning from adns any time that we have
+ * progressed (including made, finished or destroyed) queries. */
+
 /* From reply.c: */
 
 void adns__procdgram(adns_state ads, const byte *dgram, int len,
