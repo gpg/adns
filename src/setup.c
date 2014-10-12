@@ -604,7 +604,7 @@ static int init_finish(adns_state ads) {
   struct sockaddr_in sin;
   struct protoent *proto;
   struct udpsocket *udp;
-  int i, j;
+  int i;
   int r;
   
   if (!ads->nservers) {
@@ -635,7 +635,7 @@ static int init_finish(adns_state ads) {
   return 0;
 
  x_closeudp:
-  for (j=0; j<ads->nudpsockets; j++) close(ads->udpsockets[j].fd);
+  for (i=0; i<ads->nudpsockets; i++) close(ads->udpsockets[i].fd);
  x_free:
   free(ads);
   return r;
