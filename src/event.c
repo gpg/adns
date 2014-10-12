@@ -316,8 +316,8 @@ int adns__pollfds(adns_state ads, struct pollfd pollfds_buf[MAX_POLLFDS]) {
 
   assert(MAX_POLLFDS == MAXUDP + 1);
 
-  for (i=0; i<ads->nudp; i++)
-    ADD_POLLFD(ads->udpsocket[i].fd, POLLIN);
+  for (i=0; i<ads->nudpsockets; i++)
+    ADD_POLLFD(ads->udpsockets[i].fd, POLLIN);
 
   switch (ads->tcpstate) {
   case server_disconnected:
@@ -396,8 +396,8 @@ int adns_processreadable(adns_state ads, int fd, const struct timeval *now) {
   default:
     abort();
   }
-  for (i=0; i<ads->nudp; i++) {
-    udp= &ads->udpsocket[i];
+  for (i=0; i<ads->nudpsockets; i++) {
+    udp= &ads->udpsockets[i];
     if (fd == udp->fd) {
       for (;;) {
 	udpaddrlen= sizeof(udpaddr);

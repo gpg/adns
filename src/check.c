@@ -78,7 +78,7 @@ static void checkc_global(adns_state ads) {
   const struct sortlist *sl;
   int i;
   
-  assert(ads->udpsocket >= 0);
+  assert(ads->udpsockets >= 0);
 
   for (i=0; i<ads->nsortlist; i++) {
     sl= &ads->sortlist[i];

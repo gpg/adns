@@ -372,8 +372,8 @@ struct adns__state {
   struct query_queue udpw, tcpw, childw, output, intdone;
   adns_query forallnext;
   int nextid, tcpsocket;
-  struct udpsocket { int af; int fd; } udpsocket[MAXUDP];
-  int nudp;
+  struct udpsocket { int af; int fd; } udpsockets[MAXUDP];
+  int nudpsockets;
   vbuf tcpsend, tcprecv;
   int nservers, nsortlist, nsearchlist, searchndots, tcpserver, tcprecv_skip;
   enum adns__tcpstate {

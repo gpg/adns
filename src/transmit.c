@@ -242,8 +242,8 @@ static void query_usetcp(adns_query qu, struct timeval now) {
 
 struct udpsocket *adns__udpsocket_by_af(adns_state ads, int af) {
   int i;
-  for (i=0; i<ads->nudp; i++)
-    if (ads->udpsocket[i].af == af) return &ads->udpsocket[i];
+  for (i=0; i<ads->nudpsockets; i++)
+    if (ads->udpsockets[i].af == af) return &ads->udpsockets[i];
   return 0;
 }
 
