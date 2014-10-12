@@ -41,7 +41,7 @@
 
 static void readconfig(adns_state ads, const char *filename, int warnmissing);
 
-static void addserver(adns_state ads, const struct sockaddr *sa, int n) {
+static void addserver(adns_state ads, const struct sockaddr *sa, int salen) {
   int i;
   adns_rr_addr *ss;
   char buf[ADNS_ADDR2TEXT_BUFLEN];
@@ -61,9 +61,9 @@ static void addserver(adns_state ads, const struct sockaddr *sa, int n) {
   }
 
   ss= ads->servers+ads->nservers;
-  assert(n <= sizeof(ss->addr));
-  ss->len = n;
-  memcpy(&ss->addr, sa, n);
+  assert(salen <= sizeof(ss->addr));
+  ss->len = salen;
+  memcpy(&ss->addr, sa, salen);
   ads->nservers++;
 }
 
