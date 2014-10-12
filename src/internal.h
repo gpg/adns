@@ -207,7 +207,7 @@ typedef struct typeinfo {
    * because lablen is zero.
    */
 
-  void (*postsort)(adns_state ads, void *array, int nrrs,int rrsz,
+  void (*postsort)(adns_state ads, void *array, int nrrs, int rrsz,
 		   const struct typeinfo *typei);
   /* Called immediately after the RRs have been sorted, and may rearrange
    * them.  (This is really for the benefit of SRV's bizarre weighting
