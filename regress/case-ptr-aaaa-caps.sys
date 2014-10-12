@@ -1,7 +1,7 @@
 ./adnstest default
 :65548 4.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.2.0.0.0.9.D.1.0.8.A.B.0.1.0.0.2.IP6.ARPA
  start 1406162686.218685
- socket domain=PF_INET type=SOCK_DGRAM
+ socket domain=AF_INET type=SOCK_DGRAM
  socket=6
  +0.000153
  fcntl fd=6 cmd=F_GETFL

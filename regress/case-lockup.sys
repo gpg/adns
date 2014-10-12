@@ -1,7 +1,7 @@
 adnstest noserver
 :1 chiark.greenend.org.uk
  start 912889153.349504
- socket domain=PF_INET type=SOCK_DGRAM
+ socket domain=AF_INET type=SOCK_DGRAM
  socket=4
  +0.000193
  fcntl fd=4 cmd=F_GETFL

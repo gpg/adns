@@ -1,7 +1,7 @@
 adnstest default -0x416
 4.204.50.158.in-addr.arpa
  start 939764277.018636
- socket domain=PF_INET type=SOCK_DGRAM
+ socket domain=AF_INET type=SOCK_DGRAM
  socket=4
  +0.000162
  fcntl fd=4 cmd=F_GETFL
@@ -477,7 +477,7 @@ adnstest default -0x416
      0014036e 73320a69 6d616765 666f7275 6d02746d c07cc00c 000c0001 00000000
      0007046e 657773c1 c6.
  +0.003281
- socket domain=PF_INET type=SOCK_STREAM
+ socket domain=AF_INET type=SOCK_STREAM
  socket=5
  +0.002885
  fcntl fd=5 cmd=F_GETFL

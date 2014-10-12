@@ -1,7 +1,7 @@
 adnstest default
 :1 5/newsx.davenant 5/news.davenant 5/news.davenant.greenend.org.uk 5/trunc.test.iwj.relativity 5/trunx.test.iwj.relativity 5/test.iwj.relativity
  start 931992163.221752
- socket domain=PF_INET type=SOCK_DGRAM
+ socket domain=AF_INET type=SOCK_DGRAM
  socket=4
  +0.000186
  fcntl fd=4 cmd=F_GETFL

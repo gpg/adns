@@ -1,7 +1,7 @@
 ./adnshost default -f -A4
 
  start 969123801.904882
- socket domain=PF_INET type=SOCK_DGRAM
+ socket domain=AF_INET type=SOCK_DGRAM
  socket=6
  +0.000156
  fcntl fd=6 cmd=F_GETFL

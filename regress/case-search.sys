@@ -1,7 +1,7 @@
 adnstest default -,s
 :1 0x5/news 0x5/chiark 1/news 1/chiark
  start 924360470.478357
- socket domain=PF_INET type=SOCK_DGRAM
+ socket domain=AF_INET type=SOCK_DGRAM
  socket=4
  +0.000200
  fcntl fd=4 cmd=F_GETFL

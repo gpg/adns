@@ -1,7 +1,7 @@
 adnstest default
 :32767 davenant.relativity.greenend.org.uk.
  start 933811310.565828
- socket domain=PF_INET type=SOCK_DGRAM
+ socket domain=AF_INET type=SOCK_DGRAM
  socket=4
  +0.000264
  fcntl fd=4 cmd=F_GETFL

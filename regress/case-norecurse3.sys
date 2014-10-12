@@ -1,7 +1,7 @@
 adnstest default -0x416
 2.203.156.195.in-addr.arpa1
  start 939764258.086555
- socket domain=PF_INET type=SOCK_DGRAM
+ socket domain=AF_INET type=SOCK_DGRAM
  socket=4
  +0.000189
  fcntl fd=4 cmd=F_GETFL

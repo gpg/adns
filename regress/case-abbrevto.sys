@@ -1,7 +1,7 @@
 adnstest noserver -0x400
 ,a/greenend.org.uk
  start 929580082.699581
- socket domain=PF_INET type=SOCK_DGRAM
+ socket domain=AF_INET type=SOCK_DGRAM
  socket=4
  +0.000192
  fcntl fd=4 cmd=F_GETFL

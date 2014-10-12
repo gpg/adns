@@ -1,7 +1,7 @@
 adnstest default
 :1 ,aaaaaaaaaa/chiark.greenend.org.uk
  start 929580072.670441
- socket domain=PF_INET type=SOCK_DGRAM
+ socket domain=AF_INET type=SOCK_DGRAM
  socket=4
  +0.000191
  fcntl fd=4 cmd=F_GETFL

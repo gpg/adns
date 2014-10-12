@@ -1,7 +1,7 @@
 adnstest default
 :65548 134.76.224.195.in-addr.arpa
  start 929574747.401802
- socket domain=PF_INET type=SOCK_DGRAM
+ socket domain=AF_INET type=SOCK_DGRAM
  socket=4
  +0.000189
  fcntl fd=4 cmd=F_GETFL

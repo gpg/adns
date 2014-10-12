@@ -1,7 +1,7 @@
 ./adnslogres default
 -c4
  start 969140728.042464
- socket domain=PF_INET type=SOCK_DGRAM
+ socket domain=AF_INET type=SOCK_DGRAM
  socket=6
  +0.000132
  fcntl fd=6 cmd=F_GETFL

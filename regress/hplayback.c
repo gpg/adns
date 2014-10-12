@@ -293,7 +293,7 @@ int Hpoll(	struct pollfd *fds , int nfds , int timeout 	) {
 int Hsocket(	int domain , int type , int protocol 	) {
  int r, amtread;
  char *ep;
-  Tmust("socket","domain",domain==PF_INET || domain==PF_INET6); 
+  Tmust("socket","domain",domain==AF_INET || domain==AF_INET6); 
   Tmust("socket","type",type==SOCK_STREAM || type==SOCK_DGRAM); 
  Qsocket(	domain , type 	);
  if (!adns__vbuf_ensure(&vb2,1000)) Tnomem();

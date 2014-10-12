@@ -1,7 +1,7 @@
 ./adnstest 2ndserver
 :1 2/davenant.greenend.org.uk
  start 1056289303.784817
- socket domain=PF_INET type=SOCK_DGRAM
+ socket domain=AF_INET type=SOCK_DGRAM
  socket=6
  +0.000031
  fcntl fd=6 cmd=F_GETFL
@@ -10,7 +10,7 @@
  fcntl fd=6 cmd=F_SETFL O_NONBLOCK|...
  fcntl=OK
  +0.000007
- socket domain=PF_INET type=SOCK_STREAM
+ socket domain=AF_INET type=SOCK_STREAM
  socket=7
  +0.000059
  fcntl fd=7 cmd=F_GETFL
@@ -25,7 +25,7 @@
  close fd=7
  close=OK
  +0.000031
- socket domain=PF_INET type=SOCK_STREAM
+ socket domain=AF_INET type=SOCK_STREAM
  socket=7
  +0.000035
  fcntl fd=7 cmd=F_GETFL
@@ -43,7 +43,7 @@
  select max=7 rfds=[6] wfds=[] efds=[] to=0.000000
  select=0 rfds=[] wfds=[] efds=[]
  +0.000036
- socket domain=PF_INET type=SOCK_STREAM
+ socket domain=AF_INET type=SOCK_STREAM
  socket=7
  +0.000036
  fcntl fd=7 cmd=F_GETFL
@@ -58,7 +58,7 @@
  close fd=7
  close=OK
  +0.000013
- socket domain=PF_INET type=SOCK_STREAM
+ socket domain=AF_INET type=SOCK_STREAM
  socket=7
  +0.000036
  fcntl fd=7 cmd=F_GETFL

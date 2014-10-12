@@ -1,7 +1,7 @@
 adnstest default
 :1 intel.ugcs.caltech.edu.
  start 938369896.279735
- socket domain=PF_INET type=SOCK_DGRAM
+ socket domain=AF_INET type=SOCK_DGRAM
  socket=4
  +0.000179
  fcntl fd=4 cmd=F_GETFL

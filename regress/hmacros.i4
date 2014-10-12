@@ -99,7 +99,7 @@ m4_define(`hm_create_hqcall_init',`
  m4_define(`hm_arg_socktype',`
   Tmust("$1","$'`1",$'`1==SOCK_STREAM || $'`1==SOCK_DGRAM);')
  m4_define(`hm_arg_addrfam',`
-  Tmust("$1","$'`1",$'`1==PF_INET || $'`1==PF_INET6);')
+  Tmust("$1","$'`1",$'`1==AF_INET || $'`1==AF_INET6);')
  m4_define(`hm_arg_fcntl_cmd_arg',`
   Tmust("$1","$'`1",$'`1==F_SETFL || $'`1==F_GETFL);
   if ($'`1 == F_SETFL) {

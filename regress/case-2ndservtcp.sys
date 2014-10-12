@@ -1,7 +1,7 @@
 adnstest 2ndserver
 :12 trunc.test.iwj.relativity.greenend.org.uk
  start 940100083.268555
- socket domain=PF_INET type=SOCK_DGRAM
+ socket domain=AF_INET type=SOCK_DGRAM
  socket=4
  +0.000169
  fcntl fd=4 cmd=F_GETFL
@@ -47,7 +47,7 @@ adnstest 2ndserver
      7472756e 63617469 6f6e0136 c069c00c 000c0001 0000003c 0024046c 6f6e6706
      646f6d61 696e0274 6f05666f 7263650a 7472756e 63617469 6f6e0137 c069.
  +0.002022
- socket domain=PF_INET type=SOCK_STREAM
+ socket domain=AF_INET type=SOCK_STREAM
  socket=5
  +0.000905
  fcntl fd=5 cmd=F_GETFL
@@ -74,7 +74,7 @@ adnstest 2ndserver
  select max=5 rfds=[4] wfds=[] efds=[] to=0.000000
  select=0 rfds=[] wfds=[] efds=[]
  +0.000001
- socket domain=PF_INET type=SOCK_STREAM
+ socket domain=AF_INET type=SOCK_STREAM
  socket=5
  +0.000678
  fcntl fd=5 cmd=F_GETFL
