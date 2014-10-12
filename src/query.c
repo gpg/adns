@@ -133,17 +133,17 @@ static adns_status check_domain_name(adns_state ads, adns_queryflags flags,
 				     const byte *dgram, int dglen)
 {
   findlabel_state fls;
-  adns_status err;
+  adns_status st;
   int labnum= 0, labstart, lablen;
   union checklabel_state cls;
 
   adns__findlabel_start(&fls,ads, -1,0, dgram,dglen,dglen, DNS_HDRSIZE,0);
   do {
-    err= adns__findlabel_next(&fls, &lablen,&labstart);
-    assert(!err); assert(lablen >= 0);
-    err= typei->checklabel(ads,flags, &cls,ctx,
+    st= adns__findlabel_next(&fls, &lablen,&labstart);
+    assert(!st); assert(lablen >= 0);
+    st= typei->checklabel(ads,flags, &cls,ctx,
 			   labnum++, dgram,labstart,lablen);
-    if (err) return err;
+    if (st) return st;
   } while (lablen);
   return adns_s_ok;
 }
@@ -155,12 +155,12 @@ adns_status adns__internal_submit(adns_state ads, adns_query *query_r,
 				  adns_queryflags flags, struct timeval now,
 				  qcontext *ctx) {
   adns_query qu;
-  adns_status err;
+  adns_status st;
 
-  err= check_domain_name(ads, flags,ctx,typei, qumsg_vb->buf,qumsg_vb->used);
-  if (err) goto x_err;
+  st= check_domain_name(ads, flags,ctx,typei, qumsg_vb->buf,qumsg_vb->used);
+  if (st) goto x_err;
   qu= query_alloc(ads,typei,type,flags,now);
-  if (!qu) { err = adns_s_nomemory; goto x_err; }
+  if (!qu) { st = adns_s_nomemory; goto x_err; }
   *query_r= qu;
 
   qu->parent= parent;
@@ -172,7 +172,7 @@ adns_status adns__internal_submit(adns_state ads, adns_query *query_r,
 
 x_err:
   adns__vbuf_free(qumsg_vb);
-  return err;
+  return st;
 }
 
 static void query_simple(adns_state ads, adns_query qu,
