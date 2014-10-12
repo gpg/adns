@@ -304,29 +304,35 @@ void adns_processtimeouts(adns_state ads, const struct timeval *now) {
 
 int adns__pollfds(adns_state ads, struct pollfd pollfds_buf[MAX_POLLFDS]) {
   /* Returns the number of entries filled in.  Always zeroes revents. */
+  int nwanted=0;
+#define ADD_POLLFD(wantfd, wantevents) do{	\
+    pollfds_buf[nwanted].fd= (wantfd);		\
+    pollfds_buf[nwanted].events= (wantevents);	\
+    pollfds_buf[nwanted].revents= 0;		\
+    nwanted++;					\
+  }while(0)
 
   assert(MAX_POLLFDS==2);
 
-  pollfds_buf[0].fd= ads->udpsocket;
-  pollfds_buf[0].events= POLLIN;
-  pollfds_buf[0].revents= 0;
+  ADD_POLLFD(ads->udpsocket, POLLIN);
 
   switch (ads->tcpstate) {
   case server_disconnected:
   case server_broken:
-    return 1;
+    break;
   case server_connecting:
-    pollfds_buf[1].events= POLLOUT;
+    ADD_POLLFD(ads->tcpsocket, POLLOUT);
     break;
   case server_ok:
-    pollfds_buf[1].events=
-      ads->tcpsend.used ? POLLIN|POLLOUT|POLLPRI : POLLIN|POLLPRI;
+    ADD_POLLFD(ads->tcpsocket,
+	       ads->tcpsend.used ? POLLIN|POLLOUT|POLLPRI : POLLIN|POLLPRI);
     break;
   default:
     abort();
   }
-  pollfds_buf[1].fd= ads->tcpsocket;
-  return 2;
+  assert(nwanted<=MAX_POLLFDS);
+#undef ADD_POLLFD
+  return nwanted;
 }
 
 int adns_processreadable(adns_state ads, int fd, const struct timeval *now) {
