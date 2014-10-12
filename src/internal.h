@@ -450,8 +450,9 @@ extern const void *adns__sockaddr_addr(const struct sockaddr *sa);
  */
 
 char *adns__sockaddr_ntoa(const struct sockaddr *sa, char *buf);
-/* Convert sa to a string, and write it to buf, which must be at least
- * ADNS_ADDR2TEXT_BUFLEN bytes long (unchecked).  Return buf; can't fail.
+/* Converts sa to a string, and writes it to buf, which must be at
+ * least ADNS_ADDR2TEXT_BUFLEN bytes long (unchecked).  Returns buf;
+ * can't fail.
  */
 
 extern int adns__make_reverse_domain(const struct sockaddr *sa,
