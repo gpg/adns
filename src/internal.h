@@ -706,7 +706,7 @@ void adns__reset_preserved(adns_query qu);
 
 void adns__cancel(adns_query qu);
 void adns__query_done(adns_query qu);
-void adns__query_fail(adns_query qu, adns_status stat);
+void adns__query_fail(adns_query qu, adns_status st);
 void adns__cancel_children(adns_query qu);
 
 void adns__returning(adns_state ads, adns_query qu);
