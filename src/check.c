@@ -148,15 +148,29 @@ static void checkc_queue_childw(adns_state ads) {
   });
 }
 
+static void checkc_query_done(adns_state ads, adns_query qu) {
+  assert(qu->state == query_done);
+  assert(!qu->children.head && !qu->children.tail);
+  checkc_query(ads,qu);
+}
+
 static void checkc_queue_output(adns_state ads) {
   adns_query qu;
   
   DLIST_CHECK(ads->output, qu, , {
-    assert(qu->state == query_done);
-    assert(!qu->children.head && !qu->children.tail);
     assert(!qu->parent);
     assert(!qu->allocations.head && !qu->allocations.tail);
-    checkc_query(ads,qu);
+    checkc_query_done(ads,qu);
+  });
+}
+
+static void checkc_queue_intdone(adns_state ads) {
+  adns_query qu;
+  
+  DLIST_CHECK(ads->intdone, qu, , {
+    assert(qu->parent);
+    assert(qu->ctx.callback);
+    checkc_query_done(ads,qu);
   });
 }
 
@@ -168,6 +182,7 @@ void adns__consistency(adns_state ads, adns_query qu, consistency_checks cc) {
     break;
   case cc_entex:
     if (!(ads->iflags & adns_if_checkc_entex)) return;
+    assert(!ads->intdone.head);
     break;
   case cc_freq:
     if ((ads->iflags & adns_if_checkc_freq) != adns_if_checkc_freq) return;
@@ -181,6 +196,7 @@ void adns__consistency(adns_state ads, adns_query qu, consistency_checks cc) {
   checkc_queue_tcpw(ads);
   checkc_queue_childw(ads);
   checkc_queue_output(ads);
+  checkc_queue_intdone(ads);
 
   if (qu) {
     switch (qu->state) {
@@ -194,7 +210,10 @@ void adns__consistency(adns_state ads, adns_query qu, consistency_checks cc) {
       DLIST_ASSERTON(qu, search, ads->childw, );
       break;
     case query_done:
-      DLIST_ASSERTON(qu, search, ads->output, );
+      if (qu->parent)
+	DLIST_ASSERTON(qu, search, ads->intdone, );
+      else
+	DLIST_ASSERTON(qu, search, ads->output, );
       break;
     default:
       assert(!"specific query state");

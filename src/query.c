@@ -497,6 +497,17 @@ static void free_query_allocs(adns_query qu) {
 }
 
 void adns__returning(adns_state ads, adns_query qu_for_caller) {
+  while (ads->intdone.head) {
+    adns_query iq= ads->intdone.head;
+    adns_query parent= iq->parent;
+    LIST_UNLINK_PART(parent->children,iq,siblings.);
+    LIST_UNLINK(iq->ads->childw,parent);
+    LIST_UNLINK(ads->intdone,iq);
+    iq->ctx.callback(parent,iq);
+    free_query_allocs(iq);
+    free(iq->answer);
+    free(iq);
+  }
   adns__consistency(ads,qu_for_caller,cc_entex);
 }
 
@@ -517,7 +528,10 @@ void adns__cancel(adns_query qu) {
     LIST_UNLINK(ads->childw,qu);
     break;
   case query_done:
-    LIST_UNLINK(ads->output,qu);
+    if (qu->parent)
+      LIST_UNLINK(ads->intdone,qu);
+    else
+      LIST_UNLINK(ads->output,qu);
     break;
   default:
     abort();
@@ -585,8 +599,8 @@ static void makefinal_query(adns_query qu) {
 }
 
 void adns__query_done(adns_query qu) {
+  adns_state ads=qu->ads;
   adns_answer *ans;
-  adns_query parent;
 
   adns__cancel_children(qu);
 
@@ -617,18 +631,12 @@ void adns__query_done(adns_query qu) {
   }
 
   ans->expires= qu->expires;
-  parent= qu->parent;
-  if (parent) {
-    LIST_UNLINK_PART(parent->children,qu,siblings.);
-    LIST_UNLINK(qu->ads->childw,parent);
-    qu->ctx.callback(parent,qu);
-    free_query_allocs(qu);
-    free(qu->answer);
-    free(qu);
+  qu->state= query_done;
+  if (qu->parent) {
+    LIST_LINK_TAIL(ads->intdone,qu);
   } else {
     makefinal_query(qu);
     LIST_LINK_TAIL(qu->ads->output,qu);
-    qu->state= query_done;
   }
 }
 

@@ -319,6 +319,10 @@ struct adns__query {
    * Queries in state tcpw/tcpw have been sent (or are in the to-send buffer)
    * iff the tcp connection is in state server_ok.
    *
+   * Internal queries (from adns__submit_internal) end up on intdone
+   * instead of output, and the callbacks are made on the way out of
+   * adns, to avoid reentrancy hazards.
+   *
    *			      +------------------------+
    *             START -----> |      tosend/NONE       |
    *			      +------------------------+
@@ -364,7 +368,7 @@ struct adns__state {
   adns_logcallbackfn *logfn;
   void *logfndata;
   int configerrno;
-  struct query_queue udpw, tcpw, childw, output;
+  struct query_queue udpw, tcpw, childw, output, intdone;
   adns_query forallnext;
   int nextid, tcpsocket;
   struct udpsocket { int af; int fd; } udpsocket[MAXUDP];
@@ -711,7 +715,11 @@ void adns__cancel_children(adns_query qu);
 
 void adns__returning(adns_state ads, adns_query qu);
 /* Must be called before returning from adns any time that we have
- * progressed (including made, finished or destroyed) queries. */
+ * progressed (including made, finished or destroyed) queries.
+ *
+ * Might reenter adns via internal query callbacks, so
+ * external-faciing functions which call adns__returning should
+ * normally be avoided in internal code. */
 
 /* From reply.c: */
 

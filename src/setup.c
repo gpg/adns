@@ -558,6 +558,7 @@ static int init_begin(adns_state *ads_r, adns_initflags flags,
   LIST_INIT(ads->tcpw);
   LIST_INIT(ads->childw);
   LIST_INIT(ads->output);
+  LIST_INIT(ads->intdone);
   ads->forallnext= 0;
   ads->nextid= 0x311f;
   ads->nudp= 0;
@@ -729,6 +730,7 @@ void adns_finish(adns_state ads) {
     else if (ads->tcpw.head) adns__cancel(ads->tcpw.head);
     else if (ads->childw.head) adns__cancel(ads->childw.head);
     else if (ads->output.head) adns__cancel(ads->output.head);
+    else if (ads->intdone.head) adns__cancel(ads->output.head);
     else break;
   }
   for (i=0; i<ads->nudp; i++) close(ads->udpsocket[i].fd);
