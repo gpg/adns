@@ -872,6 +872,7 @@ void adns__autosys(adns_state ads, struct timeval now);
 
 void adns__must_gettimeofday(adns_state ads, const struct timeval **now_io,
 			     struct timeval *tv_buf);
+/* Call with care - might reentrantly cause queries to be completed! */
 
 int adns__pollfds(adns_state ads, struct pollfd pollfds_buf[MAX_POLLFDS]);
 void adns__fdevents(adns_state ads,
