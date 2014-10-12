@@ -365,7 +365,7 @@ enum {
   addr_nrrtypes,
 #define RRTY_FLAG(ty) addr_rf_##ty = 1 << addr__ri_##ty,
   ADDR_RRTYPES(RRTY_FLAG)
-  addr__rrty_hunoz
+  addr__rrty_eat_final_comma
 #undef RRTY_FLAG
 };
 
