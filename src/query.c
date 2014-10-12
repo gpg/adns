@@ -410,7 +410,7 @@ void *adns__alloc_preserved(adns_query qu, size_t sz) {
   return rv;
 }
 
-static allocnode *alloc_info(adns_query qu, void *p, size_t *sz_r) {
+static allocnode *alloc__info(adns_query qu, void *p, size_t *sz_r) {
   allocnode *an;
 
   if (!p || p == qu) { *sz_r= 0; return 0; }
@@ -421,7 +421,7 @@ static allocnode *alloc_info(adns_query qu, void *p, size_t *sz_r) {
 
 void adns__free_interim(adns_query qu, void *p) {
   size_t sz;
-  allocnode *an= alloc_info(qu, p, &sz);
+  allocnode *an= alloc__info(qu, p, &sz);
 
   if (!an) return;
   assert(!qu->final_allocspace);
@@ -436,7 +436,7 @@ void *adns__alloc_mine(adns_query qu, size_t sz) {
 
 void adns__transfer_interim(adns_query from, adns_query to, void *block) {
   size_t sz;
-  allocnode *an= alloc_info(from, block, &sz);
+  allocnode *an= alloc__info(from, block, &sz);
 
   if (!an) return;
 
