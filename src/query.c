@@ -148,6 +148,7 @@ static adns_status check_domain_name(adns_state ads, adns_queryflags flags,
 }
 
 adns_status adns__internal_submit(adns_state ads, adns_query *query_r,
+				  adns_query parent,
 				  const typeinfo *typei, adns_rrtype type,
 				  vbuf *qumsg_vb, int id,
 				  adns_queryflags flags, struct timeval now,
@@ -161,6 +162,8 @@ adns_status adns__internal_submit(adns_state ads, adns_query *query_r,
   if (!qu) { err = adns_s_nomemory; goto x_err; }
   *query_r= qu;
 
+  qu->parent= parent;
+  LIST_LINK_TAIL_PART(parent->children,qu,siblings.);
   memcpy(&qu->ctx,ctx,sizeof(qu->ctx));
   query_submit(ads,qu, typei,qumsg_vb,id,flags,now);
   

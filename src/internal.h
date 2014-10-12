@@ -601,6 +601,7 @@ void adns__query_send(adns_query qu, struct timeval now);
 /* From query.c: */
 
 adns_status adns__internal_submit(adns_state ads, adns_query *query_r,
+				  adns_query parent,
 				  const typeinfo *typei, adns_rrtype type,
 				  vbuf *qumsg_vb, int id,
 				  adns_queryflags flags, struct timeval now,
