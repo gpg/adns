@@ -398,31 +398,30 @@ int adns_processreadable(adns_state ads, int fd, const struct timeval *now) {
   }
   for (i=0; i<ads->nudpsockets; i++) {
     udp= &ads->udpsockets[i];
-    if (fd == udp->fd) {
-      for (;;) {
-	udpaddrlen= sizeof(udpaddr);
-	r= recvfrom(fd,udpbuf,sizeof(udpbuf),0, &udpaddr.sa,&udpaddrlen);
-	if (r<0) {
-	  if (errno == EAGAIN || errno == EWOULDBLOCK) { r= 0; goto xit; }
-	  if (errno == EINTR) continue;
-	  if (errno_resources(errno)) { r= errno; goto xit; }
-	  adns__warn(ads,-1,0,"datagram receive error: %s",strerror(errno));
-	  r= 0; goto xit;
-	}
-	for (serv= 0;
-	     serv < ads->nservers &&
-	       !adns__sockaddrs_equal(&udpaddr.sa,
-				      &ads->servers[serv].addr.sa);
-	     serv++);
-	if (serv >= ads->nservers) {
-	  adns__warn(ads,-1,0,"datagram received from unknown nameserver %s",
-		     adns__sockaddr_ntoa(&udpaddr.sa, addrbuf));
-	  continue;
-	}
-	adns__procdgram(ads,udpbuf,r,serv,0,*now);
+    if (fd != udp->fd) continue;
+    for (;;) {
+      udpaddrlen= sizeof(udpaddr);
+      r= recvfrom(fd,udpbuf,sizeof(udpbuf),0, &udpaddr.sa,&udpaddrlen);
+      if (r<0) {
+	if (errno == EAGAIN || errno == EWOULDBLOCK) { r= 0; goto xit; }
+	if (errno == EINTR) continue;
+	if (errno_resources(errno)) { r= errno; goto xit; }
+	adns__warn(ads,-1,0,"datagram receive error: %s",strerror(errno));
+	r= 0; goto xit;
       }
-      break;
+      for (serv= 0;
+	   serv < ads->nservers &&
+	     !adns__sockaddrs_equal(&udpaddr.sa,
+				    &ads->servers[serv].addr.sa);
+	   serv++);
+      if (serv >= ads->nservers) {
+	adns__warn(ads,-1,0,"datagram received from unknown nameserver %s",
+		   adns__sockaddr_ntoa(&udpaddr.sa, addrbuf));
+	continue;
+      }
+      adns__procdgram(ads,udpbuf,r,serv,0,*now);
     }
+    break;
   }
   r= 0;
 xit:
