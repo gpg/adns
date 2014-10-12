@@ -64,7 +64,7 @@ INSTALL_DATA=		$(INSTALL) -m 644
 all:			$(TARGETS)
 
 clean mostlyclean:
-		rm -f *.o *.tmp* *.so *.so.*
+		rm -f *.o *.tmp* *.so *.so.* pipe.*
 
 distclean:		clean
 		rm -f $(TARGETS) *~ ./#*# core *.orig *.rej Makefile
