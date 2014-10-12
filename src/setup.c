@@ -725,10 +725,10 @@ void adns_finish(adns_state ads) {
   int i;
   adns__consistency(ads,0,cc_entex);
   for (;;) {
-    if (ads->udpw.head) adns_cancel(ads->udpw.head);
-    else if (ads->tcpw.head) adns_cancel(ads->tcpw.head);
-    else if (ads->childw.head) adns_cancel(ads->childw.head);
-    else if (ads->output.head) adns_cancel(ads->output.head);
+    if (ads->udpw.head) adns__cancel(ads->udpw.head);
+    else if (ads->tcpw.head) adns__cancel(ads->tcpw.head);
+    else if (ads->childw.head) adns__cancel(ads->childw.head);
+    else if (ads->output.head) adns__cancel(ads->output.head);
     else break;
   }
   for (i=0; i<ads->nudp; i++) close(ads->udpsocket[i].fd);

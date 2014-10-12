@@ -472,7 +472,7 @@ void adns__cancel_children(adns_query qu) {
 
   for (cqu= qu->children.head; cqu; cqu= ncqu) {
     ncqu= cqu->siblings.next;
-    adns_cancel(cqu);
+    adns__cancel(cqu);
   }
 }
 
@@ -500,11 +500,11 @@ void adns__returning(adns_state ads, adns_query qu_for_caller) {
   adns__consistency(ads,qu_for_caller,cc_entex);
 }
 
-void adns_cancel(adns_query qu) {
+void adns__cancel(adns_query qu) {
   adns_state ads;
 
   ads= qu->ads;
-  adns__consistency(ads,qu,cc_entex);
+  adns__consistency(ads,qu,cc_freq);
   if (qu->parent) LIST_UNLINK_PART(qu->parent->children,qu,siblings.);
   switch (qu->state) {
   case query_tosend:
@@ -525,6 +525,15 @@ void adns_cancel(adns_query qu) {
   free_query_allocs(qu);
   free(qu->answer);
   free(qu);
+}
+
+void adns_cancel(adns_query qu) {
+  adns_state ads;
+
+  assert(!qu->parent);
+  ads= qu->ads;
+  adns__consistency(ads,qu,cc_entex);
+  adns__cancel(qu);
   adns__returning(ads,0);
 }
 
