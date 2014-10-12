@@ -373,8 +373,10 @@ static unsigned addr_rrtypeflag(adns_rrtype type) {
   int i;
 
   type &= adns_rrt_typemask;
-  for (i=0; i<addr_nrrtypes && type!=addr_all_rrtypes[i]; i++);
-  return i < addr_nrrtypes ? 1 << i : 0;
+  for (i=0; i<addr_nrrtypes; i++)
+     if (type==addr_all_rrtypes[i])
+       return 1 << i;
+  return 0;
 }
 
 /* About CNAME handling in addr queries.
