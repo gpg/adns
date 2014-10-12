@@ -1422,7 +1422,8 @@ static adns_status ckl_srv(adns_state ads, adns_queryflags flags,
 			   int labnum, const char *dgram,
 			   int labstart, int lablen) {
   const char *label = dgram+labstart;
-  if (labnum < 2 && !(flags & adns_qf_quoteok_query)) {
+  if (labnum < 2) {
+    if (flags & adns_qf_quoteok_query) return adns_s_ok;
     if (!lablen || label[0] != '_') return adns_s_querydomaininvalid;
     return adns_s_ok;
   }
