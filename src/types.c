@@ -579,11 +579,11 @@ static adns_status addr_submit(adns_query parent, adns_query *query_r,
    * available record types.  The memory management and callback rules are
    * the same as for adns__internal_submit.
    *
-   * Some differences: the query is linked onto the parent's children list
-   * before exit (though the parent's state is not changed, and it is not
-   * linked into the childw list queue); and we fiddle with the `tinfo'
-   * portion of the context structure (yes, modifying *ctx), since this is,
-   * in fact, the main purpose of this function.
+   * Some differences: the query is linked onto the parent's children
+   * list before exit (though the parent's state is not changed, and
+   * it is not linked into the childw list queue); and we set the
+   * `tinfo' portion of the context structure (yes, modifying *ctx),
+   * since this is, in fact, the main purpose of this function.
    */
 
   adns_state ads= parent->ads;
