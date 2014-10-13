@@ -400,50 +400,46 @@ static unsigned addr_rrtypeflag(adns_rrtype type) {
  * adns__qf_addr_cname set so that we know that we're in the fixup state.
  */
 
-static adns_status pap_addr(const parseinfo *pai, int rrty, size_t rrsz,
-			    int *cbyte_io, int max, adns_rr_addr *storeto) {
-  const byte *dgram= pai->dgram;
-  int af, addrlen, salen;
+static adns_status pap_addr(const parseinfo *pai, int in_rrty, size_t out_rrsz,
+			    int *cbyte_io, int cbyte_max, adns_rr_addr *out) {
+  int in_addrlen;
+  int out_af, out_salen;
   struct in6_addr v6map;
-  const void *oaddr= dgram + *cbyte_io;
-  int avail= max - *cbyte_io;
-  int step= -1;
-  void *addrp= 0;
 
-  switch (rrty) {
-  case adns_r_a:
-    if ((pai->qu->flags & adns_qf_ipv6_mapv4) &&
-	(pai->qu->answer->type & adns__qtf_bigaddr)) {
-      if (avail < 4) return adns_s_invaliddata;
-      memset(v6map.s6_addr +  0, 0x00, 10);
-      memset(v6map.s6_addr + 10, 0xff,  2);
-      memcpy(v6map.s6_addr + 12, oaddr, 4);
-      oaddr= v6map.s6_addr; avail= sizeof(v6map.s6_addr);
-      if (step < 0) step= 4;
-      goto aaaa;
-    }
-    af= AF_INET; addrlen= 4;
-    addrp= &storeto->addr.inet.sin_addr;
-    salen= sizeof(storeto->addr.inet);
-    break;
-  case adns_r_aaaa:
-  aaaa:
-    af= AF_INET6; addrlen= 16;
-    addrp= storeto->addr.inet6.sin6_addr.s6_addr;
-    salen= sizeof(storeto->addr.inet6);
-    break;
+  const void *use_addr= pai->dgram + *cbyte_io;
+
+  switch (in_rrty) {
+  case adns_r_a:    in_addrlen= 4;  out_af= AF_INET;  break;
+  case adns_r_aaaa: in_addrlen= 16; out_af= AF_INET6; break;
+  default: abort();
   }
-  assert(addrp);
 
-  assert(offsetof(adns_rr_addr, addr) + salen <= rrsz);
-  if (addrlen < avail) return adns_s_invaliddata;
-  if (step < 0) step= addrlen;
-  *cbyte_io += step;
-  memset(&storeto->addr, 0, salen);
-  storeto->len= salen;
-  storeto->addr.sa.sa_family= af;
-  memcpy(addrp, oaddr, addrlen);
+  if ((*cbyte_io + in_addrlen) != cbyte_max) return adns_s_invaliddata;
 
+  if (out_af==AF_INET &&
+      (pai->qu->flags & adns_qf_ipv6_mapv4) &&
+      (pai->qu->answer->type & adns__qtf_bigaddr)) {
+    memset(v6map.s6_addr +  0, 0x00,    10);
+    memset(v6map.s6_addr + 10, 0xff,     2);
+    memcpy(v6map.s6_addr + 12, use_addr, 4);
+    use_addr= v6map.s6_addr;
+    out_af= AF_INET6;
+  }
+
+  switch (out_af) {
+  case AF_INET:  out_salen= sizeof(out->addr.inet);  break;
+  case AF_INET6: out_salen= sizeof(out->addr.inet6); break;
+  default: abort();
+  }
+
+  assert(offsetof(adns_rr_addr, addr) + out_salen <= out_rrsz);
+
+  memset(&out->addr, 0, out_salen);
+  out->len= out_salen;
+  out->addr.sa.sa_family= out_af;
+  adns__addr_inject(use_addr, &out->addr);
+
+  *cbyte_io += in_addrlen;
   return adns_s_ok;
 }
 
