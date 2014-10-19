@@ -10,7 +10,7 @@ m4_dnl  (See the file INSTALL for full details.)
 m4_dnl  
 m4_dnl  This program is free software; you can redistribute it and/or modify
 m4_dnl  it under the terms of the GNU General Public License as published by
-m4_dnl  the Free Software Foundation; either version 2, or (at your option)
+m4_dnl  the Free Software Foundation; either version 3, or (at your option)
 m4_dnl  any later version.
 m4_dnl  
 m4_dnl  This program is distributed in the hope that it will be useful,
