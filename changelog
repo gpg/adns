@@ -19,6 +19,7 @@ adns (1.5~~) UPSTREAM; urgency=low
   Build system fixes and improvements:
   * `make clean' removes the pipes.
   * Work around bugs in make (Debian #4073, #756123) affecting regress.
+  * Do not include Makefile and src/config.h in distribution tarball.
 
   Regression test debugging improvements:
   * Provide gdbwrap convenience script.

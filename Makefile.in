@@ -47,7 +47,7 @@ clean-here mostlyclean-here:
 		rm -rf dist_tmp
 
 distclean-here maintainer-clean-here:	clean-here
-		rm -f settings.make config.h config.cache config.log config.status
+	rm -f settings.make config.cache config.log config.status Makefile
 
 install-strip:
 	$(MAKE) INSTALL_PROGRAM_FLAGS=-s

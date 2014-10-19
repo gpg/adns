@@ -67,7 +67,7 @@ clean mostlyclean:
 		rm -f *.o *.tmp* *.so *.so.* pipe.*
 
 distclean:		clean
-		rm -f $(TARGETS) *~ ./#*# core *.orig *.rej Makefile
+		rm -f $(TARGETS) *~ ./#*# core *.orig *.rej Makefile config.h
 
 distprep:		$(AUTOCSRCS) $(AUTOCHDRS)
 
