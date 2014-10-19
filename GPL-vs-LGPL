@@ -90,32 +90,6 @@ free software licensing, visit:
   at http://www.fsf.org/philosophy/why-not-lgpl.html
 
 
-3. Proprietary applications of adns
------------------------------------
-
-This applies to you if you are writing a proprietary program, by which
-I mean that you will not be distributing source code and not allowing
-users to modify and share your software; most likely you are doing
-this for your own (personal or corporate) financial gain.
-
-In this case the copyleft GPL licence does not meet your needs.
-Instead, you will need to negotiate a separate proprietary licence for
-adns.
-
-The List Price for a proprietary but LGPL-compatible application which
-uses adns is EUR150,000 per program per 10,000 users or part thereof,
-of which I will donate 25% to a Free Software organisation of my
-choice (as recognition for the contributions and help I have received
-from the Free Software communicy).
-
-Discounts may be available, particularly if I approve of your product.
-So, if you are serious about proprietary software, and paying for the
-software that you use, please contact me to negotiate a good deal.
-
-
--- Ian Jackson 22.5.2004
-
-
 Local variables:
 mode: text
 End: 
