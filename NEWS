@@ -1,0 +1,41 @@
+I am pleased to announce adns 1.5.0~rc0
+
+Changes in adns 1.5, since adns 1.4, are:
+
+ * This release provides full IPv6 support.  Applications can request
+   AAAA records (containing IPv6 addresses) as well as, or instead of,
+   A records (containing IPv4 addresses).  adns 1.5 can speak to
+   nameservers over IPv6.
+
+ * There is a fix to the one currently known bug in the resolver:
+   previously, some harmless but wrong owner names for checked ptr
+   queries would be accepted; now they are rejected with `Domain
+   invalid for particular DNS query type'.
+
+ * We fix a crashing bug in adnslogres.  (Debian#392102.)
+
+ * There are also some build system and test suite improvements.
+
+Compatibility:
+
+  adns 1.5 is fully forwards API- and ABI-compatible with 1.4.
+
+  adns 1.5 is not backwards ABI-compatible, in the sense that
+  applications built against adns 1.5 but run with adns 1.4 may
+  experience `Function not implemented' errors, or `symbol lookup
+  error' due to undefined symbols.  But applications built against 1.4
+  will not experience data corruption due to ABI mismatches.
+
+  adns_r_addr queries (general `address' queries where the application
+  does not specify the kind of address) used to only return AF_INET
+  (IPv4) addresses.  To avoid surprising existing applications,
+  AF_INET6 (IPv6) addresses will be returned only if the application
+  explicitly states its support for handling a mixture of address
+  families in the results from adns_r_addr.  In a future version of
+  adns this will become the default.
+
+  adnshost and the other command-line utilities are fully forward- and
+  backward-compatible, except that in adns 1.5, adnshost will return
+  IPv6 as well as IPv4 information if simply asked for `addresses'.
+  Calling programs which did not ask for a specific address type ought
+  to cope with this.
