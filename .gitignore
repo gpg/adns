@@ -2,6 +2,7 @@ Makefile
 config.log
 config.cache
 config.status
+autom4te.cache
 dist_tmp
 adns-*.tar.gz
 settings.make
