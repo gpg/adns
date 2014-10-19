@@ -1,7 +1,5 @@
 adns (1.5~~) UPSTREAM; urgency=low
 
-  Licence changed to GPLv3 (still LGPLv2 for adns.h).
-  
   New features:
   * Support for queries about IPv6 data in all applicable adns
     query types (including AAAA, PTR, and adns_r_addr queries).
@@ -26,11 +24,12 @@ adns (1.5~~) UPSTREAM; urgency=low
   * Honour ADNS_TEST_DEBUG env. var.  (Mark Wooding.)
 
   Other improvements:
+  * Licence changed to GPLv3 (still LGPLv2 for adns.h).
   * Source code cleanups.  (Some from Mark Wooding.)
   * Now in git.
   * Documentation and webpage updates.
 
- -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sun, 19 Oct 2014 23:52:20 +0100
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Mon, 20 Oct 2014 00:41:33 +0100
 
 adns (1.4); urgency=low
 
