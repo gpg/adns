@@ -8,7 +8,7 @@
  *   Copyright (C) 1999-2000 Ian Jackson <ian@davenant.greenend.org.uk>
  *
  *  It is part of adns, which is
- *    Copyright (C) 1997-2000,2003,2006  Ian Jackson
+ *    Copyright (C) 1997-2000,2003,2006,2014  Ian Jackson
  *    Copyright (C) 1999-2000,2003,2006  Tony Finch
  *    Copyright (C) 1991 Massachusetts Institute of Technology
  *  (See the file INSTALL for full details.)

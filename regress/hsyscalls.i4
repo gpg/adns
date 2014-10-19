@@ -3,7 +3,7 @@ m4_dnl (part of complex test harness, not of the library)
 m4_dnl - list of syscalls to override/log and their args
 
 m4_dnl  This file is part of adns, which is
-m4_dnl    Copyright (C) 1997-2000,2003,2006  Ian Jackson
+m4_dnl    Copyright (C) 1997-2000,2003,2006,2014  Ian Jackson
 m4_dnl    Copyright (C) 1999-2000,2003,2006  Tony Finch
 m4_dnl    Copyright (C) 1991 Massachusetts Institute of Technology
 m4_dnl  (See the file INSTALL for full details.)
