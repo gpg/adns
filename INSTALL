@@ -61,7 +61,7 @@ free to send me patches to improve the situation.  However, the
 Makefiles only know how to use GCC to make dynamic libraries.
 
 The adnsresfilter utility uses `tsearch' from the C library (a la SVID
-and X/Open).  If you don't have tsearch configure will arranges for
+and X/Open).  If you don't have tsearch configure will arrange for
 adnsresfilter not to be built.  To fix this, install a C library
 containing tsearch, such as the GNU C library.  It is best if tsearch
 uses an automatically-balancing tree algorithm, like the glibc version
@@ -98,16 +98,17 @@ COPYRIGHT
 
 This file, INSTALL, contains installation instructions and other
 details for adns.  It is
- Copyright (C) 1997-2000 Ian Jackson <ian@davenant.greenend.org.uk>
+ Copyright (C) 1997-2000 Ian Jackson <ijackson@chiark.greenend.org.uk>
 
 adns is
- Copyright (C) 1997-2000,2003,2006 Ian Jackson <ian@davenant.greenend.org.uk>
+ Copyright (C) 1997-2000,2003,2006,2014 Ian Jackson
+ Copyright (C) 2014 Mark Wooding
  Copyright (C) 1999-2000,2003,2006 Tony Finch <dot@dotat.at>         [1]
  Copyright (C) 1991 Massachusetts Institute of Technology            [2]
 
 adns is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free
-Software Foundation; either version 2 of the License, or (at your
+Software Foundation; either version 3 of the License, or (at your
 option) any later version.
 
 This program is distributed in the hope that it will be useful, but
