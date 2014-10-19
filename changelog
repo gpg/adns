@@ -1,3 +1,31 @@
+adns (1.5~~) UPSTREAM; urgency=low
+
+  New features:
+  * Support for transport over IPv6.
+  * Support for queries about IPv6 data in all applicable adns
+    query types (including AAAA, PTR, and adns_r_addr queries).
+
+  Bugfixes:
+  * Fix a crashing bug in adnslogres.  (Debian#392102.)
+  * Do all checks of checked PTR owner name before actually sending the
+    query, and reject IPv4 PTR owner names whose labels have leading zero
+    digits or values >255.
+
+  Build system fixes and improvements:
+  * `make clean' removes the pipes.
+  * Work around bugs in make (Debian #4073, #756123) affecting regress.
+
+  Regression test debugging improvements:
+  * Provide gdbwrap convenience script.
+  * Honour ADNS_TEST_DEBUG env. var.
+
+  Other improvements:
+  * Source code cleanups.
+  * Now in git.
+  * Documentation and webpage updates.
+
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sun, 19 Oct 2014 23:52:20 +0100
+
 adns (1.4); urgency=low
 
   Improvements for multithreaded programs:
