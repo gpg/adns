@@ -1,9 +1,14 @@
 adns (1.5~~) UPSTREAM; urgency=low
 
+  Licence changed to GPLv3 (still LGPLv2 for adns.h).
+  
   New features:
-  * Support for transport over IPv6.
   * Support for queries about IPv6 data in all applicable adns
     query types (including AAAA, PTR, and adns_r_addr queries).
+    (Thanks very much to Mark Wooding.)
+  * Support for transport over IPv6.  (Thanks to Mark Wooding again.)
+  * adns_addr2text and adns_text2addr: Convenient functions for
+    converting between addresses and address literals.
 
   Bugfixes:
   * Fix a crashing bug in adnslogres.  (Debian#392102.)
@@ -17,10 +22,10 @@ adns (1.5~~) UPSTREAM; urgency=low
 
   Regression test debugging improvements:
   * Provide gdbwrap convenience script.
-  * Honour ADNS_TEST_DEBUG env. var.
+  * Honour ADNS_TEST_DEBUG env. var.  (Mark Wooding.)
 
   Other improvements:
-  * Source code cleanups.
+  * Source code cleanups.  (Some from Mark Wooding.)
   * Now in git.
   * Documentation and webpage updates.
 
