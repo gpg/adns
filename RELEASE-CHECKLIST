@@ -1,0 +1,62 @@
+#!/bin/bash
+# This is for the benefit of the upstream maintainers of GNU adns
+#
+#  * Maybe rerun autoconf
+#  * Ensure changelog reflects changes
+#  * Ensure NEWS reflects changes
+#  * Maybe update MAJOR and/or MINOR in common.make.in
+#  * Update DISTVERSION in Makefile.in
+#  * Update ADNS_VERSION_STRING in client/client.h
+#
+#  * Run this script
+#      ./RELEASE-CHECKLIST
+#
+#  * On chiark, maybe, replace ~ian/public-html/adns/current
+#    with symlink to web-$(version) (as directed by script)
+#
+#  * Send release announcement (use last one as template)
+
+set -e
+
+version=`sed -n <Makefile.in 's/^DISTVERSION=[	]*//p'`
+
+gpgkey='-u 0x48B50D39'
+chiark=chiark:/u/ian/public-html/adns
+chiarkftp=$chiark/ftp
+
+x () { echo "----- $* -----"; "$@"; }
+
+x git clean -xdff
+x ./configure
+x make -j4
+x make check
+x make dist
+rm -rf web
+x make web-install
+
+distfile=adns-$version.tar.gz
+x test -f $distfile
+
+tag=adns-${version//\~/-}
+webout=docs-$version
+
+x gpg --detach-sign $distfile
+x git tag -s $gpgkey -m "adns release $version" $tag
+x git push origin $tag~0:master $tag
+
+distfiles="$distfile $distfile.sig"
+x rsync -vP $distfiles $chiarkftp/
+
+x rsync -rvP web/. $chiark/$webout
+
+x sha256sum $distfiles
+
+cat <<END
+
+TO UPDATE WEB PAGE DOCS:
+  ssh ${chiark%%:*}
+  cd ${chiark#*:}
+  rm -f docs.tmp
+  ln -s $webout docs.tmp
+  mv -Tf docs.tmp docs
+END
