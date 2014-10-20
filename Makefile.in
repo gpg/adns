@@ -44,7 +44,7 @@ all-here install-here uninstall-here distprep-here:	README
 
 clean-here mostlyclean-here:
 		rm -f *~ ./#*# core *.orig *.rej adns-*.tar.gz
-		rm -rf dist_tmp
+		rm -rf dist_tmp web adnshost.txt
 
 distclean-here maintainer-clean-here:	clean-here
 	rm -f settings.make config.cache config.log config.status Makefile
@@ -64,6 +64,9 @@ dist:			distprep
 	cd dist_tmp && tar cf ../$(dist_tmp).tar `basename $(dist_tmp)`
 	gzip -9 $(dist_tmp).tar
 	mv $(dist_tmp).tar.gz .
+
+adnshost.txt: all
+	client/adnshost_s --help >$@.tmp && mv -f $@.tmp $@
 
 check:			all
 	$(MAKE) -C regress check

@@ -11,6 +11,7 @@ settings.make
 *.so
 *.a
 *~
+adnshost.txt
 x.gdb
 client/Makefile
 client/adnstest_s
