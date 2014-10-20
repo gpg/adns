@@ -36,6 +36,8 @@ else
 SUBDIRS_DYNAMIC=
 endif
 
+WEBDIR=web
+
 SUBDIRS= src $(SUBDIRS_DYNAMIC) client regress
 
 all install uninstall clean distclean mostlyclean maintainer-clean distprep:
@@ -69,6 +71,13 @@ dist:			distprep
 
 adnshost.txt: all
 	client/adnshost_s --help >$@.tmp && mv -f $@.tmp $@
+
+web-install: adnshost.txt
+	test -e $(WEBDIR) || mkdir $(WEBDIR)
+	$(INSTALL_DATA) $(srcdir)/README.html $(WEBDIR)/index.html
+	$(INSTALL_DATA) $(srcdir)/src/adns.h $(WEBDIR)/adns.h.txt
+	$(INSTALL_DATA) COPYING $(WEBDIR)/COPYING.txt
+	$(INSTALL_DATA) adnshost.txt $(WEBDIR)/
 
 check:			all
 	$(MAKE) -C regress check

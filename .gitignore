@@ -36,3 +36,4 @@ regress/pipe.out
 regress/pipe.err
 src/Makefile
 src/config.h
+web
