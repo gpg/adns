@@ -5,6 +5,7 @@ config.status
 autom4te.cache
 dist_tmp
 adns-*.tar.gz
+adns-*.tar.gz.sig
 common.make
 settings.make
 *.tmp*
