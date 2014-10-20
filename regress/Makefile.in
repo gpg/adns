@@ -56,7 +56,7 @@ LINK_CMD=	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
 %_playback:	%_c.o hplayback.o $(HARNLOBJS)
 		$(LINK_CMD)
 
-.SECONDARY: $(addsuffix _c.o, $(CLIENTS))
+.SECONDARY: $(addsuffix _c.o, $(filter-out adnshost, $(CLIENTS)))
 # Without this, make will remove <client>_c.o after building <client>.
 # This wastes effort.  (Debian bug #4073.)
 #
