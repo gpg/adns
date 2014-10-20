@@ -15,6 +15,8 @@
 #    with symlink to web-$(version) (as directed by script)
 #
 #  * Send release announcement (use last one as template)
+#
+#  * Update DISTVERSION, ADNS_VERSION_STRING and start new changelog entry
 
 set -e
 
