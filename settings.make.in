@@ -27,6 +27,8 @@ all:			$(TARGETS)
 
 clean mostlyclean:
 		rm -f *.o *.tmp* *.so *.so.* pipe.*
+		rm -f output-*.err output-*.leftover
+		rm -f output-*.out output-*.report
 
 distclean:		clean
 		rm -f $(TARGETS) *~ ./#*# core *.orig *.rej Makefile config.h

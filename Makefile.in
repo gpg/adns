@@ -51,7 +51,8 @@ clean-here mostlyclean-here:
 		rm -rf dist_tmp web adnshost.txt
 
 distclean-here maintainer-clean-here:	clean-here
-	rm -f settings.make config.cache config.log config.status Makefile
+	rm -f settings.make common.make
+	rm -f config.cache config.log config.status Makefile
 
 install-strip:
 	$(MAKE) INSTALL_PROGRAM_FLAGS=-s
