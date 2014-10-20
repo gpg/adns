@@ -1,4 +1,4 @@
-adns (1.5~~) UPSTREAM; urgency=low
+adns (1.5.0~rc0) UPSTREAM; urgency=low
 
   New features:
   * Support for queries about IPv6 data in all applicable adns
@@ -29,7 +29,7 @@ adns (1.5~~) UPSTREAM; urgency=low
   * Now in git.
   * Documentation and webpage updates.
 
- -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Mon, 20 Oct 2014 00:41:33 +0100
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Mon, 20 Oct 2014 01:29:50 +0100
 
 adns (1.4); urgency=low
 

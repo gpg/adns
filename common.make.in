@@ -22,7 +22,7 @@
 #  along with this program; if not, write to the Free Software Foundation.
 
 MAJOR=		1
-MINOR=		3
+MINOR=		5
 SHLIBFILE=	@SHLIBFILE@
 SHLIBSONAME=	@SHLIBSONAME@
 SHLIBFORLINK=	@SHLIBFORLINK@
