@@ -193,7 +193,7 @@ typedef enum {
  adns_r_soa_raw=          6,
  adns_r_soa=                 adns_r_soa_raw|adns__qtf_mail822, 
  		     
- adns_r_ptr_raw=         12, /* do not mind PTR with wrong or missing A */
+ adns_r_ptr_raw=         12, /* do not mind PTR with wrong or missing addr */
  adns_r_ptr=                 adns_r_ptr_raw|adns__qtf_deref,
  		     
  adns_r_hinfo=           13,  
@@ -315,8 +315,8 @@ typedef enum {
  adns_s_max_tempfail= 99,
 
  /* remote configuration errors */
- adns_s_inconsistent, /* PTR gives domain whose A does not exist and match */
- adns_s_prohibitedcname, /* CNAME, but eg A expected (not if _qf_loosecname) */
+ adns_s_inconsistent, /* PTR gives domain whose addr is missing or mismatch */
+ adns_s_prohibitedcname, /* CNAME, but eg A expected (not if _qf_cname_loose) */
  adns_s_answerdomaininvalid,
  adns_s_answerdomaintoolong,
  adns_s_invaliddata,
