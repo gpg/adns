@@ -1,4 +1,4 @@
-# settings.make[.in] - main configuration settings for Makefiles,
+#  common.make[.in] - common configuration settings for Makefiles,
 #  used by autoconf/configure to generate settings.make
 #  
 #  This file is part of adns, which is
@@ -21,17 +21,43 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program; if not, write to the Free Software Foundation.
 
-include		../common.make
+MAJOR=		1
+MINOR=		3
+SHLIBFILE=	@SHLIBFILE@
+SHLIBSONAME=	@SHLIBSONAME@
+SHLIBFORLINK=	@SHLIBFORLINK@
 
-all:			$(TARGETS)
+CC=		@CC@
+CFLAGS=		$(AUTOCFLAGS) $(WARNS) $(WERROR) $(DIRCFLAGS) $(XCFLAGS)
+LDFLAGS=	$(AUTOLDFLAGS) $(DIRLDFLAGS) $(XLDFLAGS)
+LDLIBS=		@LIBS@ $(XLIBS)
+AUTOCFLAGS=	@CFLAGS@
+AUTOLDFLAGS=	@LDFLAGS@
+WARNS=		@WARNS@
+#WERROR=	-Werror
 
-clean mostlyclean:
-		rm -f *.o *.tmp* *.so *.so.* pipe.*
+M4=		m4
+RANLIB=		@RANLIB@
 
-distclean:		clean
-		rm -f $(TARGETS) *~ ./#*# core *.orig *.rej Makefile config.h
+SHLIBCC=	@SHLIBCC@
 
-distprep:		$(AUTOCSRCS) $(AUTOCHDRS)
+MKSHLIB_1=	@MKSHLIB_1@
+MKSHLIB_2=	@MKSHLIB_2@
+MKSHLIB_3=	@MKSHLIB_3@
 
-maintainer-clean:	distclean
-		-rm -f $(AUTOCSRCS) $(AUTOCHDRS)
+prefix=		@prefix@
+exec_prefix=	@exec_prefix@
+bindir=		@bindir@
+libdir=		@libdir@
+includedir=	@includedir@
+
+AC_INSTALL=	@INSTALL@
+ifeq ($(AC_INSTALL),./install-sh -c)
+INSTALL=	$(srcdir)/../$(AC_INSTALL)
+else
+INSTALL=	$(AC_INSTALL)
+endif
+
+INSTALL_PROGRAM=	$(INSTALL) -m 755 $(INSTALL_PROGRAM_FLAGS)
+INSTALL_DATA=		$(INSTALL) -m 644
+

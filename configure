@@ -4054,7 +4054,7 @@ MKSHLIB_1='$(CC) $(LDFLAGS) -shared -Wl,-soname=$(SHLIBSONAME) -o'
 MKSHLIB_2=''
 MKSHLIB_3='-lc'
 
-ac_config_files="$ac_config_files settings.make Makefile src/Makefile client/Makefile dynamic/Makefile regress/Makefile"
+ac_config_files="$ac_config_files common.make settings.make Makefile src/Makefile client/Makefile dynamic/Makefile regress/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -4747,6 +4747,7 @@ for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
     "src/config.h") CONFIG_HEADERS="$CONFIG_HEADERS src/config.h" ;;
+    "common.make") CONFIG_FILES="$CONFIG_FILES common.make" ;;
     "settings.make") CONFIG_FILES="$CONFIG_FILES settings.make" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;

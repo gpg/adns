@@ -148,6 +148,6 @@ MKSHLIB_2=''
 MKSHLIB_3='-lc'
 
 AC_OUTPUT(
-	settings.make Makefile
+	common.make settings.make Makefile
 	src/Makefile client/Makefile dynamic/Makefile regress/Makefile
 )
