@@ -5,6 +5,10 @@ Changes in adns 1.5, since adns 1.4, are:
    A records (containing IPv4 addresses).  adns 1.5 can speak to
    nameservers over IPv6.
 
+  * adns_addr2text and adns_text2addr: Convenient C functions for
+    converting between addresses and address literals.  These carry
+    less baggage than getaddrinfo and getnameinfo.
+
  * There is a fix to the one currently known bug in the resolver:
    previously, some harmless but wrong owner names for checked ptr
    queries would be accepted; now they are rejected with `Domain
@@ -13,6 +17,8 @@ Changes in adns 1.5, since adns 1.4, are:
  * We fix a crashing bug in adnslogres.  (Debian#392102.)
 
  * There are also some build system and test suite improvements.
+
+ * Licence is now GPLv3.
 
 Compatibility:
 
