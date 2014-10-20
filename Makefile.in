@@ -24,7 +24,7 @@ include		./common.make
 
 # Remember to change ADNS_VERSION_STRING in client/client.h too, and
 # possibly library soname (MAJOR and MINOR in common.make.in).
-DISTVERSION=	1.5.0~rc0
+DISTVERSION=	1.5.0~rc1~
 
 srcdir=		@srcdir@
 VPATH=		@srcdir@

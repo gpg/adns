@@ -1,3 +1,9 @@
+adns (1.5.0~rc1~) UPSTREAM; urgency=low
+
+  * WIP
+
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Mon, 20 Oct 2014 02:29:45 +0100
+
 adns (1.5.0~rc0) UPSTREAM; urgency=low
 
   New features:
