@@ -130,6 +130,7 @@ typedef enum { /* In general, or together the desired flags: */
  adns_qf_quoteok_anshost=0x00000040,/*  ... in things supposedly hostnames */
  adns_qf_quotefail_cname=0x00000080,/* refuse if quote-req chars in CNAME we go via */
  adns_qf_cname_loose=    0x00000100,/* allow refs to CNAMEs - without, get _s_cname */
+ adns_qf_cname_strict=   0x00010000,/* forbid CNAME refs (default, currently) */
  adns_qf_cname_forbid=   0x00000200,/* don't follow CNAMEs, instead give _s_cname */
 
  adns_qf_want_ipv4=	 0x00000400,/* try to return IPv4 addresses */
