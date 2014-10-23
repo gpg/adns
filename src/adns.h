@@ -110,13 +110,14 @@ typedef enum { /* In general, or together the desired flags: */
 
  adns_if_permit_ipv4= 0x0400,/* allow _addr queries to return IPv4 addresses  */
  adns_if_permit_ipv6= 0x0800,/* allow _addr queries to return IPv6 addresses */
- adns_if_afmask=      0x0c00
+ adns_if_afmask=      0x0c00,
    /* These are policy flags, and overridden by the adns_af:... option in
     * resolv.conf.  If the adns_qf_want_... query flags are incompatible with
     * these settings (in the sense that no address families are permitted at
     * all) then the query flags take precedence; otherwise only records which
     * satisfy all of the stated requirements are allowed.
     */
+ adns__if_sizeforce= 0x7fff,
 } adns_initflags;
 
 typedef enum { /* In general, or together the desired flags: */
@@ -145,7 +146,8 @@ typedef enum { /* In general, or together the desired flags: */
  adns_qf_addrlit_scope_numeric=0x00004000,/* %<scope> may only be numeric */
  adns_qf_addrlit_ipv4_quadonly=0x00008000,/* reject non-dotted-quad ipv4 */
 
- adns__qf_internalmask=  0x0ff00000
+ adns__qf_internalmask=  0x0ff00000,
+ adns__qf_sizeforce=     0x7fffffff
 } adns_queryflags;
 
 typedef enum {
@@ -214,7 +216,9 @@ typedef enum {
  adns_r_srv_raw=         33,
  adns_r_srv=                 adns_r_srv_raw|adns__qtf_deref,
 		     
- adns_r_addr=                adns_r_a|adns__qtf_deref
+ adns_r_addr=                adns_r_a|adns__qtf_deref,
+
+ adns__rrt_sizeforce= 0x7fffffff,
  
 } adns_rrtype;
 
