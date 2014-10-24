@@ -256,15 +256,26 @@ static bool addrtext_scope_use_ifname(const struct sockaddr *sa) {
     IN6_IS_ADDR_MC_LINKLOCAL(in6);
 }
 
+static int textaddr_check_qf(adns_queryflags flags) {
+  if (flags & ~(adns_queryflags)(adns_qf_addrlit_scope_forbid|
+				 adns_qf_addrlit_scope_numeric|
+				 adns_qf_addrlit_ipv4_quadonly|
+				 0x40000000))
+    return ENOSYS;
+  return 0;
+}
+
 int adns_text2addr(const char *text, uint16_t port, adns_queryflags flags,
 		   struct sockaddr *sa, socklen_t *salen_io) {
-  int af;
+  int r, af;
   char copybuf[INET6_ADDRSTRLEN];
   const char *parse=text;
   const char *scopestr=0;
   socklen_t needlen;
   void *dst;
   uint16_t *portp;
+
+  r= textaddr_check_qf(flags);  if (r) return r;
 
 #define INVAL(how) do{				\
   af_debug("invalid: %s: `%s'", how, text);	\
@@ -389,7 +400,9 @@ int adns_text2addr(const char *text, uint16_t port, adns_queryflags flags,
 int adns_addr2text(const struct sockaddr *sa, adns_queryflags flags,
 		   char *buffer, int *buflen_io, int *port_r) {
   const void *src;
-  int port;
+  int r, port;
+
+  r= textaddr_check_qf(flags);  if (r) return r;
 
   if (*buflen_io < ADNS_ADDR2TEXT_BUFLEN) {
     *buflen_io = ADNS_ADDR2TEXT_BUFLEN;

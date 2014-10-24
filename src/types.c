@@ -1693,6 +1693,10 @@ DEEP_TYPE(unknown,0, "unknown",byteblock,opaque,  0,     opaque            );
 const typeinfo *adns__findtype(adns_rrtype type) {
   const typeinfo *begin, *end, *mid;
 
+  if (type & ~(adns_rrtype)0x63ffffff)
+    /* 0x60000000 is reserved for `harmless' future expansion */
+    return 0;
+
   if (type & adns_r_unknown) return &typeinfo_unknown;
   type &= adns_rrt_reprmask;
 

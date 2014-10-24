@@ -567,6 +567,10 @@ static int init_begin(adns_state *ads_r, adns_initflags flags,
   adns_state ads;
   pid_t pid;
   
+  if (flags & ~(adns_initflags)(0x4fff))
+    /* 0x4000 is reserved for `harmless' future expansion */
+    return ENOSYS;
+
   ads= malloc(sizeof(*ads)); if (!ads) return errno;
 
   ads->iflags= flags;

@@ -275,6 +275,12 @@ int adns_submit(adns_state ads,
 
   adns__consistency(ads,0,cc_entex);
 
+  if (flags & ~(adns_queryflags)0x4009ffff)
+    /* 0x40080000 are reserved for `harmless' future expansion
+     * 0x00000020 used to be adns_qf_quoteok_cname, now the default;
+     * see also addrfam.c:textaddr_check_qf */
+    return ENOSYS;
+
   typei= adns__findtype(type);
   if (!typei) return ENOSYS;
 

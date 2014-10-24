@@ -709,8 +709,7 @@ int adns_addr2text(const struct sockaddr *sa, adns_queryflags flags,
    * port is always in host byte order and is simply copied to and
    * from the appropriate sockaddr field (byteswapped as necessary).
    *
-   * The only flags supported are adns_qf_addrlit_...; others are
-   * ignored.
+   * The only flags supported are adns_qf_addrlit_...
    *
    * Error return values are:
    *
@@ -732,6 +731,8 @@ int adns_addr2text(const struct sockaddr *sa, adns_queryflags flags,
    *            caller specified adns_qf_addrlit_scope_numeric.
    *
    *  EAFNOSUPPORT   sa->sa_family is not supported (addr2text only).
+   *
+   *  ENOSYS    Unsupported flags set.
    *
    * Only if neither adns_qf_addrlit_scope_forbid nor
    * adns_qf_addrlit_scope_numeric are set:
