@@ -102,6 +102,7 @@ static void usageerr(const char *why) {
 	  "initflags:   p  use poll(2) instead of select(2)\n"
 	  "             s  use adns_wait with specified query, instead of 0\n"
 	  "queryflags:  a  print status abbrevs instead of strings\n"
+	  "typenum:      may be 0x<hex>|<dec>, or 0x<hex> or <dec>\n"
 	  "exit status:  0 ok (though some queries may have failed)\n"
 	  "              1 used by test harness to indicate test failed\n"
 	  "              2 unable to submit or init or some such\n"
@@ -207,12 +208,19 @@ int main(int argc, char *const *argv) {
       if (ch==',') tc++;
     types_a= malloc(sizeof(*types_a)*(tc+1));
     if (!types_a) { perror("malloc types"); quitnow(3); }
-    for (cp= argv[1]+1, ti=0; ti<tc; ti++) {
-      types_a[ti]= strtoul(cp,&cp,10);
-      if ((ch= *cp)) {
-	if (ch != ',') usageerr("unexpected char (not comma) in or between types");
+    for (cp= argv[1]+1, ti=0; ti<tc; ) {
+      types_a[ti]= 0;
+      for (;;) {
+	types_a[ti] |= strtoul(cp,&cp,0);
+	ch= *cp;
+	if (!ch) break;
 	cp++;
+	if (ch=='|') continue;
+	if (ch==',') break;
+	usageerr("unexpected char (not comma) in or between types");
       }
+      ti++;
+      if (!ch) break;
     }
     types_a[ti]= adns_r_none;
     types= types_a;
