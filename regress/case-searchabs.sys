@@ -1,5 +1,5 @@
 adnstest default
-:1 1/news.davenant
+:0x0|1 1/news.davenant
  start 924363451.882765
  socket domain=AF_INET type=SOCK_DGRAM
  socket=4

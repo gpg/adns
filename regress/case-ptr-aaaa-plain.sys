@@ -1,5 +1,5 @@
 ./adnstest distorted
-:12 4.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.2.0.0.0.9.d.1.0.8.a.b.0.1.0.0.2.ip6.arpa
+:0x0|12 4.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.2.0.0.0.9.d.1.0.8.a.b.0.1.0.0.2.ip6.arpa
  start 1401918956.635299
  socket domain=AF_INET type=SOCK_DGRAM
  socket=6

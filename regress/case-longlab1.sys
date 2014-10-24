@@ -1,5 +1,5 @@
 adnstest default
-:1 1/hyrndrobwlxxxxxxxxxxlllantysiliogogllanfairpwllgwyngyllgogerychw.relativity.greenend.org.uk.
+:0x0|1 1/hyrndrobwlxxxxxxxxxxlllantysiliogogllanfairpwllgwyngyllgogerychw.relativity.greenend.org.uk.
  start 951955261.286712
  socket domain=AF_INET type=SOCK_DGRAM
  socket=4

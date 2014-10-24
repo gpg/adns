@@ -1,5 +1,5 @@
 adnstest default
-:12,65548 37.45.18.172.in-addr.arpa.test.iwj.relativity.greenend.org.uk.
+:0x0|12,0x10000|12 37.45.18.172.in-addr.arpa.test.iwj.relativity.greenend.org.uk.
  start 951960654.608219
  socket domain=AF_INET type=SOCK_DGRAM
  socket=4

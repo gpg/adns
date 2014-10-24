@@ -1,5 +1,5 @@
 adnstest noserver -,p
-:1 chiark.greenend.org.uk
+:0x0|1 chiark.greenend.org.uk
  start 931719968.733439
  socket domain=AF_INET type=SOCK_DGRAM
  socket=4

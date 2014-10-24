@@ -1,5 +1,5 @@
 adnstest default
-:32767 davenant.relativity.greenend.org.uk.
+:0x0|32767 davenant.relativity.greenend.org.uk.
  start 933811310.565828
  socket domain=AF_INET type=SOCK_DGRAM
  socket=4

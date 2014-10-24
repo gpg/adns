@@ -1,5 +1,5 @@
 adnstest default
-:12 37.45.18.172.in-addr.arpa.
+:0x0|12 37.45.18.172.in-addr.arpa.
  start 951961094.184850
  socket domain=AF_INET type=SOCK_DGRAM
  socket=4

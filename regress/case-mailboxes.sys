@@ -1,5 +1,5 @@
 adnstest default
-:131089 silly-rp.test.iwj.relativity.greenend.org.uk
+:0x20000|17 silly-rp.test.iwj.relativity.greenend.org.uk
  start 923859567.899146
  socket domain=AF_INET type=SOCK_DGRAM
  socket=4

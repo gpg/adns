@@ -1,5 +1,5 @@
 ./adnstest 2ndserver
-:1 2/davenant.greenend.org.uk
+:0x0|1 2/davenant.greenend.org.uk
  start 1056289303.784817
  socket domain=AF_INET type=SOCK_DGRAM
  socket=6

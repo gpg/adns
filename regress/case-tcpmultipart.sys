@@ -1,5 +1,5 @@
 adnstest tunnel
-:12 2/132.76.224.195.in-addr.arpa 2/manymorerrs.test.culture.dotat.at. 2/132.76.224.195.in-addr.arpa
+:0x0|12 2/132.76.224.195.in-addr.arpa 2/manymorerrs.test.culture.dotat.at. 2/132.76.224.195.in-addr.arpa
  start 938365454.994875
  socket domain=AF_INET type=SOCK_DGRAM
  socket=4

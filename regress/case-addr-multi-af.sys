@@ -1,5 +1,5 @@
 ./adnstest distorted
-:16842753,16842767,50397185,50397199 maddr.dnserr.distorted.org.uk mx.dnserr.distorted.org.uk 0x400/maddr.dnserr.distorted.org.uk 0x400/mx.dnserr.distorted.org.uk 0x800/maddr.dnserr.distorted.org.uk 0x800/mx.dnserr.distorted.org.uk 0xc00/maddr.dnserr.distorted.org.uk 0xc00/mx.dnserr.distorted.org.uk
+:0x1010000|1,0x1010000|15,0x3010000|1,0x3010000|15 maddr.dnserr.distorted.org.uk mx.dnserr.distorted.org.uk 0x400/maddr.dnserr.distorted.org.uk 0x400/mx.dnserr.distorted.org.uk 0x800/maddr.dnserr.distorted.org.uk 0x800/mx.dnserr.distorted.org.uk 0xc00/maddr.dnserr.distorted.org.uk 0xc00/mx.dnserr.distorted.org.uk
  start 1402445458.222480
  socket domain=AF_INET type=SOCK_DGRAM
  socket=6

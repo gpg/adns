@@ -1,5 +1,5 @@
 adnstest default -0x400
-:15,16842767 broken-mail.test.iwj.relativity.greenend.org.uk. 256/broken-mail.test.iwj.relativity.greenend.org.uk. 0x104/broken-mail.test.iwj.relativity.greenend.org.uk.
+:0x0|15,0x1010000|15 broken-mail.test.iwj.relativity.greenend.org.uk. 256/broken-mail.test.iwj.relativity.greenend.org.uk. 0x104/broken-mail.test.iwj.relativity.greenend.org.uk.
  start 934726868.117908
  socket domain=AF_INET type=SOCK_DGRAM
  socket=4

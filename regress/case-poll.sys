@@ -1,5 +1,5 @@
 adnstest default -,p
-:1 chiark.greenend.org.uk
+:0x0|1 chiark.greenend.org.uk
  start 931719947.391142
  socket domain=AF_INET type=SOCK_DGRAM
  socket=4

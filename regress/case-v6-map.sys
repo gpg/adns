@@ -1,5 +1,5 @@
 ./adnstest distorted
-:16842753,16842767,65537 0x1000/distorted.org.uk
+:0x1010000|1,0x1010000|15,0x10000|1 0x1000/distorted.org.uk
  start 1402443121.225484
  socket domain=AF_INET type=SOCK_DGRAM
  socket=6

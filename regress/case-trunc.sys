@@ -1,5 +1,5 @@
 adnstest default
-:1 trunc.test.iwj.relativity.greenend.org.uk
+:0x0|1 trunc.test.iwj.relativity.greenend.org.uk
  start 912888921.274801
  socket domain=AF_INET type=SOCK_DGRAM
  socket=4

@@ -1,5 +1,5 @@
 adnstest 2ndserver
-:12 trunc.test.iwj.relativity.greenend.org.uk
+:0x0|12 trunc.test.iwj.relativity.greenend.org.uk
  start 940100083.268555
  socket domain=AF_INET type=SOCK_DGRAM
  socket=4

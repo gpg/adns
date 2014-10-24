@@ -1,5 +1,5 @@
 ./adnstest distorted
-:16842753,65537 maddr.dnserr.distorted.org.uk
+:0x1010000|1,0x10000|1 maddr.dnserr.distorted.org.uk
  start 1402443258.469312
  socket domain=AF_INET type=SOCK_DGRAM
  socket=6

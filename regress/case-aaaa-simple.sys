@@ -1,5 +1,5 @@
 ./adnstest distorted
-:28 stratocaster.distorted.org.uk
+:0x0|28 stratocaster.distorted.org.uk
  start 1401870460.843715
  socket domain=AF_INET type=SOCK_DGRAM
  socket=6

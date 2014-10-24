@@ -1,5 +1,5 @@
 adnstest default
-:1 intel.ugcs.caltech.edu.
+:0x0|1 intel.ugcs.caltech.edu.
  start 938369896.279735
  socket domain=AF_INET type=SOCK_DGRAM
  socket=4
