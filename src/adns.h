@@ -589,6 +589,12 @@ int adns_init_logfn(adns_state *newstate_r, adns_initflags flags,
  *   Lookups occur (logically) concurrently; use the `sortlist' directive to
  *   control the relative order of addresses in answers.  This option
  *   overrides the corresponding init flags (covered by adns_if_afmask).
+ *
+ *  adns_ignoreunkcfg
+ *   Ignore unknown options and configuration directives, rather than
+ *   logging them.  To be effective, appear in the configuration
+ *   before the unknown options.  ADNS_RES_OPTIONS is generally early
+ *   enough.
  * 
  * There are a number of environment variables which can modify the
  * behaviour of adns.  They take effect only if adns_init is used, and

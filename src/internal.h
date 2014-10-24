@@ -394,6 +394,7 @@ struct adns__state {
     adns_sockaddr base, mask;
   } sortlist[MAXSORTLIST];
   char **searchlist;
+  unsigned config_report_unknown:1;
   unsigned short rand48xsubi[3];
 };
 

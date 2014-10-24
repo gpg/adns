@@ -321,6 +321,10 @@ static void ccf_options(adns_state ads, const char *fn,
       }
       continue;
     }
+    if (OPTION_IS("adns_ignoreunkcfg")) {
+      ads->config_report_unknown=0;
+      continue;
+    }
     if (/* adns's query strategy is not configurable */
 	OPTION_STARTS("timeout:") ||
 	OPTION_STARTS("attempts:") ||
@@ -333,7 +337,8 @@ static void ccf_options(adns_state ads, const char *fn,
 	/* adns does not do edns0 and this is not a problem */
 	OPTION_IS("edns0"))
       continue;
-    adns__diag(ads,-1,0,"%s:%d: unknown option `%.*s'", fn,lno, l,word);
+    if (ads->config_report_unknown)
+      adns__diag(ads,-1,0,"%s:%d: unknown option `%.*s'", fn,lno, l,word);
   }
 
 #undef OPTION__IS
@@ -375,8 +380,9 @@ static void ccf_lookup(adns_state ads, const char *fn, int lno,
       adns__diag(ads,-1,0,"%s:%d: yp lookups not supported by adns", fn,lno);
       found_bind=-1;
     } else {
-      adns__diag(ads,-1,0,"%s:%d: unknown `lookup' database `%.*s'",
-		 fn,lno, l,word);
+      if (ads->config_report_unknown)
+	adns__diag(ads,-1,0,"%s:%d: unknown `lookup' database `%.*s'",
+		   fn,lno, l,word);
       found_bind=-1;
     }
   }
@@ -506,8 +512,9 @@ static void readconfiggeneric(adns_state ads, const char *filename,
 	   !(strlen(ccip->name)==dirl && !memcmp(ccip->name,p,q-p));
 	 ccip++);
     if (!ccip->name) {
-      adns__diag(ads,-1,0,"%s:%d: unknown configuration directive `%.*s'",
-		 filename,lno,(int)(q-p),p);
+      if (ads->config_report_unknown)
+	adns__diag(ads,-1,0,"%s:%d: unknown configuration directive `%.*s'",
+		   filename,lno,(int)(q-p),p);
       continue;
     }
     while (ctype_whitespace(*q)) q++;
@@ -619,6 +626,7 @@ static int init_begin(adns_state *ads_r, adns_initflags flags,
   ads->tcpstate= server_disconnected;
   timerclear(&ads->tcptimeout);
   ads->searchlist= 0;
+  ads->config_report_unknown=1;
 
   pid= getpid();
   ads->rand48xsubi[0]= pid;
