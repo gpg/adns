@@ -260,21 +260,25 @@ static void ccf_sortlist(adns_state ads, const char *fn,
 
 static void ccf_options(adns_state ads, const char *fn,
 			int lno, const char *buf) {
-  const char *word;
+  const char *word, *rhs;
   char *ep;
   unsigned long v;
   int i,l;
 
   if (!buf) return;
 
+#define OPTION__IS(s,op) (l op (sizeof(s)-1) && !memcmp(word,s,(sizeof(s)-1)))
+#define OPTION_IS(s)     (OPTION__IS(s,==))
+#define OPTION_STARTS(s) (OPTION__IS(s,>=) ? ((rhs=word+sizeof(s)-1)) : 0)
+
   while (nextword(&buf,&word,&l)) {
-    if (l==5 && !memcmp(word,"debug",5)) {
+    if (OPTION_IS("debug")) {
       ads->iflags |= adns_if_debug;
       continue;
     }
-    if (l>=6 && !memcmp(word,"ndots:",6)) {
-      v= strtoul(word+6,&ep,10);
-      if (l==6 || ep != word+l || v > INT_MAX) {
+    if (OPTION_STARTS("ndots:")) {
+      v= strtoul(rhs,&ep,10);
+      if (ep==rhs || ep != word+l || v > INT_MAX) {
 	configparseerr(ads,fn,lno,"option `%.*s' malformed"
 		       " or has bad value",l,word);
 	continue;
@@ -282,23 +286,23 @@ static void ccf_options(adns_state ads, const char *fn,
       ads->searchndots= v;
       continue;
     }
-    if (l>=12 && !memcmp(word,"adns_checkc:",12)) {
-      if (!strcmp(word+12,"none")) {
+    if (OPTION_STARTS("adns_checkc:")) {
+      if (!strcmp(rhs,"none")) {
 	ads->iflags &= ~adns_if_checkc_freq;
 	ads->iflags |= adns_if_checkc_entex;
-      } else if (!strcmp(word+12,"entex")) {
+      } else if (!strcmp(rhs,"entex")) {
 	ads->iflags &= ~adns_if_checkc_freq;
 	ads->iflags |= adns_if_checkc_entex;
-      } else if (!strcmp(word+12,"freq")) {
+      } else if (!strcmp(rhs,"freq")) {
 	ads->iflags |= adns_if_checkc_freq;
       } else {
 	configparseerr(ads,fn,lno, "option adns_checkc has bad value `%s' "
-		       "(must be none, entex or freq", word+12);
+		       "(must be none, entex or freq", rhs);
       }
       continue;
     }
-    if (l>=8 && !memcmp(word,"adns_af:",8)) {
-      word += 8;
+    if (OPTION_STARTS("adns_af:")) {
+      word= rhs;
       ads->iflags &= ~adns_if_afmask;
       if (strcmp(word,"any")) for (;;) {
 	i= strcspn(word,",");
@@ -319,6 +323,10 @@ static void ccf_options(adns_state ads, const char *fn,
     }
     adns__diag(ads,-1,0,"%s:%d: unknown option `%.*s'", fn,lno, l,word);
   }
+
+#undef OPTION__IS
+#undef OPTION_IS
+#undef OPTION_STARTS
 }
 
 static void ccf_clearnss(adns_state ads, const char *fn,
