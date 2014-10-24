@@ -50,8 +50,6 @@
  *  or the GNU Library General Public License, as appropriate, along
  *  with this program; if not, write to the Free Software Foundation.
  *
- *
- *  $Id$
  */
 
 #ifndef ADNS_H_INCLUDED

@@ -29,9 +29,6 @@
  *  This file is by Tony Finch, based on adnslogres.c.
  */
 
-static const char * const cvsid =
-	"$Id$";
-
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/time.h>

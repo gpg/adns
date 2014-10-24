@@ -31,9 +31,6 @@
  * modified by Ian Jackson as it was incorporated into adns.
  */
 
-static const char * const cvsid =
-	"$Id$";
-
 #include <sys/types.h>
 #include <sys/time.h>
 
