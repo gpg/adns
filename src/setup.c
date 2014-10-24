@@ -321,6 +321,18 @@ static void ccf_options(adns_state ads, const char *fn,
       }
       continue;
     }
+    if (/* adns's query strategy is not configurable */
+	OPTION_STARTS("timeout:") ||
+	OPTION_STARTS("attempts:") ||
+	OPTION_IS("rotate") ||
+	/* adns provides the application with knob for this */
+	OPTION_IS("no-check-names") ||
+	/* adns normally does IPv6 if the application wants it; control
+	 * this with the adns_af: option if you like */
+	OPTION_IS("inet6") ||
+	/* adns does not do edns0 and this is not a problem */
+	OPTION_IS("edns0"))
+      continue;
     adns__diag(ads,-1,0,"%s:%d: unknown option `%.*s'", fn,lno, l,word);
   }
 
@@ -372,6 +384,10 @@ static void ccf_lookup(adns_state ads, const char *fn, int lno,
     adns__diag(ads,-1,0,"%s:%d: `lookup' specified, but not `bind'", fn,lno);
 }
 
+static void ccf_ignore(adns_state ads, const char *fn, int lno,
+		       const char *buf) {
+}
+
 static const struct configcommandinfo {
   const char *name;
   void (*fn)(adns_state ads, const char *fn, int lno, const char *buf);
@@ -384,6 +400,7 @@ static const struct configcommandinfo {
   { "clearnameservers",  ccf_clearnss    },
   { "include",           ccf_include     },
   { "lookup",            ccf_lookup      }, /* OpenBSD */
+  { "lwserver",          ccf_ignore      }, /* BIND9 lwresd */
   {  0                                   }
 };
 
