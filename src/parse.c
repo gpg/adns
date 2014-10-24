@@ -26,7 +26,7 @@
 
 #include "internal.h"
 
-int vbuf__append_quoted1035(vbuf *vb, const byte *buf, int len) {
+static int vbuf_append_quoted1035(vbuf *vb, const byte *buf, int len) {
   char qbuf[10];
   int i, ch;
   
@@ -142,7 +142,7 @@ adns_status adns__parse_domain_more(findlabel_state *fls, adns_state ads,
       if (!adns__vbuf_append(vb,".",1)) return adns_s_nomemory;
     }
     if (flags & pdf_quoteok) {
-      if (!vbuf__append_quoted1035(vb,dgram+labstart,lablen))
+      if (!vbuf_append_quoted1035(vb,dgram+labstart,lablen))
 	return adns_s_nomemory;
     } else {
       ch= dgram[labstart];

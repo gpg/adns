@@ -865,8 +865,6 @@ void adns__update_expires(adns_query qu, unsigned long ttl,
  * now + ttl.
  */
 
-int vbuf__append_quoted1035(vbuf *vb, const byte *buf, int len);
-
 bool adns__labels_equal(const byte *a, int al, const byte *b, int bl);
 
 /* From event.c: */
