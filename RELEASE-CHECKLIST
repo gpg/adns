@@ -51,8 +51,21 @@ x make dist
 rm -rf web
 x make web-install
 
-distfile=adns-$version.tar.gz
+distdir=adns-$version
+distfile=$distdir.tar.gz
 x test -f $distfile
+
+rm -rf dist_tmp
+mkdir dist_tmp
+cd dist_tmp
+tar axf ../$distfile
+cd $distdir
+git init --quiet
+git fetch --quiet ../.. HEAD
+git add .
+git commit --quiet -m T
+git diff --exit-code FETCH_HEAD
+cd ../..
 
 tag=adns-${version//\~/-}
 webout=docs-$version
