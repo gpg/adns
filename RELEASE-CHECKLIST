@@ -9,7 +9,7 @@
 #  * Update ADNS_VERSION_STRING in client/client.h
 #
 #  * Run this script
-#      ./RELEASE-CHECKLIST
+#      ./RELEASE-CHECKLIST <version>
 #
 #  * On chiark, maybe, replace ~ian/public-html/adns/current
 #    with symlink to web-$(version) (as directed by script)
@@ -20,7 +20,16 @@
 
 set -e
 
+fail () { echo >&2 "$0: $*"; exit 16; }
+
+if [ $# != 1 ]; then fail "wrong # arguments"; fi
+wantversion="$1"
+
 version=`sed -n <Makefile.in 's/^DISTVERSION=[	]*//p'`
+
+if [ "x$version" != "x$wantversion" ]; then
+	fail "you say version $wantversion but tree is $version"
+fi
 
 gpgkey='-u 0x48B50D39'
 chiark=chiark:/u/ian/public-html/adns
