@@ -9,7 +9,7 @@
 #  * Update ADNS_VERSION_STRING in client/client.h
 #
 #  * Run this script
-#      ./RELEASE-CHECKLIST <version>
+#      ./RELEASE-CHECKLIST [--real] <version>
 #
 #  * On chiark, maybe, replace ~ian/public-html/adns/current
 #    with symlink to web-$(version) (as directed by script)
@@ -21,6 +21,11 @@
 set -e
 
 fail () { echo >&2 "$0: $*"; exit 16; }
+
+real=false
+if [ "x$1" = x--real ]; then
+	real=true; shift
+fi
 
 if [ $# != 1 ]; then fail "wrong # arguments"; fi
 wantversion="$1"
@@ -36,6 +41,7 @@ chiark=chiark:/u/ian/public-html/adns
 chiarkftp=$chiark/ftp
 
 x () { echo "----- $* -----"; "$@"; }
+wx () { if $real; then x "$@"; else echo "WOULD: $*"; fi; }
 
 x git clean -xdff
 x ./configure
@@ -51,16 +57,18 @@ x test -f $distfile
 tag=adns-${version//\~/-}
 webout=docs-$version
 
-x gpg --detach-sign $distfile
-x git tag -s $gpgkey -m "adns release $version" $tag
-x git push origin $tag~0:master $tag
+wx gpg --detach-sign $distfile
+wx git tag -s $gpgkey -m "adns release $version" $tag
+wx git push origin $tag~0:master $tag
 
 distfiles="$distfile $distfile.sig"
-x rsync -vP $distfiles $chiarkftp/
+wx rsync -vP $distfiles $chiarkftp/
 
-x rsync -rvP web/. $chiark/$webout
+wx rsync -rvP web/. $chiark/$webout
 
-x sha256sum $distfiles
+wx sha256sum $distfiles
+
+if ! $real; then echo "NOT REAL"; exit 0; fi
 
 cat <<END
 
