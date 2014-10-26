@@ -7,12 +7,18 @@
 #  * Maybe update MAJOR and/or MINOR in common.make.in
 #  * Update DISTVERSION in Makefile.in
 #  * Update ADNS_VERSION_STRING in client/client.h
+#  * Update version in ./changelog
+#  * Commit the result
 #
 #  * Run this script
 #      ./RELEASE-CHECKLIST [--real] <version>
 #
 #  * On chiark, maybe, replace ~ian/public-html/adns/current
-#    with symlink to web-$(version) (as directed by script)
+#    with symlink to web-$(version)
+#
+#  * On chiark, maybe, replace docs link (as directed by script)
+#
+#  * If not an rc release, put files on ftp.gnu.org
 #
 #  * Send release announcement (use last one as template)
 #
@@ -45,8 +51,8 @@ wx () { if $real; then x "$@"; else echo "WOULD: $*"; fi; }
 
 x git clean -xdff
 x ./configure
-x make -j4
-x make check
+x make -j6
+x make check -j6
 x make dist
 rm -rf web
 x make web-install
