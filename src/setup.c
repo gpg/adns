@@ -314,9 +314,11 @@ static void ccf_options(adns_state ads, const char *fn,
 	else if (WORD_IS("ipv6"))
 	  ads->iflags |= adns_if_permit_ipv6;
 	else {
-	  configparseerr(ads,fn,lno, "option adns_af has bad value `%.*s' "
-			 "(must be `any' or list {`ipv4',`ipv6'},...)",
-			 (int)(endword-word), word);
+	  if (ads->config_report_unknown)
+	    adns__diag(ads,-1,0,"%s:%d: "
+		       "option adns_af has bad value or entry `%.*s' "
+		       "(option must be `any', or list of `ipv4',`ipv6')",
+		       fn,lno, (int)(endword-word),word);
 	  break;
 	}
 	if (!comma) break;
