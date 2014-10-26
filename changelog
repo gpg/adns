@@ -1,4 +1,10 @@
-adns (1.5.0~rc1~) UPSTREAM; urgency=low
+adns (1.5.0~rc2~) UNRELEASED; urgency=low
+
+  * WIP.
+
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sun, 26 Oct 2014 14:57:10 +0000
+
+adns (1.5.0~rc1) UPSTREAM; urgency=low
 
   ABI/API changes:
   * Provide adns_qf_cname_strict flag, currently ignored because it's the
@@ -28,7 +34,7 @@ adns (1.5.0~rc1~) UPSTREAM; urgency=low
   * More correctly and effectively work around bugs in make (Debian #4073,
     #756123) affecting regress.
 
- -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sun, 26 Oct 2014 13:21:38 +0000
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sun, 26 Oct 2014 13:24:00 +0000
 
 adns (1.5.0~rc0) UPSTREAM; urgency=low
 
