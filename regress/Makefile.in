@@ -45,8 +45,14 @@ ALL_OBJS=	$(HARNLOBJS) dtest.o hrecord.o hplayback.o
 
 all install uninstall: $(TARGETS)
 
-check:		$(TARGETS)
-		srcdir=$(srcdir) $(srcdir)/checkall
+ALL_TESTS:=$(patsubst $(srcdir)/case-%.sys,%,$(wildcard $(srcdir)/case-*.sys))
+
+check:		$(TARGETS) $(addprefix check-,$(ALL_TESTS))
+		@echo
+		@echo 'all tests passed or maybe skipped.'
+
+check-%:	case-%.sys
+		@srcdir=$(srcdir) $(srcdir)/r1test $* || test $? = 5
 
 LINK_CMD=	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
