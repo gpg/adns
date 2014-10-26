@@ -4,5 +4,6 @@ search davenant.greenend.org.uk greenend.org.uk
 lwserver 127.0.0.1
 options timeout:1 attempts:30 rotate no-check-names inet6 edns0 wombat
 stoat
+options adns_checkc:freq zorkmid
 options adns_ignoreunkcfg wombat2
 stoat2
