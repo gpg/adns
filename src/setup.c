@@ -260,64 +260,67 @@ static void ccf_sortlist(adns_state ads, const char *fn,
 
 static void ccf_options(adns_state ads, const char *fn,
 			int lno, const char *buf) {
-  const char *word, *rhs;
+  const char *opt, *word, *endword, *endopt;
   char *ep;
   unsigned long v;
-  int i,l;
+  int l;
 
   if (!buf) return;
 
-#define OPTION__IS(s,op) (l op (sizeof(s)-1) && !memcmp(word,s,(sizeof(s)-1)))
+#define OPTION__IS(s,op) ((endword-word) op (sizeof(s)-1) && \
+			  !memcmp(word,s,(sizeof(s)-1)))
 #define OPTION_IS(s)     (OPTION__IS(s,==))
-#define OPTION_STARTS(s) (OPTION__IS(s,>=) ? ((rhs=word+sizeof(s)-1)) : 0)
+#define OPTION_STARTS(s) (OPTION__IS(s,>=) ? ((word+=sizeof(s)-1)) : 0)
 
   while (nextword(&buf,&word,&l)) {
+    opt=word;
+    endopt=endword=word+l;
     if (OPTION_IS("debug")) {
       ads->iflags |= adns_if_debug;
       continue;
     }
     if (OPTION_STARTS("ndots:")) {
-      v= strtoul(rhs,&ep,10);
-      if (ep==rhs || ep != word+l || v > INT_MAX) {
+      v= strtoul(word,&ep,10);
+      if (ep==word || ep != endword || v > INT_MAX) {
 	configparseerr(ads,fn,lno,"option `%.*s' malformed"
-		       " or has bad value",l,word);
+		       " or has bad value",l,opt);
 	continue;
       }
       ads->searchndots= v;
       continue;
     }
     if (OPTION_STARTS("adns_checkc:")) {
-      if (!strcmp(rhs,"none")) {
+      if (OPTION_IS("none")) {
 	ads->iflags &= ~adns_if_checkc_freq;
 	ads->iflags |= adns_if_checkc_entex;
-      } else if (!strcmp(rhs,"entex")) {
+      } else if (OPTION_IS("entex")) {
 	ads->iflags &= ~adns_if_checkc_freq;
 	ads->iflags |= adns_if_checkc_entex;
-      } else if (!strcmp(rhs,"freq")) {
+      } else if (OPTION_IS("freq")) {
 	ads->iflags |= adns_if_checkc_freq;
       } else {
 	configparseerr(ads,fn,lno, "option adns_checkc has bad value `%s' "
-		       "(must be none, entex or freq", rhs);
+		       "(must be none, entex or freq", word);
       }
       continue;
     }
     if (OPTION_STARTS("adns_af:")) {
-      word= rhs;
       ads->iflags &= ~adns_if_afmask;
-      if (strcmp(word,"any")) for (;;) {
-	i= strcspn(word,",");
-	if (i>=4 && !memcmp(word,"ipv4",4))
+      if (!OPTION_IS("any")) for (;;) {
+	const char *comma= memchr(word,',',endopt-word);
+	endword=comma?comma:endopt;
+	if (OPTION_IS("ipv4"))
 	  ads->iflags |= adns_if_permit_ipv4;
-	else if (i>=4 && !memcmp(word,"ipv6",4))
+	else if (OPTION_IS("ipv6"))
 	  ads->iflags |= adns_if_permit_ipv6;
 	else {
 	  configparseerr(ads,fn,lno, "option adns_af has bad value `%.*s' "
 			 "(must be `any' or list {`ipv4',`ipv6'},...)",
-			 i, word);
+			 (int)(endword-word), word);
 	  break;
 	}
-	if (!word[i]) break;
-	word= word + i + 1;
+	if (!comma) break;
+	word= comma+1;
       }
       continue;
     }
@@ -338,7 +341,7 @@ static void ccf_options(adns_state ads, const char *fn,
 	OPTION_IS("edns0"))
       continue;
     if (ads->config_report_unknown)
-      adns__diag(ads,-1,0,"%s:%d: unknown option `%.*s'", fn,lno, l,word);
+      adns__diag(ads,-1,0,"%s:%d: unknown option `%.*s'", fn,lno, l,opt);
   }
 
 #undef OPTION__IS
