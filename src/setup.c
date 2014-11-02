@@ -113,9 +113,11 @@ static void ccf_nameserver(adns_state ads, const char *fn,
   adns_rr_addr a;
   char addrbuf[ADNS_ADDR2TEXT_BUFLEN];
   int err;
+  socklen_t salen;
 
-  a.len= sizeof(a.addr);
-  err= adns_text2addr(buf,DNS_PORT, 0, &a.addr.sa,&a.len);
+  salen= sizeof(a.addr);
+  err= adns_text2addr(buf,DNS_PORT, 0, &a.addr.sa,&salen);
+  a.len= salen;
   switch (err) {
   case 0:
     break;
@@ -129,7 +131,7 @@ static void ccf_nameserver(adns_state ads, const char *fn,
   }
   adns__debug(ads,-1,0,"using nameserver %s",
 	      adns__sockaddr_ntoa(&a.addr.sa, addrbuf));
-  addserver(ads,&a.addr.sa,a.len);
+  addserver(ads,&a.addr.sa,salen);
 }
 
 static void ccf_search(adns_state ads, const char *fn,
@@ -167,7 +169,7 @@ static void ccf_search(adns_state ads, const char *fn,
 
 static int gen_pton(const char *text, int want_af, adns_sockaddr *a) {
   int err;
-  int len;
+  socklen_t len;
 
   len= sizeof(*a);
   err= adns_text2addr(text,0, adns_qf_addrlit_scope_forbid,

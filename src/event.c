@@ -339,7 +339,8 @@ int adns__pollfds(adns_state ads, struct pollfd pollfds_buf[MAX_POLLFDS]) {
 }
 
 int adns_processreadable(adns_state ads, int fd, const struct timeval *now) {
-  int want, dgramlen, r, i, udpaddrlen, serv, old_skip;
+  int want, dgramlen, r, i, serv, old_skip;
+  socklen_t udpaddrlen;
   byte udpbuf[DNS_MAXUDP];
   char addrbuf[ADNS_ADDR2TEXT_BUFLEN];
   struct udpsocket *udp;
