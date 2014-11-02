@@ -35,7 +35,7 @@ Changes in adns 1.5.0, since adns 1.4, are:
  * There are also some build system, test suite and coding style
    improvements.
 
- * Licence is now GPLv3.
+ * Licence is now GPLv3+.
 
 Compatibility:
 
