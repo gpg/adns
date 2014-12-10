@@ -1,6 +1,8 @@
 adns (1.5.1~~) unstable; urgency=low
 
   * Portability fix for systems where socklen_t is bigger than int.
+  * Fix for malicious optimisation of memcpy in test suite, which
+    causes failure with gcc-4.1.9 -O3.  See Debian bug #772718.
 
  --
 
