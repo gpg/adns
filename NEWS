@@ -1,3 +1,9 @@
+Noteworthy changes in version 1.4-g10-5 (2014-12-12)
+----------------------------------------------------
+
+ * [W32] Build fix for newer dlltool versions.
+
+
 Noteworthy changes in version 1.4-g10-4 (2014-04-05)
 ----------------------------------------------------
 

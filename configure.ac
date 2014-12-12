@@ -29,7 +29,7 @@ min_automake_version="1.10"
 # bump the version number immediately *after* the release and do
 # another commit and push so that the git magic is able to work.
 # See below for the LT version numbers.
-m4_define([mym4_version], [1.4-g10-4])
+m4_define([mym4_version], [1.4-g10-5])
 
 # Below is m4 magic to extract and compute the git revision number,
 # the decimalized short revision number, a beta version string and a
@@ -61,7 +61,8 @@ ADNS_CONFIG_API_VERSION=1
 
 
 AC_CONFIG_SRCDIR([src/adns.h])
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([dist-bzip2 no-dist-gzip])
+AM_MAINTAINER_MODE
 AM_CONFIG_HEADER(src/config.h)
 AC_CONFIG_MACRO_DIR([m4])
 AC_CANONICAL_HOST
@@ -91,13 +92,15 @@ AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_CHECK_PROGS(M4, m4)
 AC_C_INLINE
+AC_LANG([C])
 
 #
 # Libtool stuff
 #
-AC_LIBTOOL_WIN32_DLL
-AC_LIBTOOL_RC
-AM_PROG_LIBTOOL
+LT_PREREQ([2.2.6])
+LT_INIT([win32-dll disable-static])
+LT_LANG([Windows Resource])
+
 
 # This is handy for debugging so the compiler doesn't rearrange
 # things and eliminate variables.
@@ -115,23 +118,22 @@ if test "$GCC" = yes; then
     AC_MSG_CHECKING([if gcc supports -Wpointer-arith])
     _gcc_cflags_save=$CFLAGS
     CFLAGS="-Wpointer-arith"
-    AC_COMPILE_IFELSE(AC_LANG_PROGRAM([]),_gcc_wopt=yes,_gcc_wopt=no)
-    AC_MSG_RESULT($_gcc_wopt)
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[])],_gcc_psign=yes,_gcc_psign=no)
+    AC_MSG_RESULT($_gcc_psign)
     CFLAGS=$_gcc_cflags_save;
-    if test x"$_gcc_wopt" = xyes ; then
+    if test x"$_gcc_psign" = xyes ; then
        CFLAGS="$CFLAGS -Wpointer-arith"
     fi
 
     AC_MSG_CHECKING([if gcc supports -Wno-pointer-sign])
     _gcc_cflags_save=$CFLAGS
-    CFLAGS="-Wno-pointer-sign"
-    AC_COMPILE_IFELSE(AC_LANG_PROGRAM([]),_gcc_psign=yes,_gcc_psign=no)
+    CFLAGS="-Wpointer-arith"
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[])],_gcc_psign=yes,_gcc_psign=no)
     AC_MSG_RESULT($_gcc_psign)
     CFLAGS=$_gcc_cflags_save;
     if test x"$_gcc_psign" = xyes ; then
        CFLAGS="$CFLAGS -Wno-pointer-sign"
     fi
-
 fi
 
 # Setup some stuff depending on host.
