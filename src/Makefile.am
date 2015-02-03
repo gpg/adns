@@ -52,6 +52,7 @@ adns_res = versioninfo.lo
 adns_res_ldflag = -Wl,.libs/versioninfo.o
 no_undefined = -no-undefined
 export_symbols = -export-symbols $(srcdir)/libadns.def
+extra_ltoptions = -XCClinker -static-libgcc
 adns_deps = $(ksba_res) libadns.def
 w32src = w32support.c w32extra.c w32inet.c
 
@@ -66,6 +67,7 @@ adns_res =
 adns_ldflag =
 no_undefined =
 export_symbols =
+extra_ltoptions =
 adns_deps =
 w32src =
 install-def-file:
@@ -73,7 +75,7 @@ uninstall-def-file:
 endif !HAVE_W32_SYSTEM
 
 
-libadns_la_LDFLAGS = $(no_undefined) $(export_symbols) \
+libadns_la_LDFLAGS = $(no_undefined) $(export_symbols) $(extra_ltoptions) \
       $(adns_version_script_cmd) -version-info \
       @ADNS_LT_CURRENT@:@ADNS_LT_REVISION@:@ADNS_LT_AGE@
 libadns_la_DEPENDENCIES = $(srcdir)/libadns.vers $(adns_deps)
