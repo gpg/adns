@@ -22,9 +22,6 @@
 
 ## Process this file with automake to produce Makefile.in
 
-# Thsi directory.  It is used by the include file.
-adnssrcdir = $(top_srcdir)/src
-
 EXTRA_DIST = adns-config.in libadns.vers libadns.def versioninfo.rc.in \
              w32support.c w32extra.c w32inet.c
 bin_SCRIPTS = adns-config
@@ -81,9 +78,24 @@ libadns_la_LDFLAGS = $(no_undefined) $(export_symbols) $(extra_ltoptions) \
 libadns_la_DEPENDENCIES = $(srcdir)/libadns.vers $(adns_deps)
 libadns_la_LIBADD = @LTLIBOBJS@ $(NETLIBS)
 
-# Because we need the list of source files also in ../regress, we put
-# them into a separate file.
-include $(srcdir)/source.list
+# NOTE: The list of these files is also used in ../regress.
+adnssources = \
+        adns.h      \
+        internal.h  \
+        dlist.h     \
+        tvarith.h   \
+        platform.h  \
+        types.c     \
+        event.c     \
+        query.c     \
+        reply.c     \
+        general.c   \
+        vbuf.c      \
+        setup.c     \
+        transmit.c  \
+        parse.c     \
+        poll.c      \
+        check.c
 
 libadns_la_SOURCES = $(adnssources) $(w32src)
 
