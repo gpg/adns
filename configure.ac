@@ -22,7 +22,7 @@
 
 # Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.61)
-min_automake_version="1.10"
+min_automake_version="1.14"
 
 # To build a release you need to create a tag with the version number
 # (git tag -s gnupg-2.n.m) and run "./autogen.sh --force".  Please
@@ -61,7 +61,7 @@ ADNS_CONFIG_API_VERSION=1
 
 
 AC_CONFIG_SRCDIR([src/adns.h])
-AM_INIT_AUTOMAKE([dist-bzip2 no-dist-gzip])
+AM_INIT_AUTOMAKE([serial-tests dist-bzip2 no-dist-gzip])
 AM_MAINTAINER_MODE
 AM_CONFIG_HEADER(src/config.h)
 AC_CONFIG_MACRO_DIR([m4])
