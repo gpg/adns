@@ -1,5 +1,8 @@
-Noteworthy changes in version 1.4-g10-6 (unreleased)
+Noteworthy changes in version 1.4-g10-6 (2015-04-13)
 ----------------------------------------------------
+
+ * Fix building for Windows with newer versions of Mingw.
+
 
 Noteworthy changes in version 1.4-g10-5 (2014-12-12)
 ----------------------------------------------------
