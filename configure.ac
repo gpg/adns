@@ -29,7 +29,7 @@ min_automake_version="1.14"
 # bump the version number immediately *after* the release and do
 # another commit and push so that the git magic is able to work.
 # See below for the LT version numbers.
-m4_define([mym4_version], [1.4-g10-6])
+m4_define([mym4_version], [1.4-g10-7])
 
 # Below is m4 magic to extract and compute the git revision number,
 # the decimalized short revision number, a beta version string and a
