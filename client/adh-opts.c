@@ -27,7 +27,7 @@
 
 #include "adnshost.h"
 
-int ov_env=1, ov_pipe=0, ov_asynch=0;
+int ov_env=1, ov_pipe=0, ov_asynch=0, ov_tormode = 0;
 int ov_verbose= 0;
 adns_rrtype ov_type= adns_r_none;
 int ov_search=0, ov_qc_query=0, ov_qc_anshost=0, ov_qc_cname=1;
@@ -43,6 +43,8 @@ static const struct optioninfo global_options[]= {
     "f", "pipe",           &ov_pipe, 1 },
   { ot_flag,             "Allow answers to be reordered",
     "a", "asynch",         &ov_asynch, 1 },
+  { ot_flag,             "Run over TOR",
+    0, "use-tor",          &ov_tormode, 1 },
 
   { ot_desconly, "answer/error output format and destination (see below):" },
   { ot_value,            "Answers to stdout, errors as messages to stderr (default)",

@@ -222,12 +222,15 @@ int adns_submit(adns_state ads,
 
   adns__consistency(ads,0,cc_entex);
 
+  if ((ads->iflags & adns_if_tormode))
+    flags |= adns_qf_usevc;
+
   typei= adns__findtype(type);
   if (!typei) return ENOSYS;
 
   r= gettimeofday(&now,0); if (r) goto x_errno;
   qu= query_alloc(ads,typei,type,flags,now); if (!qu) goto x_errno;
-  
+
   qu->ctx.ext= context;
   qu->ctx.callback= 0;
   memset(&qu->ctx.info,0,sizeof(qu->ctx.info));
@@ -287,6 +290,8 @@ int adns_submit_reverse_any(adns_state ads,
   int r, lreq;
 
   flags &= ~adns_qf_search;
+  if ((ads->iflags & adns_if_tormode))
+    flags |= adns_qf_usevc;
 
   if (addr->sa_family != AF_INET) return ENOSYS;
   iaddr= (const unsigned char*)
@@ -315,6 +320,10 @@ int adns_submit_reverse(adns_state ads,
 			void *context,
 			adns_query *query_r) {
   if (type != adns_r_ptr && type != adns_r_ptr_raw) return EINVAL;
+
+  if ((ads->iflags & adns_if_tormode))
+    flags |= adns_qf_usevc;
+
   return adns_submit_reverse_any(ads,addr,"in-addr.arpa",
 				 type,flags,context,query_r);
 }
@@ -326,7 +335,10 @@ int adns_synchronous(adns_state ads,
 		     adns_answer **answer_r) {
   adns_query qu;
   int r;
-  
+
+  if ((ads->iflags & adns_if_tormode))
+    flags |= adns_qf_usevc;
+
   r= adns_submit(ads,owner,type,flags,0,&qu);
   if (r) return r;
 

@@ -9,20 +9,20 @@
  *    Copyright (C) 1999-2000,2003,2006  Tony Finch
  *    Copyright (C) 1991 Massachusetts Institute of Technology
  *  (See the file INSTALL for full details.)
- *  
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2, or (at your option)
  *  any later version.
- *  
+ *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software Foundation,
- *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
+ *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
 #include "adnshost.h"
@@ -35,15 +35,15 @@ static unsigned long idcounter;
 /* inet_aton implementation.  [Taken from the adns 1.0 W32 port.
    Copyright (C) 2000, 2004 Jarle (jgaa) Aase <jgaa@jgaa.com>] */
 #ifdef HAVE_W32_SYSTEM
-static int 
+static int
 inet_aton (const char *cp, struct in_addr *inp)
 {
   if (!cp || !*cp || !inp)
     {
       errno = EINVAL;
-      return -1; 
+      return -1;
     }
-  
+
   if (!strcmp(cp, "255.255.255.255"))
     {
       /*  Although this is a valid address, the old inet_addr fucntion
@@ -51,7 +51,7 @@ inet_aton (const char *cp, struct in_addr *inp)
         inp->s_addr = INADDR_NONE;
         return 0;
     }
-  
+
   inp->s_addr = inet_addr (cp);
   return (inp->s_addr == INADDR_NONE) ? -1 : 0;
 }
@@ -61,7 +61,7 @@ inet_aton (const char *cp, struct in_addr *inp)
 void ensure_adns_init(void) {
   adns_initflags initflags;
   int r;
-  
+
   if (ads) return;
 
 #ifndef HAVE_W32_SYSTEM
@@ -70,6 +70,7 @@ void ensure_adns_init(void) {
 
   initflags= adns_if_noautosys|adns_if_nosigpipe|ov_verbose;
   if (!ov_env) initflags |= adns_if_noenv;
+  if (ov_tormode) initflags |= adns_if_tormode;
 
   if (config_text) {
     r= adns_init_strcfg(&ads, initflags, stderr, config_text);
@@ -86,7 +87,7 @@ void type_info(adns_rrtype type, const char **typename_r,
 	       const void *datap, char **data_r) {
   static char buf[12];
   adns_status st;
-  
+
   st= adns_rr_info(type, typename_r, 0,0, datap,data_r);
   if (st == adns_s_nomemory) sysfail("adns_rr_info failed",ENOMEM);
   assert(!st);
@@ -99,10 +100,10 @@ void type_info(adns_rrtype type, const char **typename_r,
 static void prep_query(struct query_node **qun_r, int *quflags_r) {
   struct query_node *qun;
   char idbuf[20];
-  
+
   if (ov_pipe && !ads) usageerr("-f/--pipe not consistent with domains on command line");
   ensure_adns_init();
-  
+
   qun= malloc(sizeof(*qun));
   qun->pqfr= ov_pqfr;
   if (ov_id) {
@@ -121,10 +122,10 @@ static void prep_query(struct query_node **qun_r, int *quflags_r) {
     (ov_qc_anshost ? adns_qf_quoteok_anshost : 0) |
     (ov_qc_cname ? 0 : adns_qf_quoteok_cname) |
     ov_cname,
-    
+
   *qun_r= qun;
 }
-  
+
 void of_ptr(const struct optioninfo *oi, const char *arg, const char *arg2) {
   struct query_node *qun;
   int quflags, r;
@@ -200,7 +201,7 @@ static void print_withspace(const char *str) {
 static void print_ttl(struct query_node *qun, adns_answer *answer) {
   unsigned long ttl;
   time_t now;
-  
+
   switch (qun->pqfr.ttl) {
   case tm_none:
     return;
@@ -262,7 +263,7 @@ static void print_status(adns_status st, struct query_node *qun, adns_answer *an
 static void print_dnsfail(adns_status st, struct query_node *qun, adns_answer *answer) {
   int r;
   const char *typename, *statusstring;
-  
+
   if (ov_format == fmt_inline) {
     if (fputs("; failed ",stdout) == EOF) outerr();
     print_status(st,qun,answer);
@@ -283,7 +284,7 @@ static void print_dnsfail(adns_status st, struct query_node *qun, adns_answer *a
   }
   if (r == EOF) sysfail("write error message to stderr",errno);
 }
-    
+
 void query_done(struct query_node *qun, adns_answer *answer) {
   adns_status st;
   int rrn, nrrs;

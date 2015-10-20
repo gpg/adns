@@ -277,7 +277,7 @@ struct adns__query {
    *        too big for UDP /             UDP timeout  \  \ send via UDP
    *        send via TCP   /              more retries  \  \
    *        when conn'd   /                  desired     \  \
-   *                     |     	       	       	       	  |  |
+   *        or TOR-mode  |     	       	       	       	  |  |
    *                     v				  |  v
    *              +-----------+         	    	+-------------+
    *              | tcpw/tcpw | ________                | tosend/udpw |
