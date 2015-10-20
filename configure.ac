@@ -246,9 +246,11 @@ fi
 #
 ADNS_CONFIG_LIBS="-ladns"
 ADNS_CONFIG_CFLAGS=""
-AC_SUBST(ADNS_CONFIG_LIBS)
-AC_SUBST(ADNS_CONFIG_CFLAGS)
+ADNS_CONFIG_HOST="$host"
 AC_SUBST(ADNS_CONFIG_API_VERSION)
+AC_SUBST(ADNS_CONFIG_CFLAGS)
+AC_SUBST(ADNS_CONFIG_LIBS)
+AC_SUBST(ADNS_CONFIG_HOST)
 
 # The Makefiles need to know about cross compiling
 AM_CONDITIONAL(CROSS_COMPILING, test x$cross_compiling = xyes)
@@ -349,6 +351,9 @@ src/versioninfo.rc
 client/Makefile
 regress/Makefile
 ])
+AC_CONFIG_COMMANDS([adns-conf],[[
+chmod +x src/adns-config
+]])
 AC_OUTPUT
 
 
