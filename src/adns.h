@@ -92,7 +92,8 @@ typedef enum { /* In general, or together the desired flags: */
  adns_if_eintr=       0x0020,/* allow _wait and _synchronous to return EINTR */
  adns_if_nosigpipe=   0x0040,/* applic has SIGPIPE ignored, do not protect */
  adns_if_checkc_entex=0x0100,/* consistency checks on entry/exit to adns fns */
- adns_if_checkc_freq= 0x0300 /* consistency checks very frequently (slow!) */
+ adns_if_checkc_freq= 0x0300,/* consistency checks very frequently (slow!) */
+ adns_if_tormode=     0x1000 /* route all trafic via TOR.  */
 } adns_initflags;
 
 typedef enum { /* In general, or together the desired flags: */

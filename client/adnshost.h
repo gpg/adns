@@ -78,7 +78,7 @@ struct perqueryflags_remember {
   int ttl;
 };
 
-extern int ov_env, ov_pipe, ov_asynch;
+extern int ov_env, ov_pipe, ov_asynch, ov_tormode;
 extern int ov_verbose;
 extern adns_rrtype ov_type;
 extern int ov_search, ov_qc_query, ov_qc_anshost, ov_qc_cname;

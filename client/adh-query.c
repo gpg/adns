@@ -70,6 +70,7 @@ void ensure_adns_init(void) {
 
   initflags= adns_if_noautosys|adns_if_nosigpipe|ov_verbose;
   if (!ov_env) initflags |= adns_if_noenv;
+  if (ov_tormode) initflags |= adns_if_tormode;
 
   if (config_text) {
     r= adns_init_strcfg(&ads, initflags, stderr, config_text);
