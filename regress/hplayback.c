@@ -140,7 +140,7 @@ static void Ppollfds(struct pollfd *fds, int nfds) {
   for (i=0; i<nfds; i++) {
     Pstring("{fd=","{fd= in pollfds");
     fds->fd= strtoul(vb2.buf+vb2.used,&ep,10);
-    vb2.used= ep - (char*)vb2.buf;    
+    vb2.used= ep - (char*)vb2.buf;
     Pstring(", events=",", events= in pollfds");
     fds->events= Ppollfdevents();
     Pstring(", revents=",", revents= in pollfds");
@@ -194,11 +194,10 @@ static int Pbytes(byte *buf, int maxlen) {
   }
 }
 void Q_vb(void) {
-  int r;
   const char *nl;
   Tensurerecordfile();
   if (!adns__vbuf_ensure(&vb2,vb.used+2)) Tnomem();
-  r= fread(vb2.buf,1,vb.used+2,Tinputfile);
+  fread(vb2.buf,1,vb.used+2,Tinputfile);
   if (feof(Tinputfile)) {
     fprintf(stderr,"adns test harness: input ends prematurely; program did:\n %.*s\n",
            vb.used,vb.buf);
@@ -241,9 +240,9 @@ int Hselect(	int max , fd_set *rfds , fd_set *wfds , fd_set *efds , struct timev
   r= strtoul(vb2.buf+8,&ep,10);
   if (*ep && *ep!=' ') Psyntax("return value not E* or positive number");
   vb2.used= ep - (char*)vb2.buf;
-	Parg("rfds"); Pfdset(rfds,max); 
-	Parg("wfds"); Pfdset(wfds,max); 
-	Parg("efds"); Pfdset(efds,max); 
+	Parg("rfds"); Pfdset(rfds,max);
+	Parg("wfds"); Pfdset(wfds,max);
+	Parg("efds"); Pfdset(efds,max);
  assert(vb2.used <= amtread);
  if (vb2.used != amtread) Psyntax("junk at end of line");
  P_updatetime();
@@ -273,7 +272,7 @@ int Hpoll(	struct pollfd *fds , int nfds , int timeout 	) {
   r= strtoul(vb2.buf+6,&ep,10);
   if (*ep && *ep!=' ') Psyntax("return value not E* or positive number");
   vb2.used= ep - (char*)vb2.buf;
-        Parg("fds"); Ppollfds(fds,nfds); 
+        Parg("fds"); Ppollfds(fds,nfds);
  assert(vb2.used <= amtread);
  if (vb2.used != amtread) Psyntax("junk at end of line");
  P_updatetime();
@@ -283,8 +282,8 @@ int Hpoll(	struct pollfd *fds , int nfds , int timeout 	) {
 int Hsocket(	int domain , int type , int protocol 	) {
  int r, amtread;
  char *ep;
-	Tmust("socket","domain",domain==AF_INET); 
-  Tmust("socket","type",type==SOCK_STREAM || type==SOCK_DGRAM); 
+	Tmust("socket","domain",domain==AF_INET);
+  Tmust("socket","type",type==SOCK_STREAM || type==SOCK_DGRAM);
  Qsocket(	 type 	);
  if (!adns__vbuf_ensure(&vb2,1000)) Tnomem();
  fgets(vb2.buf,vb2.avail,Tinputfile); Pcheckinput();
@@ -312,13 +311,13 @@ int Hsocket(	int domain , int type , int protocol 	) {
 }
 int Hfcntl(	int fd , int cmd , ... 	) {
  int r, amtread;
-	va_list al; long arg; 
+	va_list al; long arg;
   Tmust("fcntl","cmd",cmd==F_SETFL || cmd==F_GETFL);
   if (cmd == F_SETFL) {
     va_start(al,cmd); arg= va_arg(al,long); va_end(al);
   } else {
     arg= 0;
-  } 
+  }
  Qfcntl(	fd , cmd , arg 	);
  if (!adns__vbuf_ensure(&vb2,1000)) Tnomem();
  fgets(vb2.buf,vb2.avail,Tinputfile); Pcheckinput();
@@ -469,7 +468,7 @@ int Hclose(	int fd 	) {
 int Hsendto(	int fd , const void *msg , int msglen , unsigned int flags , const struct sockaddr *addr , int addrlen 	) {
  int r, amtread;
  char *ep;
-	Tmust("sendto","flags",flags==0); 
+	Tmust("sendto","flags",flags==0);
  Qsendto(	fd , msg , msglen , addr , addrlen 	);
  if (!adns__vbuf_ensure(&vb2,1000)) Tnomem();
  fgets(vb2.buf,vb2.avail,Tinputfile); Pcheckinput();
@@ -497,8 +496,8 @@ int Hsendto(	int fd , const void *msg , int msglen , unsigned int flags , const 
 }
 int Hrecvfrom(	int fd , void *buf , int buflen , unsigned int flags , struct sockaddr *addr , int *addrlen 	) {
  int r, amtread;
-	Tmust("recvfrom","flags",flags==0); 
-	Tmust("recvfrom","*addrlen",*addrlen>=sizeof(struct sockaddr_in)); 
+	Tmust("recvfrom","flags",flags==0);
+	Tmust("recvfrom","*addrlen",*addrlen>=sizeof(struct sockaddr_in));
  Qrecvfrom(	fd , buflen , *addrlen 	);
  if (!adns__vbuf_ensure(&vb2,1000)) Tnomem();
  fgets(vb2.buf,vb2.avail,Tinputfile); Pcheckinput();
@@ -519,10 +518,10 @@ int Hrecvfrom(	int fd , void *buf , int buflen , unsigned int flags , struct soc
   if (memcmp(vb2.buf+10,"OK",2)) Psyntax("success/fail not E* or OK");
   vb2.used= 10+2;
   r= 0;
-	Parg("addr"); Paddr(addr,addrlen); 
+	Parg("addr"); Paddr(addr,addrlen);
  assert(vb2.used <= amtread);
  if (vb2.used != amtread) Psyntax("junk at end of line");
-	r= Pbytes(buf,buflen); 
+	r= Pbytes(buf,buflen);
  P_updatetime();
  return r;
 }
@@ -550,7 +549,7 @@ int Hread(	int fd , void *buf , size_t buflen 	) {
   r= 0;
  assert(vb2.used <= amtread);
  if (vb2.used != amtread) Psyntax("junk at end of line");
-	r= Pbytes(buf,buflen); 
+	r= Pbytes(buf,buflen);
  P_updatetime();
  return r;
 }

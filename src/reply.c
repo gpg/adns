@@ -8,33 +8,33 @@
  *    Copyright (C) 1999-2000,2003,2006  Tony Finch
  *    Copyright (C) 1991 Massachusetts Institute of Technology
  *  (See the file INSTALL for full details.)
- *  
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2, or (at your option)
  *  any later version.
- *  
+ *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software Foundation,
- *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
+ *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
 #include <stdlib.h>
 
 #include "internal.h"
-    
+
 void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
 		     int serv, int viatcp, struct timeval now) {
   int cbyte, rrstart, wantedrrs, rri, foundsoa, foundns, cname_here;
   int id, f1, f2, qdcount, ancount, nscount, arcount;
   int flg_ra, flg_rd, flg_tc, flg_qr, opcode;
   int rrtype, rrclass, rdlength, rdstart;
-  int anstart, nsstart, arstart;
+  int anstart, nsstart;
   int ownermatched, l, nrrs;
   unsigned long ttl, soattl;
   const typeinfo *typei;
@@ -44,7 +44,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
   vbuf tempvb;
   byte *newquery, *rrsdata;
   parseinfo pai;
-  
+
   if (dglen<DNS_HDRSIZE) {
     adns__diag(ads,serv,0,"received datagram"
 	       " too short for message header (%d)",dglen);
@@ -68,7 +68,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
   rcode= (f2&0x0f);
 
   cname_here= 0;
-  
+
   if (!flg_qr) {
     adns__diag(ads,serv,0,"server sent us a query, not a response");
     return;
@@ -80,7 +80,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
   }
 
   qu= 0;
-  /* See if we can find the relevant query, or leave qu=0 otherwise ... */   
+  /* See if we can find the relevant query, or leave qu=0 otherwise ... */
 
   if (qdcount == 1) {
     for (qu= viatcp ? ads->tcpw.head : ads->udpw.head; qu; qu= nqu) {
@@ -105,7 +105,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
       else LIST_UNLINK(ads->udpw,qu);
     }
   }
-  
+
   /* If we're going to ignore the packet, we return as soon as we have
    * failed the query (if any) and printed the warning message (if
    * any).
@@ -155,9 +155,8 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
 
   /* We're definitely going to do something with this packet and this
    * query now. */
-  
+
   anstart= qu->query_dglen;
-  arstart= -1;
 
   /* Now, take a look at the answer section, and see if it is complete.
    * If it has any CNAMEs we stuff them in the answer.
@@ -241,7 +240,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
    * which we could use.
    */
   if (flg_tc) goto x_truncated;
-  
+
   nsstart= cbyte;
 
   if (!wantedrrs) {
@@ -266,7 +265,7 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
       if (rrtype == adns_r_soa_raw) { foundsoa= 1; soattl= ttl; break; }
       else if (rrtype == adns_r_ns_raw) { foundns= 1; }
     }
-    
+
     if (rcode == rcode_nxdomain) {
       /* We still wanted to look for the SOA so we could find the TTL. */
       adns__update_expires(qu,soattl,now);
@@ -360,29 +359,29 @@ void adns__procdgram(adns_state ads, const byte *dgram, int dglen,
   return;
 
  x_truncated:
-  
+
   if (!flg_tc) {
     adns__diag(ads,serv,qu,"server sent datagram which points outside itself");
     adns__query_fail(qu,adns_s_invalidresponse);
     return;
   }
   qu->flags |= adns_qf_usevc;
-  
+
  x_restartquery:
   if (qu->cname_dgram) {
     st= adns__mkquery_frdgram(qu->ads,&qu->vb,&qu->id,
 			      qu->cname_dgram,qu->cname_dglen,qu->cname_begin,
 			      qu->answer->type, qu->flags);
     if (st) { adns__query_fail(qu,st); return; }
-    
+
     newquery= realloc(qu->query_dgram,qu->vb.used);
     if (!newquery) { adns__query_fail(qu,adns_s_nomemory); return; }
-    
+
     qu->query_dgram= newquery;
     qu->query_dglen= qu->vb.used;
     memcpy(newquery,qu->vb.buf,qu->vb.used);
   }
-  
+
   if (qu->state == query_tcpw) qu->state= query_tosend;
   qu->retries= 0;
   adns__reset_preserved(qu);
