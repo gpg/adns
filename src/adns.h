@@ -515,6 +515,14 @@ int adns_init_logfn(adns_state *newstate_r, adns_initflags flags,
  *   setting of adns_if_check_entex, adns_if_check_freq, or neither,
  *   in the flags passed to adns_init.
  *
+ *  adns_tormode
+ *   Forces the use of virtual circuits over a SOCKS5 proxy running at
+ *   port 9050.  No UDP based communication is done.
+ *
+ *  adns_sockscred:username:password
+ *   Use username and password for SOCKS5 authentication.  Default is
+ *   no authentication.
+ *
  * There are a number of environment variables which can modify the
  * behaviour of adns.  They take effect only if adns_init is used, and
  * the caller of adns_init can disable them using adns_if_noenv.  In

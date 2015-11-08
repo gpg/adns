@@ -347,6 +347,7 @@ struct adns__state {
   } sortlist[MAXSORTLIST];
   char **searchlist;
   unsigned short rand48xsubi[3];
+  char *sockscred; /* Malloced string with the SOCKS5 credentials or NULL.  */
 };
 
 /* From setup.c: */
