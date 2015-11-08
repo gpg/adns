@@ -396,6 +396,7 @@ struct adns__state {
   char **searchlist;
   unsigned config_report_unknown:1;
   unsigned short rand48xsubi[3];
+  char *sockscred; /* Malloced string with the SOCKS5 credentials or NULL.  */
 };
 
 /* From addrfam.c: */

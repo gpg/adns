@@ -328,6 +328,21 @@ static void ccf_options(adns_state ads, const char *fn,
       }
       continue;
     }
+    if (WORD_IS("adns_tormode")) {
+      ads->iflags |= adns_if_tormode;
+      continue;
+    }
+    if (WORD_STARTS("adns_sockscred:")) {
+      l -= 15;
+      ads->sockscred = malloc (l + 1);
+      if (!ads->sockscred) {
+        saveerr(ads,errno);
+        continue;
+      }
+      memcpy (ads->sockscred, word, l);
+      ads->sockscred[l] = 0;
+      continue;
+    }
     if (WORD_IS("adns_ignoreunkcfg")) {
       ads->config_report_unknown=0;
       continue;
@@ -640,6 +655,8 @@ static int init_begin(adns_state *ads_r, adns_initflags flags,
   ads->rand48xsubi[1]= (unsigned long)pid >> 16;
   ads->rand48xsubi[2]= pid ^ ((unsigned long)pid >> 16);
 
+  ads->sockscred = NULL;
+
   *ads_r= ads;
   return 0;
 }
@@ -681,6 +698,8 @@ static int init_finish(adns_state ads) {
  x_closeudp:
   for (i=0; i<ads->nudpsockets; i++) close(ads->udpsockets[i].fd);
  x_free:
+  if (ads->sockscred)
+    free (ads->sockscred);
   free(ads);
   return r;
 }
