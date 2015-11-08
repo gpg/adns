@@ -269,6 +269,21 @@ static void ccf_options(adns_state ads, const char *fn,
       }
       continue;
     }
+    if (l==12 && !memcmp(word,"adns_tormode",12)) {
+      ads->iflags |= adns_if_tormode;
+      continue;
+    }
+    if (l>=15 && !memcmp(word,"adns_sockscred:",15)) {
+      l -= 15;
+      ads->sockscred = malloc (l + 1);
+      if (!ads->sockscred) {
+        saveerr(ads,errno);
+        continue;
+      }
+      memcpy (ads->sockscred, word+15, l);
+      ads->sockscred[l] = 0;
+      continue;
+    }
     adns__diag(ads,-1,0,"%s:%d: unknown option `%.*s'", fn,lno, l,word);
   }
 }
@@ -557,6 +572,8 @@ static int init_begin(adns_state *ads_r, adns_initflags flags,
   ads->rand48xsubi[1]= (unsigned long)pid >> 16;
   ads->rand48xsubi[2]= pid ^ ((unsigned long)pid >> 16);
 
+  ads->sockscred = NULL;
+
   *ads_r= ads;
   return 0;
 }
@@ -585,6 +602,8 @@ static int init_finish(adns_state ads) {
  x_closeudp:
   close(ads->udpsocket);
  x_free:
+  if (ads->sockscred)
+    free (ads->sockscred);
   free(ads);
   return r;
 }
