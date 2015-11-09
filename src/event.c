@@ -220,7 +220,7 @@ socks_connect (adns_state ads, int fd,
         errno = EIO;
       return -1;
     }
-  ret = adns__sock_read(fd, buffer, buflen);
+  ret = adns__sock_read(fd, buffer, 10 /*(v4 length)*/);
   if (ret < 0)
     return ret;
   if (ret != buflen || buffer[0] != 5 || buffer[2] != 0 )
@@ -258,9 +258,23 @@ socks_connect (adns_state ads, int fd,
         case 0x07: /* Command not supported */
         default:
           errno = ENOTSUP; /* Fixme: Is there a better errno? */
+          break;
         }
       return -1;
     }
+  if (buffer[3] == 4)
+    {
+      /* ATYP indicates a v6 address.  We need to read the remaining
+         12 bytes to finialize the SOCKS5 intro.  */
+      ret = adns__sock_read(fd, buffer, 12 /*(v6-v4 length)*/);
+      if (ret != 12)
+        {
+          if (ret >= 0)
+            errno = EIO;
+          return -1;
+        }
+    }
+
   /* FIXME: We have not way to store the actual address used by the
      server.  */
 
