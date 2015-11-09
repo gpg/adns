@@ -149,8 +149,10 @@ socks_connect (adns_state ads, int fd,
   size_t proxyaddrlen;
   struct sockaddr_in6 *addr_in6;
   struct sockaddr_in  *addr_in;
-  unsigned char buffer[22];
+  unsigned char buffer[22+512]; /* The extra 512 bytes is used as
+                                   space for username:password.  */
   size_t buflen;
+  int method;
 
   memset (&proxyaddr_in, 0, sizeof proxyaddr_in);
 
@@ -168,7 +170,11 @@ socks_connect (adns_state ads, int fd,
   /* Negotiate method.  */
   buffer[0] = 5; /* RFC-1928 VER field.  */
   buffer[1] = 1; /* NMETHODS */
-  buffer[2] = 0; /* Method: No authentication required. */
+  if (ads->sockscred)
+    method = 2;  /* Method: username/password authentication. */
+  else
+    method = 0;  /* Method: No authentication required. */
+  buffer[2] = method;
   adns__sigpipe_protect(ads);
   ret = adns__sock_write(fd, buffer, 3);
   adns__sigpipe_unprotect(ads);
@@ -181,12 +187,72 @@ socks_connect (adns_state ads, int fd,
   ret = adns__sock_read(fd, buffer, 2);
   if (ret < 0)
     return ret;
-  if (ret != 2 || buffer[0] != 5 || buffer[1] != 0 )
+  if (ret != 2 || buffer[0] != 5 || buffer[1] != method )
     {
       /* Socks server returned wrong version or does not support our
          requested method.  */
       errno = ENOTSUP; /* Fixme: Is there a better errno? */
       return -1;
+    }
+
+  if (ads->sockscred)
+    {
+      /* Username/Password sub-negotiation.  */
+      const char *password;
+      int ulen, plen;
+
+      password = strchr (ads->sockscred, ':');
+      if (!password)
+        {
+          errno = EINVAL; /* No password given.  */
+          return -1;
+        }
+      ulen = password - ads->sockscred;
+      password++;
+      plen = strlen (password);
+      if (!ulen || ulen > 255 || !plen || plen > 255)
+        {
+          errno = EINVAL; /* Credentials too long or too short.  */
+          return -1;
+        }
+
+      buffer[0] = 1; /* VER of the sub-negotiation. */
+      buffer[1] = ulen;
+      buflen = 2;
+      memcpy (buffer+buflen, ads->sockscred, ulen);
+      buflen += ulen;
+      buffer[buflen++] = plen;
+      memcpy (buffer+buflen, password, plen);
+      buflen += plen;
+      adns__sigpipe_protect(ads);
+      ret = adns__sock_write(fd, buffer, buflen);
+      adns__sigpipe_unprotect(ads);
+      WIPEMEMORY (buffer, buflen);
+      if (ret != buflen)
+        {
+          if (ret >= 0)
+            errno = EIO;
+          return -1;
+        }
+      ret = adns__sock_read(fd, buffer, 2);
+      if (ret != 2)
+        {
+          if (ret >= 0)
+            errno = EIO;
+          return -1;
+        }
+      if (buffer[0] != 1)
+        {
+          /* SOCKS server returned wrong version.  */
+          errno = EPROTO;
+          return -1;
+        }
+      if (buffer[1])
+        {
+          /* SOCKS server denied access.  */
+          errno = EACCES;
+          return -1;
+        }
     }
 
   /* Send request details (rfc-1928, 4).  */
