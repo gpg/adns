@@ -944,4 +944,12 @@ static inline int errno_resources(int e) { return e==ENOMEM || e==ENOBUFS; }
 		       (tv)|=GETIL_B(cb)		\
 		     )
 
+/* To avoid that a compiler optimizes certain memset calls away, this
+   macro may be used instead.  */
+#define WIPEMEMORY(_ptr,_len) do {                          \
+              volatile char *_vptr=(volatile char *)(_ptr); \
+              size_t _vlen=(_len);                          \
+              while(_vlen) { *_vptr=0; _vptr++; _vlen--; }  \
+              } while(0)
+
 #endif
