@@ -936,12 +936,12 @@ static inline int errno_resources(int e) { return e==ENOMEM || e==ENOBUFS; }
 
 #define GETIL_B(cb) (((dgram)[(cb)++]) & 0x0ff)
 #define GET_B(cb,tv) ((tv)= GETIL_B((cb)))
-#define GET_W(cb,tv) ((tv)=0,(tv)|=(GETIL_B((cb))<<8), (tv)|=GETIL_B(cb), (tv))
+#define GET_W(cb,tv) ((tv)=0,(tv)|=(GETIL_B((cb))<<8), (tv)|=GETIL_B(cb))
 #define GET_L(cb,tv) ( (tv)=0,				\
 		       (tv)|=(GETIL_B((cb))<<24),	\
 		       (tv)|=(GETIL_B((cb))<<16),	\
 		       (tv)|=(GETIL_B((cb))<<8),	\
-		       (tv)|=GETIL_B(cb),		\
-		       (tv) )
+		       (tv)|=GETIL_B(cb)		\
+		     )
 
 #endif
