@@ -11,17 +11,17 @@
  *    Copyright (C) 1999-2000,2003,2006  Tony Finch
  *    Copyright (C) 1991 Massachusetts Institute of Technology
  *  (See the file INSTALL for full details.)
- *  
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 3, or (at your option)
  *  any later version.
- *  
+ *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software Foundation.
  */
@@ -41,11 +41,11 @@ static adns_query query_alloc(adns_state ads,
 			      adns_queryflags flags, struct timeval now) {
   /* Allocate a virgin query and return it. */
   adns_query qu;
-  
+
   qu= malloc(sizeof(*qu));  if (!qu) return 0;
   qu->answer= malloc(sizeof(*qu->answer));
   if (!qu->answer) { free(qu); return 0; }
-  
+
   qu->ads= ads;
   qu->state= query_tosend;
   qu->back= qu->next= qu->parent= 0;
@@ -100,7 +100,7 @@ static void query_submit(adns_state ads, adns_query qu,
 
   qu->query_dgram= malloc(qu->vb.used);
   if (!qu->query_dgram) { adns__query_fail(qu,adns_s_nomemory); return; }
-  
+
   qu->id= id;
   qu->query_dglen= qu->vb.used;
   memcpy(qu->query_dgram,qu->vb.buf,qu->vb.used);
@@ -167,7 +167,7 @@ adns_status adns__internal_submit(adns_state ads, adns_query *query_r,
   LIST_LINK_TAIL_PART(parent->children,qu,siblings.);
   memcpy(&qu->ctx,ctx,sizeof(qu->ctx));
   query_submit(ads,qu, typei,qumsg_vb,id,flags,now);
-  
+
   return adns_s_ok;
 
 x_err:
@@ -206,7 +206,7 @@ static void query_simple(adns_state ads, adns_query qu,
 void adns__search_next(adns_state ads, adns_query qu, struct timeval now) {
   const char *nextentry;
   adns_status st;
-  
+
   if (qu->search_doneabs<0) {
     nextentry= 0;
     qu->search_doneabs= 1;
@@ -286,7 +286,7 @@ int adns_submit(adns_state ads,
 
   r= gettimeofday(&now,0); if (r) goto x_errno;
   qu= query_alloc(ads,typei,type,flags,now); if (!qu) goto x_errno;
-  
+
   qu->ctx.ext= context;
   qu->ctx.callback= 0;
   memset(&qu->ctx.pinfo,0,sizeof(qu->ctx.pinfo));
@@ -297,7 +297,7 @@ int adns_submit(adns_state ads,
   ol= strlen(owner);
   if (!ol) { st= adns_s_querydomaininvalid; goto x_adnsfail; }
   if (ol>DNS_MAXDOMAIN+1) { st= adns_s_querydomaintoolong; goto x_adnsfail; }
-				 
+
   if (ol>=1 && owner[ol-1]=='.' && (ol<2 || owner[ol-2]!='\\')) {
     flags &= ~adns_qf_search;
     qu->flags= flags;
@@ -374,7 +374,7 @@ int adns_synchronous(adns_state ads,
 		     adns_answer **answer_r) {
   adns_query qu;
   int r;
-  
+
   r= adns_submit(ads,owner,type,flags,0,&qu);
   if (r) return r;
 
@@ -398,7 +398,7 @@ static void *alloc_common(adns_query qu, size_t sz) {
 
 void *adns__alloc_interim(adns_query qu, size_t sz) {
   void *rv;
-  
+
   sz= MEM_ROUND(sz);
   rv= alloc_common(qu,sz);
   if (!rv) return 0;
@@ -408,7 +408,7 @@ void *adns__alloc_interim(adns_query qu, size_t sz) {
 
 void *adns__alloc_preserved(adns_query qu, size_t sz) {
   void *rv;
-  
+
   sz= MEM_ROUND(sz);
   rv= adns__alloc_interim(qu,sz);
   if (!rv) return 0;
@@ -449,7 +449,7 @@ void adns__transfer_interim(adns_query from, adns_query to, void *block) {
 
   assert(!to->final_allocspace);
   assert(!from->final_allocspace);
-  
+
   LIST_UNLINK(from->allocations,an);
   LIST_LINK_TAIL(to->allocations,an);
 
@@ -585,17 +585,17 @@ static void makefinal_query(adns_query qu) {
   qu->final_allocspace= (byte*)ans + MEM_ROUND(sizeof(*ans));
   adns__makefinal_str(qu,&ans->cname);
   adns__makefinal_str(qu,&ans->owner);
-  
+
   if (ans->nrrs) {
     adns__makefinal_block(qu, &ans->rrs.untyped, ans->nrrs*ans->rrsz);
 
     for (rrn=0; rrn<ans->nrrs; rrn++)
       qu->typei->makefinal(qu, ans->rrs.bytes + rrn*ans->rrsz);
   }
-  
+
   free_query_allocs(qu);
   return;
-  
+
  x_nomem:
   qu->preserved_allocd= 0;
   qu->answer->cname= 0;
@@ -663,7 +663,7 @@ void adns__makefinal_str(adns_query qu, char **strp) {
   l= strlen(before)+1;
   after= adns__alloc_final(qu,l);
   memcpy(after,before,l);
-  *strp= after;  
+  *strp= after;
 }
 
 void adns__makefinal_block(adns_query qu, void **blpp, size_t sz) {
