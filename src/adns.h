@@ -115,6 +115,8 @@ typedef enum { /* In general, or together the desired flags: */
     * all) then the query flags take precedence; otherwise only records which
     * satisfy all of the stated requirements are allowed.
     */
+ adns_if_tormode=     0x1000,/* route all traffic via Tor */
+
  adns__if_sizeforce= 0x7fff,
 } adns_initflags;
 

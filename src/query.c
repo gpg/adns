@@ -275,6 +275,9 @@ int adns_submit(adns_state ads,
 
   adns__consistency(ads,0,cc_entex);
 
+  if ((ads->iflags & adns_if_tormode))
+    flags |= adns_qf_usevc;
+
   if (flags & ~(adns_queryflags)0x4009ffff)
     /* 0x40080000 are reserved for `harmless' future expansion
      * 0x00000020 used to be adns_qf_quoteok_cname, now the default;
@@ -346,6 +349,8 @@ int adns_submit_reverse_any(adns_state ads,
   int r;
 
   flags &= ~adns_qf_search;
+  if ((ads->iflags & adns_if_tormode))
+    flags |= adns_qf_usevc;
 
   buf = shortbuf;
   r= adns__make_reverse_domain(addr,zone, &buf,sizeof(shortbuf),&buf_free);
@@ -364,6 +369,8 @@ int adns_submit_reverse(adns_state ads,
   if (((type^adns_r_ptr) & adns_rrt_reprmask) &&
       ((type^adns_r_ptr_raw) & adns_rrt_reprmask))
     return EINVAL;
+  if ((ads->iflags & adns_if_tormode))
+    flags |= adns_qf_usevc;
   return adns_submit_reverse_any(ads,addr,0,type,flags,context,query_r);
 }
 
@@ -374,6 +381,9 @@ int adns_synchronous(adns_state ads,
 		     adns_answer **answer_r) {
   adns_query qu;
   int r;
+
+  if ((ads->iflags & adns_if_tormode))
+    flags |= adns_qf_usevc;
 
   r= adns_submit(ads,owner,type,flags,0,&qu);
   if (r) return r;

@@ -94,6 +94,176 @@ static void tcp_broken_events(adns_state ads) {
   ads->tcpstate= server_disconnected;
 }
 
+
+/* Return true if SOCKS shall be used.  This is the case if
+   adns_if_tormode is set and the desired address is not the loopback
+   address.  */
+static int
+use_socks_p (adns_state ads, const adns_rr_addr *addr)
+{
+  if (!(ads->iflags & adns_if_tormode))
+    return 0;
+  else if (addr->addr.sa.sa_family == AF_INET6)
+    {
+      const struct sockaddr_in6 *addr_in6 = &addr->addr.inet6;
+      const unsigned char *s;
+      int i;
+
+      s = (unsigned char *)&addr_in6->sin6_addr.s6_addr;
+      if (s[15] != 1)
+        return 1;   /* Last octet is not 1 - not the loopback address.  */
+      for (i=0; i < 15; i++, s++)
+        if (*s)
+          return 1; /* Non-zero octet found - not the loopback address.  */
+
+      return 0; /* This is the loopback address.  */
+    }
+  else if (addr->addr.sa.sa_family == AF_INET)
+    {
+      const struct sockaddr_in *addr_in = &addr->addr.inet;
+
+      if (*(const unsigned char*)&addr_in->sin_addr.s_addr == 127)
+        return 0; /* Loopback (127.0.0.0/8) */
+
+      return 1;
+    }
+  else
+    return 0;
+}
+
+
+/* Connect to TOR using the SOCKS5 protocol.  We assume that the
+   connection to the SOCKS proxy (TOR server) does not block; if it
+   would block we return and the the usual retry logic of the caller
+   kicks in.  */
+static int
+socks_connect (adns_state ads, int fd, const adns_rr_addr *addr)
+{
+  int ret;
+  struct sockaddr_in  proxyaddr_in;
+  struct sockaddr *proxyaddr;
+  size_t proxyaddrlen;
+  const struct sockaddr_in6 *addr_in6;
+  const struct sockaddr_in  *addr_in;
+  unsigned char buffer[22];
+  size_t buflen;
+
+  memset (&proxyaddr_in, 0, sizeof proxyaddr_in);
+
+  /* Connect to local host.  */
+  /* Fixme: First try to use IPv6.  */
+  proxyaddr_in.sin_family = AF_INET;
+  proxyaddr_in.sin_port = htons (9050);
+  proxyaddr_in.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
+  proxyaddr = (struct sockaddr *)&proxyaddr_in;
+  proxyaddrlen = sizeof proxyaddr_in;
+  ret = connect(fd, proxyaddr, proxyaddrlen);
+  if (ret)
+    return ret;
+
+  /* Negotiate method.  */
+  buffer[0] = 5; /* RFC-1928 VER field.  */
+  buffer[1] = 1; /* NMETHODS */
+  buffer[2] = 0; /* Method: No authentication required. */
+  adns__sigpipe_protect(ads);
+  ret = write(fd, buffer, 3);
+  adns__sigpipe_unprotect(ads);
+  if (ret != 3)
+    {
+      if (ret >= 0)
+        errno = EIO;
+      return -1;
+    }
+  ret = read(fd, buffer, 2);
+  if (ret < 0)
+    return ret;
+  if (ret != 2 || buffer[0] != 5 || buffer[1] != 0 )
+    {
+      /* Socks server returned wrong version or does not support our
+         requested method.  */
+      errno = ENOTSUP; /* Fixme: Is there a better errno? */
+      return -1;
+    }
+
+  /* Send request details (rfc-1928, 4).  */
+  buffer[0] = 5; /* VER  */
+  buffer[1] = 1; /* CMD = CONNECT  */
+  buffer[2] = 0; /* RSV  */
+  if (addr->addr.sa.sa_family == AF_INET6)
+    {
+      addr_in6 = &addr->addr.inet6;
+
+      buffer[3] = 4; /* ATYP = IPv6 */
+      memcpy (buffer+ 4, &addr_in6->sin6_addr.s6_addr, 16); /* DST.ADDR */
+      memcpy (buffer+20, &addr_in6->sin6_port, 2);          /* DST.PORT */
+      buflen = 22;
+    }
+  else
+    {
+      addr_in = &addr->addr.inet;
+
+      buffer[3] = 1; /* ATYP = IPv4 */
+      memcpy (buffer+4, &addr_in->sin_addr.s_addr, 4); /* DST.ADDR */
+      memcpy (buffer+8, &addr_in->sin_port, 2);        /* DST.PORT */
+      buflen = 10;
+    }
+  adns__sigpipe_protect(ads);
+  ret = write(fd, buffer, buflen);
+  adns__sigpipe_unprotect(ads);
+  if (ret != buflen)
+    {
+      if (ret >= 0)
+        errno = EIO;
+      return -1;
+    }
+  ret = read(fd, buffer, buflen);
+  if (ret < 0)
+    return ret;
+  if (ret != buflen || buffer[0] != 5 || buffer[2] != 0 )
+    {
+      /* Socks server returned wrong version or the reserved field is
+         not zero.  */
+      errno = EPROTO;
+      return -1;
+    }
+  if (buffer[1])
+    {
+      switch (buffer[1])
+        {
+        case 0x01: /* general SOCKS server failure.  */
+          errno = ENETDOWN;
+          break;
+        case 0x02: /* connection not allowed by ruleset.  */
+          errno = EACCES;
+          break;
+        case 0x03: /* Network unreachable */
+          errno = ENETUNREACH;
+          break;
+        case 0x04: /* Host unreachable */
+          errno = EHOSTUNREACH;
+          break;
+        case 0x05: /* Connection refused */
+          errno = ECONNREFUSED;
+          break;
+        case 0x06: /* TTL expired */
+          errno = ETIMEDOUT;
+          break;
+        case 0x08: /* Address type not supported */
+          errno = EPROTONOSUPPORT;
+          break;
+        case 0x07: /* Command not supported */
+        default:
+          errno = ENOTSUP; /* Fixme: Is there a better errno? */
+        }
+      return -1;
+    }
+  /* We have not way to store the actual address used by the server.
+     Fortunately it is of no real use.  */
+
+  return 0;
+}
+
+
 void adns__tcp_tryconnect(adns_state ads, struct timeval now) {
   int r, fd, tries;
   adns_rr_addr *addr;
@@ -126,14 +296,31 @@ void adns__tcp_tryconnect(adns_state ads, struct timeval now) {
       adns__diag(ads,-1,0,"cannot create TCP socket: %s",strerror(errno));
       return;
     }
-    r= adns__setnonblock(ads,fd);
-    if (r) {
-      adns__diag(ads,-1,0,"cannot make TCP socket nonblocking:"
-		 " %s",strerror(r));
-      close(fd);
-      return;
-    }
-    r= connect(fd,&addr->addr.sa,addr->len);
+    if (use_socks_p(ads,addr))
+      {
+        r= socks_connect(ads,fd,addr);
+        if (!r)
+          {
+            r= adns__setnonblock(ads,fd);
+            if (r) {
+              adns__diag(ads,-1,0,"cannot make TCP socket nonblocking:"
+                         " %s",strerror(r));
+              close(fd);
+              return;
+            }
+          }
+      }
+    else
+      {
+        r= adns__setnonblock(ads,fd);
+        if (r) {
+          adns__diag(ads,-1,0,"cannot make TCP socket nonblocking:"
+                     " %s",strerror(r));
+          close(fd);
+          return;
+        }
+        r= connect(fd,&addr->addr.sa,addr->len);
+      }
     ads->tcpsocket= fd;
     ads->tcpstate= server_connecting;
     if (r==0) { tcp_connected(ads,now); return; }
