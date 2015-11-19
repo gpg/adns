@@ -43,6 +43,36 @@
 #include "internal.h"
 #include "tvarith.h"
 
+
+/* Define missing error codes for older Windows compilers.  */
+#ifdef HAVE_W32_SYSTEM
+# ifndef ENOTSUP
+# define ENOTSUP 129
+# endif
+# ifndef EPROTO
+# define EPROTO 134
+# endif
+# ifndef EPROTONOSUPPORT
+# define EPROTONOSUPPORT 135
+# endif
+# ifndef ENETDOWN
+# define ENETDOWN 116
+# endif
+# ifndef ENETUNREACH
+# define ENETUNREACH 118
+# endif
+# ifndef EHOSTUNREACH
+# define EHOSTUNREACH 110
+# endif
+# ifndef ECONNREFUSED
+# define ECONNREFUSED 107
+# endif
+# ifndef ETIMEDOUT
+# define ETIMEDOUT 138
+# endif
+#endif/*HAVE_W32_SYSTEM*/
+
+
 /* TCP connection management. */
 
 static void tcp_close(adns_state ads) {
