@@ -13,20 +13,20 @@
  *    Copyright (C) 1999-2000,2003,2006  Tony Finch
  *    Copyright (C) 1991 Massachusetts Institute of Technology
  *  (See the file INSTALL for full details.)
- *  
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2, or (at your option)
  *  any later version.
- *  
+ *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software Foundation,
- *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
+ *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
 #ifndef HAVE_W32_SYSTEM
@@ -63,7 +63,7 @@ DllMain (HINSTANCE hinst, DWORD reason, LPVOID reserved)
       if (!wsa_startup_failed)
         WSACleanup ();
     }
-  
+
   return TRUE;
 }
 
@@ -175,26 +175,23 @@ adns__sock_sendto (int fd, void *buffer, size_t size, int flags,
    [Taken and modified from the adns 1.0 W32 port.  Note that the
     original version never worked; that is adns via TCP did not worked
     with W32.].  */
-int 
+int
 adns__sock_writev (int fd, const struct iovec *iov, int iovcount)
 {
   size_t total_len = 0;
   int rc, i;
   char *buf, *p;
-	
+
   for (i=0; i < iovcount; i++)
     total_len += iov[i].iov_len;
-	
+
   p = buf = alloca (total_len);
-  if (buf)
-    return -1;
-	
   for (i=0; i < iovcount; i++)
     {
       memcpy (p, iov[i].iov_base, iov[i].iov_len);
       p += iov[i].iov_len;
     }
-  
+
   rc = send (fd, buf, total_len, 0);
   if (rc)
     errno = adns__sock_wsa2errno (WSAGetLastError());
@@ -203,7 +200,7 @@ adns__sock_writev (int fd, const struct iovec *iov, int iovcount)
 
 
 int
-adns__sock_close (int fd) 
+adns__sock_close (int fd)
 {
   int rc = closesocket(fd);
   if (rc)
@@ -226,18 +223,18 @@ adns__sock_select (int nfds, fd_set *rset, fd_set *wset, fd_set *xset,
 
 
 /* inet_aton implementation.  [Taken from the adns 1.0 W32 port.
-   Copyright (C) 2000, 2004 Jarle (jgaa) Aase <jgaa@jgaa.com>] 
+   Copyright (C) 2000, 2004 Jarle (jgaa) Aase <jgaa@jgaa.com>]
 
    Returns true if the address is valid, false if not. */
-int 
+int
 adns__inet_aton (const char *cp, struct in_addr *inp)
 {
   if (!cp || !*cp || !inp)
     {
       errno = EINVAL;
-      return 0; 
+      return 0;
     }
-  
+
   if (!strcmp(cp, "255.255.255.255"))
     {
       /*  Although this is a valid address, the old inet_addr function
@@ -245,7 +242,7 @@ adns__inet_aton (const char *cp, struct in_addr *inp)
         inp->s_addr = INADDR_NONE;
         return 1;
     }
-  
+
   inp->s_addr = inet_addr (cp);
   return (inp->s_addr != INADDR_NONE);
 }
