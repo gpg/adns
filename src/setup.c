@@ -654,7 +654,7 @@ read_w32_init_files (adns_state ads) {
     case ERROR_INVALID_PARAMETER: network_err_str = "ERROR_INVALID_PARAMETER"; break;
     case ERROR_NO_DATA: network_err_str = "ERROR_NO_DATA"; break;
     case ERROR_NOT_SUPPORTED: network_err_str = "ERROR_NOT_SUPPORTED"; break;}
-    adns__diag(ads,-1,0,"GetNetworkParams() failed with error [%d] %s",
+    adns__diag(ads,-1,0,"GetNetworkParams() failed with error [%lu] %s",
                network_info_result,network_err_str);
     }
   else {
