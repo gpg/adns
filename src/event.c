@@ -164,6 +164,12 @@ socks_connect (adns_state ads, int fd,
   proxyaddr = (struct sockaddr *)&proxyaddr_in;
   proxyaddrlen = sizeof proxyaddr_in;
   ret = adns__sock_connect(fd, proxyaddr, proxyaddrlen);
+  if (ret && errno == ECONNREFUSED)
+    {
+      /* Assume the Tor browser is used.  */
+      proxyaddr_in.sin_port = htons (9150);
+      ret = adns__sock_connect(fd, proxyaddr, proxyaddrlen);
+    }
   if (ret)
     return ret;
 
