@@ -52,9 +52,9 @@ AC_INIT([adns], [mym4_full_version], [bug-adns@g10code.com])
 #   (Interfaces added:      CURRENT++, AGE++, REVISION=0)
 #   (No interfaces changed:                   REVISION++)
 # Please remember to document interface changes in the NEWS file.
-ADNS_LT_CURRENT=4
-ADNS_LT_AGE=3
-ADNS_LT_REVISION=3
+ADNS_LT_CURRENT=5
+ADNS_LT_AGE=4
+ADNS_LT_REVISION=0
 
 # If the API is changed in an incompatible way: increment this counter.
 ADNS_CONFIG_API_VERSION=1

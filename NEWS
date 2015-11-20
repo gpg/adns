@@ -1,8 +1,13 @@
-Noteworthy changes in version 1.4-g10-7 (unreleased)
+Noteworthy changes in version 1.4-g10-7 (2015-11-20) [C5/A4/R0]
 ----------------------------------------------------
 
+ * Implement a mode to use a public nameserver via Tor.  This
+   introduces two new config options and a new init flag.
 
-Noteworthy changes in version 1.4-g10-6 (2015-04-13)
+ * Fix use of TCP under Windows.
+
+
+Noteworthy changes in version 1.4-g10-6 (2015-04-13) [C4/A4/R3]
 ----------------------------------------------------
 
  * Fix building for Windows with newer versions of Mingw.
