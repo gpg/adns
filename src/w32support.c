@@ -41,6 +41,12 @@
 
 static int wsa_startup_failed;
 
+/* Define missing error codes for older Windows compilers.  */
+#ifndef ECONNREFUSED
+#define ECONNREFUSED 107
+#endif
+
+
 
 int WINAPI
 DllMain (HINSTANCE hinst, DWORD reason, LPVOID reserved)
@@ -81,6 +87,8 @@ adns__sock_wsa2errno (int err)
       return ENOBUFS;
     case WSAEMSGSIZE:
       return EMSGSIZE;
+    case WSAECONNREFUSED:
+      return ECONNREFUSED;
     default:
       return EIO;
     }
