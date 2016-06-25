@@ -211,9 +211,18 @@ adns__sock_close (int fd)
 
 int
 adns__sock_select (int nfds, fd_set *rset, fd_set *wset, fd_set *xset,
-                   const struct timeval *timeout)
+                   const struct timeval *timeout_arg)
 {
   int rc;
+  struct timeval timeout_buf, *timeout;
+
+  if (timeout_arg)
+    {
+      timeout_buf = *timeout_arg;
+      timeout = &timeout_buf;
+    }
+  else
+    timeout = NULL;
 
   rc = select (nfds, rset, wset, xset, timeout);
   if (rc == -1)
