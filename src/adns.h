@@ -254,6 +254,8 @@ typedef enum {
  adns_s_norecurse,
  adns_s_invalidresponse,
  adns_s_unknownformat,
+ adns_s_netunreach,
+ adns_s_netdown,
 
  adns_s_max_remotefail= 59,
 

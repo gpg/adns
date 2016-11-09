@@ -8,20 +8,20 @@
  *    Copyright (C) 1999-2000,2003,2006  Tony Finch
  *    Copyright (C) 1991 Massachusetts Institute of Technology
  *  (See the file INSTALL for full details.)
- *  
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2, or (at your option)
  *  any later version.
- *  
+ *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
- *  
+ *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software Foundation,
- *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
+ *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
 #include <stdlib.h>
@@ -53,7 +53,7 @@ void adns__vdiag(adns_state ads, const char *pfx, adns_initflags prevent,
 		 int serv, adns_query qu, const char *fmt, va_list al) {
   const char *bef, *aft;
   vbuf vb;
-  
+
   if (!ads->logfn ||
       (!(ads->iflags & adns_if_debug)
        && (!prevent || (ads->iflags & prevent))))
@@ -82,7 +82,7 @@ void adns__vdiag(adns_state ads, const char *pfx, adns_initflags prevent,
     bef=", "; aft=")\n";
     adns__vbuf_free(&vb);
   }
-  
+
   if (serv>=0) {
     adns__lprintf(ads,"%sNS=%s",bef,inet_ntoa(ads->servers[serv].addr));
     bef=", "; aft=")\n";
@@ -164,7 +164,7 @@ adns_status adns_rr_info(adns_rrtype type,
   if (len_r) *len_r= typei->rrsz;
 
   if (!datap) return adns_s_ok;
-  
+
   adns__vbuf_init(&vb);
   st= typei->convstring(&vb,datap);
   if (st) goto x_freevb;
@@ -188,33 +188,35 @@ static const struct sinfo {
   const char *string;
 } sinfos[]= {
   SINFO( ok,                  "OK"                                           ),
-									      
+
   SINFO( nomemory,            "Out of memory"                                ),
   SINFO( unknownrrtype,       "Query not implemented in DNS library"         ),
   SINFO( systemfail,          "General resolver or system failure"           ),
-									      
+
   SINFO( timeout,             "DNS query timed out"                          ),
   SINFO( allservfail,         "All nameservers failed"                       ),
   SINFO( norecurse,           "Recursion denied by nameserver"               ),
   SINFO( invalidresponse,     "Nameserver sent bad response"                 ),
   SINFO( unknownformat,       "Nameserver used unknown format"               ),
-									      
+  SINFO( netunreach,          "Network is unreachable"                       ),
+  SINFO( netdown,             "Network is down"                              ),
+
   SINFO( rcodeservfail,       "Nameserver reports failure"                   ),
   SINFO( rcodeformaterror,    "Query not understood by nameserver"           ),
   SINFO( rcodenotimplemented, "Query not implemented by nameserver"          ),
   SINFO( rcoderefused,        "Query refused by nameserver"                  ),
   SINFO( rcodeunknown,        "Nameserver sent unknown response code"        ),
-  									      
+
   SINFO( inconsistent,        "Inconsistent resource records in DNS"         ),
   SINFO( prohibitedcname,     "DNS alias found where canonical name wanted"  ),
   SINFO( answerdomaininvalid, "Found syntactically invalid domain name"      ),
   SINFO( answerdomaintoolong, "Found overly-long domain name"                ),
   SINFO( invaliddata,         "Found invalid DNS data"                       ),
-									      
+
   SINFO( querydomainwrong,    "Domain invalid for particular DNS query type" ),
   SINFO( querydomaininvalid,  "Domain name is syntactically invalid"         ),
   SINFO( querydomaintoolong,  "Domain name or component is too long"         ),
-									      
+
   SINFO( nxdomain,            "No such domain"                               ),
   SINFO( nodata,              "No such data"                                 )
 };
@@ -275,7 +277,7 @@ static int sti_compar(const void *key, const void *elem) {
   here= *st;
   min= (sti==stinfos) ? 0 : sti[-1].stmax+1;
   max= sti->stmax;
-  
+
   return here < min  ? -1 : here > max ? 1 : 0;
 }
 
@@ -311,7 +313,7 @@ void adns__isort(void *array, int nobjs, int sz, void *tempbuf,
 void adns__sigpipe_protect(adns_state ads) {
 #ifdef HAVE_W32_SYSTEM
   /* No SIGPIPE under Windows.  */
-  (void)ads; 
+  (void)ads;
 #else
   sigset_t toblock;
   struct sigaction sa;
@@ -325,7 +327,7 @@ void adns__sigpipe_protect(adns_state ads) {
   sa.sa_handler= SIG_IGN;
   sigfillset(&sa.sa_mask);
   sa.sa_flags= 0;
-  
+
   r= sigprocmask(SIG_SETMASK,&toblock,&ads->stdsigmask); assert(!r);
   r= sigaction(SIGPIPE,&sa,&ads->stdsigpipe); assert(!r);
 #endif
@@ -334,7 +336,7 @@ void adns__sigpipe_protect(adns_state ads) {
 void adns__sigpipe_unprotect(adns_state ads) {
 #ifdef HAVE_W32_SYSTEM
   /* No SIGPIPE under Windows.  */
-  (void)ads; 
+  (void)ads;
 #else
   int r;
 
